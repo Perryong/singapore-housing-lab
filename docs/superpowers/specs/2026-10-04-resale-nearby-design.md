@@ -54,7 +54,7 @@ building is outside the drawn context.
 
 ## Testing
 - `test/resale_test.py`: aggregation on a fixed in-memory sample (median, $/sqm, ≥3 rule, 1 km and 24-month filters,
-  300-sale cap, newest-first); linking resolves block 447 Bright Hill Drive to a footprint near Thomson.
+  300-sale cap, newest-first); linking resolves Blk 179 Ang Mo Kio Ave 5 (resale spelling) to its footprint near Kebun Baru Ridge.
 - Coverage report per project: linked / total nearby rows; target ≥ 95%, failures listed in progress.md.
 - Playwright sweep (29 projects): enable "Resale nearby" -> ≥ 1 coloured block where `resale.blocks` non-empty;
   click a resale block -> card shows its block number; trend SVG present; no page errors.
