@@ -1,0 +1,84 @@
+# BTO catalogue — progress
+
+Project moved to ~/Code/BTOlab (2026-10-03): ~/Documents is macOS-protected and launching Blender there
+revoked the session's access.
+
+## Pipeline per launched project
+(small-scale sheets: `trace_siteplan.py <dir> --regions` → regions.png; name units by region id "r12" / "r12.a|b"
+ in trace.json, points only for undetected units, "types" overrides for those)
+1. `python3 tools/find_scalebar.py <plan> x0 y0 x1 y1` → scale p0/p1
+2. read stack numbers + a point in each unit from `tools/grid_tiles.py` tiles → `projects/<slug>/trace.json`
+3. `python3 tools/trace_siteplan.py projects/<slug>` → check `trace-debug.png`; flat-type counts vs HDB block table
+4. `python3 tools/make_bto_project.py <slug>` (OneMap georef + context; slow: OneMap rate limit)
+5. `node tools/build.js projects/<slug>`; `node tools/make_index.js`; check in browser
+
+## Status
+| project | launch | traced | assembled | model | checked |
+|---|---|---|---|---|---|
+| mount-pleasant-crest | Oct 2025 | ✓ 50 | ✓ (pin georef) | ✓ | ✓ |
+| berlayar-rise | Jun 2026 | ✓ 48 (types = HDB table) | ✓ (6 pts, ≤14 m) | ✓ | ✓ Playwright |
+| lakeview-cascadia | Jun 2026 | ✓ 47 (types = table) | ✓ (pin) | ✓ | |
+| kebun-baru-breeze | Jun 2026 | ✓ 22 (types = table) | ✓ (2 pts) | ✓ | |
+| kebun-baru-ridge | Jun 2026 | ✓ 26 (types = table) | ✓ (5 pts) | ✓ | |
+| sembawang-portico | Jun 2026 | ✓ 37 (types = table) | ✓ (3 pts) | ✓ | |
+| sembawang-brook | Jun 2026 | ✓ 48 (types = table) | ✓ | ✓ | |
+| woodgrove-acres | Jun 2026 | ✓ 58 (types = table) | running | | |
+| Feb 2026 ×6, Oct 2025 ×9 | | | | | |
+| 7 upcoming (Oct 2026) | | n/a | ✓ | ✓ context | ✓ Playwright |
+
+## Known gaps
+- Stepped blocks (e.g. MPC 105A 15/40): all stacks at max height; HDB table doesn't say which stacks step down.
+- redhill-peaks-2 site plan URL failed (404) — find on btohq page.
+
+## 2026-10-03 status (usage limit stop)
+Built + in catalogue: mount-pleasant-crest, berlayar-rise, lakeview-cascadia, kebun-baru-breeze, kebun-baru-ridge,
+sembawang-portico, sembawang-brook, woodgrove-acres, tampines-nova, tampines-bliss, kim-keat-crest, sembawang-deck,
+sembawang-voyage, redhill-peaks, berlayar-residences, bishan-terraces, oak-ville-amk (last 3 builds were running in background —
+re-run `python3 tools/make_bto_project.py <slug> && node tools/build.js projects/<slug>` if model.glb is missing), 7 upcoming.
+Next: teban-heights (trace.json has scale+legend; run --regions and name units), yishun-glade, ping-yi-court,
+chencharu-grove, fernvale-plains. redhill-peaks-2: site plan 403 on btohq CDN — needs another source.
+Then: node tools/make_index.js; Playwright pass over every project; update README.
+Gotcha: points read from regions.png are plan-crop coords — add planBox x0,y0 before putting them in trace.json.
+
+## 2026-10-03 complete
+All 22 available launched BTOs (Oct 2025, Feb 2026, Jun 2026) traced, georeferenced, built; 7 upcoming Oct 2026
+sites as "Layout not released"; Thomson Reserve reference. Playwright sweep: 30/30 load without errors, correct
+badge, stack table rows = traced stacks. Outstanding: redhill-peaks-2 (site plan 403 at source).
+
+## 2026-10-03 neighbour alignment fix
+User reported neighbouring HDB blocks misaligned with the site plan. Cause: site lat/lon from map pins/addresses
+off by up to ~250 m. Fitted context to plan linework (register_context.py) for 11 projects, anchored Kim Keat
+Crest / Teban Heights by printed block numbers, re-placed Woodgrove Acres from OneMap. Remaining projects have no
+existing blocks on their sheets (nothing to conflict). All 22 models rebuilt; Thomson Reserve untouched (test ok).
+
+## 2026-10-03 amenities + UX
+Thomson Reserve dropped from the catalogue (kept for the regression test). Selected unit: rest dimmed, flat in blue
+with pulsing box, beam + label, camera eases to it, card/row highlighted. OneMap Grey base map (~1.2 km) under every
+site. Estate facilities OCR'd from each site plan (tools/trace_facilities.py); nearby amenities from data.gov.sg
+(tools/build_amenities.py + fetch_amenities.py). Playwright sweep: 29/29 load, selection works, 22-41 amenities each.
+
+## 2026-10-04 layout extraction coverage (for-sale stacks)
+- berlayar-residences: 24/24
+- berlayar-rise: 48/48
+- bishan-terraces: 7/14 missing 300, 302, 306, 320, 324, 326, 328
+- chencharu-grove: 51/63 missing 301, 303, 305, 307, 319, 321, 357, 359, 361, 363, 399, 401
+- fernvale-plains: 29/43 missing 414, 416, 418, 420, 438, 440, 460, 462, 464, 466, 468, 486, 488, 498
+- kebun-baru-breeze: 20/20
+- kebun-baru-ridge: 26/26
+- kim-keat-crest: 34/42 missing 640, 642, 644, 650, 652, 654, 656, 658
+- lakeview-cascadia: 45/47 missing 319, 321
+- mount-pleasant-crest: 33/41 missing 125, 127, 147, 171, 173, 195, 197, 199
+- oak-ville-amk: 64/66 missing 251, 365
+- ping-yi-court: 58/62 missing 577, 579, 603, 607
+- redhill-peaks: 25/25
+- sembawang-brook: 0/40 missing 100, 102, 104, 106, 108, 110, 112, 114, 116, 118, 120, 122, 124, 126, 128, 130, 132, 134, 136, 154, 156, 158, 160, 162, 164, 166, 168, 170, 172, 174, 176, 178, 180, 182, 184, 186, 188, 190, 192, 194
+- sembawang-deck: 23/35 missing 308, 310, 328, 330, 332, 338, 350, 352, 354, 356, 366, 368
+- sembawang-portico: 28/35 missing 425, 427, 443, 445, 447, 449, 469
+- sembawang-voyage: 44/44
+- tampines-bliss: 28/32 missing 309, 311, 333, 335
+- tampines-nova: 21/21
+- teban-heights: 11/18 missing 700, 702, 704, 720, 722, 732, 734
+- woodgrove-acres: 41/41
+- yishun-glade: 38/41 missing 132, 134, 136
+- TOTAL 698/828 (84%) of for-sale stacks
+- After final review: block guard removed 3 wrong-stack crops (Ping Yi Court 601/605, Fernvale Plains 482) -> 695/828; Kebun Baru Breeze waiting time corrected to 52 months.

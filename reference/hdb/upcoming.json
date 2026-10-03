@@ -1,0 +1,7 @@
+[{"slug":"yishun-chencharu-oct-2026","name":"Yishun (Chencharu)","town":"Yishun","code":"YS N8C23","lat":1.4132207,"lon":103.8287616,"flatTypes":["2-room Flexi","3-room","4-room","5-room"],"units":1580},
+{"slug":"toa-payoh-caldecott-oct-2026","name":"Toa Payoh (Caldecott)","town":"Toa Payoh","code":"TP N0C29","lat":1.3372302,"lon":103.841089,"flatTypes":["Community Care Apartment","2-room Flexi","4-room"],"units":1430},
+{"slug":"tengah-oct-2026","name":"Tengah","town":"Tengah","code":"TG D1C7","lat":1.3521431,"lon":103.7330282,"flatTypes":["2-room Flexi","3-room","4-room","5-room","3Gen"],"units":710},
+{"slug":"sembawang-oct-2026","name":"Sembawang","town":"Sembawang","code":"SB N4C11","lat":1.4580026,"lon":103.8155222,"flatTypes":["2-room Flexi","3-room","4-room","5-room"],"units":1310},
+{"slug":"geylang-oct-2026","name":"Geylang","town":"Geylang","code":"GL N1C51","lat":1.3281013,"lon":103.8810539,"flatTypes":["2-room Flexi","4-room"],"units":440},
+{"slug":"bedok-bayshore-i-oct-2026","name":"Bedok (Bayshore I)","town":"Bedok","code":"BD N10C3","lat":1.3136983,"lon":103.9417577,"flatTypes":["2-room Flexi","3-room","4-room"],"units":1640},
+{"slug":"bedok-bayshore-ii-oct-2026","name":"Bedok (Bayshore II)","town":"Bedok","code":"BD N10C3A","lat":1.3123773,"lon":103.9427501,"flatTypes":["2-room Flexi","4-room"],"units":860}]

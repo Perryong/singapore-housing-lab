@@ -1,0 +1,472 @@
+[
+ {
+  "id": "bedok-bayshore-i-oct-2026",
+  "name": "Bedok (Bayshore I)",
+  "town": "Bedok",
+  "launch": "Oct 2026",
+  "status": "upcoming",
+  "kind": "bto",
+  "classification": null,
+  "units": 1640,
+  "flatTypes": [
+   "2-room Flexi",
+   "3-room",
+   "4-room"
+  ],
+  "hasLayout": false
+ },
+ {
+  "id": "bedok-bayshore-ii-oct-2026",
+  "name": "Bedok (Bayshore II)",
+  "town": "Bedok",
+  "launch": "Oct 2026",
+  "status": "upcoming",
+  "kind": "bto",
+  "classification": null,
+  "units": 860,
+  "flatTypes": [
+   "2-room Flexi",
+   "4-room"
+  ],
+  "hasLayout": false
+ },
+ {
+  "id": "geylang-oct-2026",
+  "name": "Geylang",
+  "town": "Geylang",
+  "launch": "Oct 2026",
+  "status": "upcoming",
+  "kind": "bto",
+  "classification": null,
+  "units": 440,
+  "flatTypes": [
+   "2-room Flexi",
+   "4-room"
+  ],
+  "hasLayout": false
+ },
+ {
+  "id": "sembawang-oct-2026",
+  "name": "Sembawang",
+  "town": "Sembawang",
+  "launch": "Oct 2026",
+  "status": "upcoming",
+  "kind": "bto",
+  "classification": null,
+  "units": 1310,
+  "flatTypes": [
+   "2-room Flexi",
+   "3-room",
+   "4-room",
+   "5-room"
+  ],
+  "hasLayout": false
+ },
+ {
+  "id": "tengah-oct-2026",
+  "name": "Tengah",
+  "town": "Tengah",
+  "launch": "Oct 2026",
+  "status": "upcoming",
+  "kind": "bto",
+  "classification": null,
+  "units": 710,
+  "flatTypes": [
+   "2-room Flexi",
+   "3-room",
+   "4-room",
+   "5-room",
+   "3Gen"
+  ],
+  "hasLayout": false
+ },
+ {
+  "id": "toa-payoh-caldecott-oct-2026",
+  "name": "Toa Payoh (Caldecott)",
+  "town": "Toa Payoh",
+  "launch": "Oct 2026",
+  "status": "upcoming",
+  "kind": "bto",
+  "classification": null,
+  "units": 1430,
+  "flatTypes": [
+   "Community Care Apartment",
+   "2-room Flexi",
+   "4-room"
+  ],
+  "hasLayout": false
+ },
+ {
+  "id": "yishun-chencharu-oct-2026",
+  "name": "Yishun (Chencharu)",
+  "town": "Yishun",
+  "launch": "Oct 2026",
+  "status": "upcoming",
+  "kind": "bto",
+  "classification": null,
+  "units": 1580,
+  "flatTypes": [
+   "2-room Flexi",
+   "3-room",
+   "4-room",
+   "5-room"
+  ],
+  "hasLayout": false
+ },
+ {
+  "id": "berlayar-rise",
+  "name": "Berlayar Rise",
+  "town": "Bukit Merah",
+  "launch": "Jun 2026",
+  "status": "launched",
+  "kind": "bto",
+  "classification": "Prime",
+  "units": 1976,
+  "flatTypes": [
+   "2-room Flexi",
+   "3-room",
+   "4-room"
+  ],
+  "hasLayout": true
+ },
+ {
+  "id": "kebun-baru-breeze",
+  "name": "Kebun Baru Breeze",
+  "town": "Ang Mo Kio",
+  "launch": "Jun 2026",
+  "status": "launched",
+  "kind": "bto",
+  "classification": "Plus",
+  "units": 579,
+  "flatTypes": [
+   "2-room Flexi",
+   "4-room"
+  ],
+  "hasLayout": true
+ },
+ {
+  "id": "kebun-baru-ridge",
+  "name": "Kebun Baru Ridge",
+  "town": "Ang Mo Kio",
+  "launch": "Jun 2026",
+  "status": "launched",
+  "kind": "bto",
+  "classification": "Plus",
+  "units": 485,
+  "flatTypes": [
+   "3-room",
+   "4-room"
+  ],
+  "hasLayout": true
+ },
+ {
+  "id": "lakeview-cascadia",
+  "name": "Lakeview Cascadia",
+  "town": "Bishan",
+  "launch": "Jun 2026",
+  "status": "launched",
+  "kind": "bto",
+  "classification": "Prime",
+  "units": 1221,
+  "flatTypes": [
+   "2-room Flexi",
+   "4-room"
+  ],
+  "hasLayout": true
+ },
+ {
+  "id": "sembawang-brook",
+  "name": "Sembawang Brook",
+  "town": "Sembawang",
+  "launch": "Jun 2026",
+  "status": "launched",
+  "kind": "bto",
+  "classification": "Standard",
+  "units": 1160,
+  "flatTypes": [
+   "2-room Flexi",
+   "3-room",
+   "4-room",
+   "5-room",
+   "3Gen"
+  ],
+  "hasLayout": true
+ },
+ {
+  "id": "sembawang-portico",
+  "name": "Sembawang Portico",
+  "town": "Sembawang",
+  "launch": "Jun 2026",
+  "status": "launched",
+  "kind": "bto",
+  "classification": "Standard",
+  "units": 875,
+  "flatTypes": [
+   "2-room Flexi",
+   "3-room",
+   "4-room",
+   "5-room"
+  ],
+  "hasLayout": true
+ },
+ {
+  "id": "woodgrove-acres",
+  "name": "Woodgrove Acres",
+  "town": "Woodlands",
+  "launch": "Jun 2026",
+  "status": "launched",
+  "kind": "bto",
+  "classification": "Standard",
+  "units": 656,
+  "flatTypes": [
+   "2-room Flexi",
+   "3-room",
+   "4-room",
+   "5-room"
+  ],
+  "hasLayout": true
+ },
+ {
+  "id": "kim-keat-crest",
+  "name": "Kim Keat Crest",
+  "town": "Toa Payoh",
+  "launch": "Feb 2026",
+  "status": "launched",
+  "kind": "bto",
+  "classification": "Plus",
+  "units": 1151,
+  "flatTypes": [
+   "2-room Flexi",
+   "3-room",
+   "4-room"
+  ],
+  "hasLayout": true
+ },
+ {
+  "id": "sembawang-deck",
+  "name": "Sembawang Deck",
+  "town": "Sembawang",
+  "launch": "Feb 2026",
+  "status": "launched",
+  "kind": "bto",
+  "classification": "Standard",
+  "units": 777,
+  "flatTypes": [
+   "2-room Flexi",
+   "3-room",
+   "4-room",
+   "5-room"
+  ],
+  "hasLayout": true
+ },
+ {
+  "id": "sembawang-voyage",
+  "name": "Sembawang Voyage",
+  "town": "Sembawang",
+  "launch": "Feb 2026",
+  "status": "launched",
+  "kind": "bto",
+  "classification": "Standard",
+  "units": 1173,
+  "flatTypes": [
+   "2-room Flexi",
+   "4-room",
+   "5-room"
+  ],
+  "hasLayout": true
+ },
+ {
+  "id": "tampines-bliss",
+  "name": "Tampines Bliss",
+  "town": "Tampines",
+  "launch": "Feb 2026",
+  "status": "launched",
+  "kind": "bto",
+  "classification": "Standard",
+  "units": 284,
+  "flatTypes": [
+   "3-room",
+   "4-room"
+  ],
+  "hasLayout": true
+ },
+ {
+  "id": "tampines-nova",
+  "name": "Tampines Nova",
+  "town": "Tampines",
+  "launch": "Feb 2026",
+  "status": "launched",
+  "kind": "bto",
+  "classification": "Plus",
+  "units": 255,
+  "flatTypes": [
+   "2-room Flexi",
+   "4-room"
+  ],
+  "hasLayout": true
+ },
+ {
+  "id": "berlayar-residences",
+  "name": "Berlayar Residences",
+  "town": "Bukit Merah",
+  "launch": "Oct 2025",
+  "status": "launched",
+  "kind": "bto",
+  "classification": "Prime",
+  "units": 880,
+  "flatTypes": [
+   "2-room Flexi",
+   "3-room",
+   "4-room"
+  ],
+  "hasLayout": true
+ },
+ {
+  "id": "bishan-terraces",
+  "name": "Bishan Terraces",
+  "town": "Bishan",
+  "launch": "Oct 2025",
+  "status": "launched",
+  "kind": "bto",
+  "classification": "Prime",
+  "units": 538,
+  "flatTypes": [
+   "2-room Flexi",
+   "3-room",
+   "4-room"
+  ],
+  "hasLayout": true
+ },
+ {
+  "id": "chencharu-grove",
+  "name": "Chencharu Grove",
+  "town": "Yishun",
+  "launch": "Oct 2025",
+  "status": "launched",
+  "kind": "bto",
+  "classification": "Standard",
+  "units": 826,
+  "flatTypes": [
+   "2-room Flexi",
+   "3-room",
+   "4-room",
+   "5-room"
+  ],
+  "hasLayout": true
+ },
+ {
+  "id": "fernvale-plains",
+  "name": "Fernvale Plains",
+  "town": "Sengkang",
+  "launch": "Oct 2025",
+  "status": "launched",
+  "kind": "bto",
+  "classification": "Standard",
+  "units": 1037,
+  "flatTypes": [
+   "2-room Flexi",
+   "4-room",
+   "5-room",
+   "Community Care Apartment"
+  ],
+  "hasLayout": true
+ },
+ {
+  "id": "mount-pleasant-crest",
+  "name": "Mount Pleasant Crest",
+  "town": "Toa Payoh",
+  "launch": "Oct 2025",
+  "status": "launched",
+  "kind": "bto",
+  "classification": "Prime",
+  "units": 1348,
+  "flatTypes": [
+   "2-room Flexi",
+   "3-room",
+   "4-room"
+  ],
+  "hasLayout": true
+ },
+ {
+  "id": "oak-ville-amk",
+  "name": "Oak Ville @ AMK",
+  "town": "Ang Mo Kio",
+  "launch": "Oct 2025",
+  "status": "launched",
+  "kind": "bto",
+  "classification": "Plus",
+  "units": 1425,
+  "flatTypes": [
+   "2-room Flexi",
+   "3-room",
+   "4-room"
+  ],
+  "hasLayout": true
+ },
+ {
+  "id": "ping-yi-court",
+  "name": "Ping Yi Court",
+  "town": "Bedok",
+  "launch": "Oct 2025",
+  "status": "launched",
+  "kind": "bto",
+  "classification": "Standard",
+  "units": 862,
+  "flatTypes": [
+   "2-room Flexi",
+   "3-room",
+   "4-room",
+   "5-room",
+   "3Gen"
+  ],
+  "hasLayout": true
+ },
+ {
+  "id": "redhill-peaks",
+  "name": "Redhill Peaks",
+  "town": "Bukit Merah",
+  "launch": "Oct 2025",
+  "status": "launched",
+  "kind": "bto",
+  "classification": "Prime",
+  "units": 1021,
+  "flatTypes": [
+   "2-room Flexi",
+   "4-room"
+  ],
+  "hasLayout": true
+ },
+ {
+  "id": "teban-heights",
+  "name": "Teban Heights",
+  "town": "Jurong East",
+  "launch": "Oct 2025",
+  "status": "launched",
+  "kind": "bto",
+  "classification": "Standard",
+  "units": 638,
+  "flatTypes": [
+   "2-room Flexi",
+   "3-room",
+   "4-room",
+   "5-room",
+   "3Gen"
+  ],
+  "hasLayout": true
+ },
+ {
+  "id": "yishun-glade",
+  "name": "Yishun Glade",
+  "town": "Yishun",
+  "launch": "Oct 2025",
+  "status": "launched",
+  "kind": "bto",
+  "classification": "Standard",
+  "units": 569,
+  "flatTypes": [
+   "2-room Flexi",
+   "4-room"
+  ],
+  "hasLayout": true
+ }
+]

@@ -1,0 +1,23 @@
+# HDB-copyrighted material (site plans, sales brochures, launch annexes, floor plans) — re-download with tools/
+reference/hdb/brochures/
+reference/hdb/siteplans/
+reference/hdb/*.pdf
+projects/*/siteplan.jpg
+projects/*/layouts/
+projects/*/trace-debug.png
+projects/*/regions.png
+# third-party page source (embeds that developer's site plan)
+reference/sun-study.html
+# large raw open-data downloads (re-fetch: see README)
+reference/hdb/hdb-buildings.geojson
+reference/hdb/hdb-property.csv
+reference/amenities/*.raw
+# local tooling / caches
+.playwright-mcp/
+.superpowers/
+.claude/
+__pycache__/
+*.pyc
+.DS_Store
+reference/hdb/*.jpg
+.!*

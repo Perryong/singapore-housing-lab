@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sun study</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2712%27 fill=%27%23E8931C%27/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=9">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="./" aria-label="BTOlab home">BTO<span>lab</span></a>
+  <div class="ident">
+    <span class="badge" id="badge"></span>
+    <div class="ident-text"><strong id="projName">Sun study</strong><span id="projMeta"></span></div>
+  </div>
+  <button class="change" id="change" aria-haspopup="dialog">Change project</button>
+</header>
+
+<dialog id="layoutDlg" aria-labelledby="layoutTitle">
+  <div class="pick-head"><h2 id="layoutTitle">Floor plan</h2><button class="x" id="layoutClose" aria-label="Close">×</button></div>
+  <img id="layoutImg" alt="Floor plan">
+  <div class="lay-foot"><button class="btn" id="layoutToggle" hidden></button>
+  <span class="unit-meta">From HDB's sales brochure. The coloured plan does not demarcate the flat boundary.</span></div>
+</dialog>
+
+<dialog id="picker" aria-labelledby="pickerTitle">
+  <div class="pick-head">
+    <h2 id="pickerTitle">Choose a project</h2>
+    <button class="x" id="pickClose" aria-label="Close">×</button>
+  </div>
+  <input id="pickSearch" type="search" placeholder="Search project, town or flat type" aria-label="Search projects">
+  <div id="pickList"></div>
+</dialog>
+
+<div id="stage"><div id="tip" role="tooltip"></div><div class="attrib">Map: OneMap © Singapore Land Authority</div><div id="loading">Loading model…</div></div>
+
+<aside class="panel left">
+  <h1 id="name" class="vh">Sun study</h1>
+  <p class="sub" id="tagline"></p>
+  <div class="clock" id="clock">4:00 pm</div>
+  <p class="sub" id="sunline"></p>
+
+  <label class="lbl" for="time">Time of day</label>
+  <div class="row">
+    <button id="play" class="play" aria-label="Play the day">▶</button>
+    <input id="time" type="range" min="390" max="1170" step="5" value="960">
+  </div>
+
+  <label class="lbl" for="date">Date</label>
+  <input id="date" type="date">
+  <div class="chips" id="presets">
+    <button class="chip" data-d="06-21">21 Jun</button>
+    <button class="chip" data-d="09-22">22 Sep</button>
+    <button class="chip" data-d="12-21">21 Dec</button>
+    <button class="chip" data-d="today">Today</button>
+  </div>
+
+  <div class="lbl" id="modesLbl">Colour units by</div>
+  <div class="modes" id="modes">
+    <button class="mode" data-m="now" aria-pressed="true">Sun right now</button>
+    <button class="mode" data-m="pm" aria-pressed="false">Afternoon sun</button>
+    <button class="mode" data-m="am" aria-pressed="false">Morning sun</button>
+    <button class="mode" data-m="face" aria-pressed="false">Facing</button>
+    <button class="mode wide" data-m="type" aria-pressed="false">Unit type and size</button>
+  </div>
+  <div id="legend" class="legend"></div>
+  <label class="check" id="labelsRow"><input type="checkbox" id="labels"> Show stack numbers</label>
+  <section class="amen" id="amenSec">
+    <div class="lbl">Amenities</div>
+    <label class="check"><input type="checkbox" id="showFac" checked> Estate facilities (from HDB site plan)</label>
+    <label class="check"><input type="checkbox" id="showAmen" checked> Nearby amenities</label>
+    <div id="amenList"></div>
+  </section>
+  <p class="note" id="notes"></p>
+</aside>
+
+<aside class="panel right">
+  <div id="unitCard"></div>
+  <div id="upcomingCard" hidden></div>
+  <div class="tablehead" id="tableHead">
+    <h2 id="tableTitle">Stacks by afternoon sun</h2>
+    <select id="sort" aria-label="Sort stacks">
+      <option value="pm">Least afternoon sun</option>
+      <option value="am">Most morning sun</option>
+      <option value="no">Stack number</option>
+    </select>
+  </div>
+  <div class="tablewrap" id="tableWrap">
+    <table>
+      <thead><tr><th>Stack</th><th>Blk</th><th>Type</th><th>Windows face</th><th>AM</th><th>PM</th><th>Price</th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+  <p class="note" id="tableNote">AM and PM are average hours of direct sun on the unit's windows across all floors of the stack, split at solar noon, for the chosen date.</p>
+</aside>
+
+<script type="module" src="app.js?v=9"></script>
+</body>
+</html>
