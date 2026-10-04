@@ -130,9 +130,11 @@ ground.rotation.x = -Math.PI / 2; ground.position.y = -0.4; ground.receiveShadow
 if (P.plan) {
   const { pxPerM: PX, upBearing, origin: [OX, OY], image: IMG } = P.plan;
   const planGroup = new THREE.Group(); planGroup.rotation.y = -upBearing * deg; scene.add(planGroup);
-  const tex = new THREE.TextureLoader().load(base + IMG.file);
+  let plan;                                                   // shown only once the image loads: HDB plans aren't in the public repo
+  const tex = new THREE.TextureLoader().load(base + IMG.file, () => { plan.visible = true; });
   tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
-  const plan = new THREE.Mesh(new THREE.PlaneGeometry(IMG.w / PX, IMG.h / PX), new THREE.MeshLambertMaterial({ map: tex }));
+  plan = new THREE.Mesh(new THREE.PlaneGeometry(IMG.w / PX, IMG.h / PX), new THREE.MeshLambertMaterial({ map: tex }));
+  plan.visible = false;
   plan.rotation.x = -Math.PI / 2; plan.position.set((IMG.x0 + IMG.w / 2 - OX) / PX, 0, (IMG.y0 + IMG.h / 2 - OY) / PX);
   plan.receiveShadow = true; planGroup.add(plan);
 } else {
@@ -470,7 +472,7 @@ function priceBlock(code) {
 function layoutThumb(no) {
   const l = (P.layouts || {})[String(no)];
   if (!l) return '<div class="layout-thumb none">Layout not available in HDB brochure</div>';
-  return `<button class="layout-thumb" data-a="layout" aria-label="Open floor plan"><img src="${base + l.typical}" alt="Floor plan, stack ${pad(no)}"><span>Floor plan · tap to enlarge</span></button>`;
+  return `<button class="layout-thumb" data-a="layout" aria-label="Open floor plan"><img src="${base + l.typical}" alt="Floor plan, stack ${pad(no)}" onerror="this.parentElement.outerHTML='<div class=&quot;layout-thumb none&quot;>Floor plan image not included here (HDB copyright)</div>'"><span>Floor plan · tap to enlarge</span></button>`;
 }
 const layoutDlg = $('#layoutDlg');
 function openLayout(no, which = 'typical') {
