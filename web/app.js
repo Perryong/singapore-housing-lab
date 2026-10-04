@@ -120,9 +120,13 @@ ground.rotation.x = -Math.PI / 2; ground.position.y = -0.4; ground.receiveShadow
   const loader = new THREE.TextureLoader(); loader.setCrossOrigin('anonymous');
   for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) {
     const wx0 = (lonOf(x) - lon0) * kx, wx1 = (lonOf(x + 1) - lon0) * kx, wz0 = -(latOf(y) - lat0) * kz, wz1 = -(latOf(y + 1) - lat0) * kz;
-    const t = loader.load(`https://www.onemap.gov.sg/maps/tiles/Grey/${Z}/${x}/${y}.png`); t.colorSpace = THREE.SRGBColorSpace;
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(wx1 - wx0, wz1 - wz0), new THREE.MeshLambertMaterial({ map: t }));
-    m.rotation.x = -Math.PI / 2; m.position.set((wx0 + wx1) / 2, -0.15, (wz0 + wz1) / 2); m.receiveShadow = true; scene.add(m);
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(wx1 - wx0, wz1 - wz0), new THREE.MeshLambertMaterial());
+    m.rotation.x = -Math.PI / 2; m.position.set((wx0 + wx1) / 2, -0.15, (wz0 + wz1) / 2); m.receiveShadow = true; m.visible = false; scene.add(m);
+    // shown only once loaded (a failed tile would render black); OneMap throttles, so retry with backoff, else the grey ground shows
+    const url = `https://www.onemap.gov.sg/maps/tiles/Grey/${Z}/${x}/${y}.png`;
+    const ok = t => { t.colorSpace = THREE.SRGBColorSpace; m.material.map = t; m.material.needsUpdate = true; m.visible = true; };
+    const get = k => loader.load(k ? `${url}?r=${k}` : url, ok, undefined, () => k < 3 && setTimeout(() => get(k + 1), (2 ** k) * 2000 + Math.random() * 2000));
+    get(0);
   }
 }
 
