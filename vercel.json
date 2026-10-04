@@ -1,0 +1,6 @@
+{
+  "framework": null,
+  "buildCommand": "",
+  "outputDirectory": ".",
+  "redirects": [{ "source": "/", "destination": "/web/", "permanent": false }]
+}

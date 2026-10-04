@@ -1,0 +1,5 @@
+# Deploy only the static app and its data
+/*
+!/web
+!/projects
+!/vercel.json
