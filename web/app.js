@@ -8,12 +8,12 @@ import { RESALE_TYPE, defaultType, psmRamp, trendSvg } from './resale.js';
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
-const INDEX = await fetch('../projects/index.json').then(r => r.json());
+const INDEX = await fetch('../projects/index.json', { cache: 'no-cache' }).then(r => r.json());
 const asked = new URLSearchParams(location.search).get('p');
 // no project in the URL: open the newest launched project with a model, and show the picker
 const pid = INDEX.some(p => p.id === asked) ? asked : (INDEX.find(p => p.status === 'launched' && p.hasLayout) || INDEX[0]).id;
 const base = `../projects/${encodeURIComponent(pid)}/`;
-const P = await fetch(base + 'project.json').then(r => { if (!r.ok) throw new Error(`No project "${pid}"`); return r.json(); });
+const P = await fetch(base + 'project.json', { cache: 'no-cache' }).then(r => { if (!r.ok) throw new Error(`No project "${pid}"`); return r.json(); });
 const L = buildLayout(P), { stacks, units, FH } = L, site = P.site;
 const hasLayout = stacks.length > 0;
 
@@ -26,6 +26,12 @@ $('#projMeta').textContent = [P.town, P.classification && `${P.classification}`,
 $('#name').textContent = P.name; $('#tagline').textContent = P.tagline || ''; $('#notes').textContent = P.notes || '';
 
 const picker = $('#picker');
+const roomLbl = t => t.replace(/^(\d) ROOM$/, '$1-room');
+function cmpHtml(c) {                                          // BTO (orange) vs resale nearby (blue), same flat type
+  if (!c) return '';
+  return `<div class="cmp"><div class="bto${c.bto ? '' : ' na'}"><i>BTO</i>${c.bto ? `${roomLbl(c.type)} ${range(...c.bto)}` : 'Price announced at launch'}</div>
+    <div class="rs"><i>Resale</i>${c.resale ? `${roomLbl(c.type)} median ${money(c.resale)} · ${c.radiusM} m` : `Too few ${roomLbl(c.type)} sales nearby`}</div></div>`;
+}
 function renderPicker(q = '') {
   q = q.trim().toLowerCase();
   const groups = {};
@@ -40,6 +46,7 @@ function renderPicker(q = '') {
       <b>${esc(p.name)}</b>
       <div class="m">${esc([p.town, p.classification, `${p.units.toLocaleString('en-SG')} units`].filter(Boolean).join(' · '))}</div>
       <div class="m">${esc(p.flatTypes.join(', '))}</div>
+      ${cmpHtml(p.cmp)}
       <span class="tag ${p.hasLayout ? '' : 'no'}">${p.hasLayout ? '3D sun study' : 'Layout not released'}</span>
     </a>`).join('')}</div></section>`).join('') || '<p class="note">No projects match.</p>';
 }

@@ -134,3 +134,16 @@ td.price{white-space:nowrap}
 .rsales span:last-child{font-weight:600;white-space:nowrap}
 #resaleCard .unit{border-color:#1C5FD1}
 .src{font-size:11px;color:var(--muted);margin-top:8px}
+/* BTO vs resale: orange = BTO (HDB launch price), blue = resale nearby — same colours in picker and app */
+:root{--rs:#1C5FD1;--rs-soft:#E3EDFB}
+.cmp{margin-top:8px;display:grid;gap:3px;font-size:12px}
+.cmp>div{display:flex;align-items:center;gap:6px;padding:3px 6px;border-radius:6px;border-left:3px solid}
+.cmp i{font-style:normal;font-size:10px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;min-width:44px}
+.cmp .bto{background:var(--accent-soft);border-color:var(--accent);color:#5A3800}
+.cmp .bto.na{background:#F3F4F1;border-color:#C9CFCB;color:var(--muted)}
+.cmp .rs{background:var(--rs-soft);border-color:var(--rs);color:#0B3C7A}
+.cmp-key{margin:0 18px 8px;font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px}
+.cmp-key .sw{width:10px;height:10px;border-radius:2px;display:inline-block}
+.cmp-key .sw.bto{background:var(--accent)}.cmp-key .sw.rs{background:var(--rs);margin-left:8px}
+.mode.rs-mode{border-left:3px solid var(--rs)}
+.mode.rs-mode[aria-pressed="true"]{background:var(--rs-soft);border-color:var(--rs)}

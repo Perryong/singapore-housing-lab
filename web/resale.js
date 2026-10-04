@@ -27,3 +27,10 @@ export function trendSvg(points, w = 300, h = 90) {
     `<text x="${pad}" y="10" font-size="10" fill="#5B6C70">$${hi.toLocaleString('en-SG')}/sqm</text>` +
     `<text x="${pad}" y="${h - 20}" font-size="10" fill="#5B6C70" dy="-2">$${lo.toLocaleString('en-SG')}</text></svg>`;
 }
+
+// One flat type to compare BTO vs resale on: what the BTO sells (4-room first), else the first type with a resale median.
+const CMP_ORDER = ['4 ROOM', '5 ROOM', '3 ROOM', '2 ROOM'];
+export function compareType(prices, summary = {}) {
+  const sold = new Set(Object.keys(prices || {}).map(c => RESALE_TYPE[c]));
+  return CMP_ORDER.find(t => sold.size ? sold.has(t) : summary[t]?.median) || null;
+}
