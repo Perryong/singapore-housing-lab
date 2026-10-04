@@ -7,7 +7,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2712%27 fill=%27%23E8931C%27/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=9">
+<link rel="stylesheet" href="style.css?v=11">
 <script type="importmap">
 { "imports": {
   "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
@@ -71,8 +71,10 @@
     <button class="mode" data-m="am" aria-pressed="false">Morning sun</button>
     <button class="mode" data-m="face" aria-pressed="false">Facing</button>
     <button class="mode wide" data-m="type" aria-pressed="false">Unit type and size</button>
+    <button class="mode wide" data-m="resale" aria-pressed="false">Resale nearby</button>
   </div>
   <div id="legend" class="legend"></div>
+  <div id="resaleTypes" class="chips" hidden></div>
   <label class="check" id="labelsRow"><input type="checkbox" id="labels"> Show stack numbers</label>
   <section class="amen" id="amenSec">
     <div class="lbl">Amenities</div>
@@ -86,6 +88,8 @@
 <aside class="panel right">
   <div id="unitCard"></div>
   <div id="upcomingCard" hidden></div>
+  <div id="resaleCard" hidden></div>
+  <div id="resalePanel" hidden></div>
   <div class="tablehead" id="tableHead">
     <h2 id="tableTitle">Stacks by afternoon sun</h2>
     <select id="sort" aria-label="Sort stacks">
@@ -103,6 +107,6 @@
   <p class="note" id="tableNote">AM and PM are average hours of direct sun on the unit's windows across all floors of the stack, split at solar noon, for the chosen date.</p>
 </aside>
 
-<script type="module" src="app.js?v=9"></script>
+<script type="module" src="app.js?v=13"></script>
 </body>
 </html>

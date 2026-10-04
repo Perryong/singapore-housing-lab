@@ -4,6 +4,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { buildLayout, bdir, catOf, sizeOf, deg } from './project.js';
 import { solarPos, sunVec, computeDay, computeNow } from './sun.js';
 import { money, range } from './format.js';
+import { RESALE_TYPE, defaultType, psmRamp, trendSvg } from './resale.js';
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -49,7 +50,9 @@ $('#pickSearch').addEventListener('input', e => renderPicker(e.target.value));
 if (!asked) { renderPicker(); picker.showModal(); }
 
 if (!hasLayout) {
-  for (const id of ['#modesLbl', '#modes', '#labelsRow', '#unitCard', '#tableHead', '#tableWrap', '#tableNote']) $(id).hidden = true;
+  for (const id of ['#labelsRow', '#unitCard', '#tableHead', '#tableWrap', '#tableNote']) $(id).hidden = true;
+  document.querySelectorAll('#modes .mode').forEach(b => { b.hidden = b.dataset.m !== 'resale'; });
+  if (!P.resale) { $('#modesLbl').hidden = $('#modes').hidden = true; }
   const card = $('#upcomingCard'); card.hidden = false;
   card.innerHTML = `<div class="unit"><div class="unit-no" style="font-size:18px">Layout not released yet</div>
     <p class="unit-meta">HDB publishes the site plan at the sales launch. Until then this view shows the site and the existing HDB blocks around it.</p>
@@ -279,6 +282,112 @@ $('#showFac').addEventListener('change', e => { facGroup.visible = e.target.chec
 $('#showAmen').addEventListener('change', e => { amenGroup.visible = e.target.checked; });
 renderAmenities();
 
+/* ---------- Resale nearby (HDB resale transactions, data.gov.sg) ---------- */
+const RS = P.resale;
+const radiusTxt = m => m >= 1000 ? `${m / 1000} km` : `${m} m`;
+let rType = RS ? defaultType(RS) : null, rSort = 'date';
+const resaleGroup = new THREE.Group(); resaleGroup.visible = false; scene.add(resaleGroup);
+const resaleMeshes = [];
+for (const b of RS?.blocks || []) {
+  const c = b.ctx != null && P.context[b.ctx];
+  if (!c) continue;
+  const sh = new THREE.Shape(c.p.map(q => new THREE.Vector2(q[0], -q[1])));
+  const m = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { depth: c.h + 0.3, bevelEnabled: false }), new THREE.MeshLambertMaterial({ color: 0xDCEBFA }));
+  m.rotation.x = -Math.PI / 2; m.userData.resale = b; m.castShadow = true; resaleGroup.add(m); resaleMeshes.push(m);
+}
+const titleCase = s => s.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+const typeLabel = t => titleCase(t).replace('Multi-Generation', 'Multi-generation (3Gen)');
+function psmRange() {
+  const v = (RS?.blocks || []).map(b => b.types[rType]?.psm).filter(Boolean);
+  return v.length ? [Math.min(...v), Math.max(...v)] : [0, 0];
+}
+function paintResale() {
+  if (!RS) return;
+  const [lo, hi] = psmRange();
+  for (const m of resaleMeshes) {
+    const t = m.userData.resale.types[rType];
+    m.visible = !!t?.psm;
+    if (m.visible) m.material.color.set(psmRamp(t.psm, lo, hi));
+  }
+  window.__resaleOverlays = resaleMeshes.filter(m => m.visible).length;
+}
+window.__resaleScreen = () => {                              // test hook: screen point on top of each visible overlay
+  const r = renderer.domElement.getBoundingClientRect(), box = new THREE.Box3(), v = new THREE.Vector3();
+  return resaleMeshes.filter(m => m.visible).map(m => {
+    box.setFromObject(m).getCenter(v); v.y = box.max.y; v.project(camera);
+    return { blk: m.userData.resale.blk, x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height };
+  }).filter(p => p.x > r.left + 20 && p.x < r.right - 20 && p.y > r.top + 20 && p.y < r.bottom - 20);
+};
+function renderResaleLegend() {
+  const [lo, hi] = psmRange();
+  $('#legend').innerHTML = !RS ? '<div>No resale data for this project.</div>' : lo
+    ? `<div class="ramp" style="background:linear-gradient(90deg,${psmRamp(lo, lo, hi)},${psmRamp(hi, lo, hi)})"></div>
+       <div class="ramp-lbl"><span>$${lo.toLocaleString('en-SG')}/sqm</span><span>$${hi.toLocaleString('en-SG')}/sqm</span></div>
+       <div style="margin-top:6px">Median resale price per sqm, ${typeLabel(rType)}, last ${RS.months} months. Grey blocks: fewer than 3 such sales.</div>`
+    : `<div>No block within ${radiusTxt(RS.radiusM)} has 3+ ${typeLabel(rType)} resales in the last ${RS.months} months.</div>`;
+}
+function renderResaleTypes() {
+  $('#resaleTypes').innerHTML = Object.keys(RS.summary).map(t => `<button class="chip" data-t="${esc(t)}" aria-pressed="${t === rType}">${esc(typeLabel(t))}</button>`).join('');
+}
+$('#resaleTypes').addEventListener('click', e => {
+  const t = e.target.closest('.chip')?.dataset.t; if (!t) return;
+  rType = t; renderResaleTypes(); paintResale(); renderResaleLegend(); renderResalePanel();
+});
+function btoLine() {
+  const codes = Object.keys(P.prices || {}).filter(c => RESALE_TYPE[c] === rType);
+  const s = RS.summary[rType];
+  if (!codes.length || !s?.median) return '';
+  const lo = Math.min(...codes.map(c => P.prices[c].min)), hi = Math.max(...codes.map(c => P.prices[c].max));
+  return `<div class="btovs">This BTO ${esc(typeLabel(rType))}: <b>${range(lo, hi)}</b> · Resale nearby median <b>${money(s.median)}</b>${s.leaseLeft ? ` (${s.leaseLeft} yrs left)` : ''}</div>`;
+}
+function renderResalePanel() {
+  if (!RS) { $('#resalePanel').innerHTML = '<p class="unit-meta">No resale data for this project.</p>'; return; }
+  const rows = Object.entries(RS.summary).map(([t, s]) => `<tr${t === rType ? ' class="on"' : ''}><td>${esc(typeLabel(t))}</td><td>${s.n}</td>` +
+    (s.median ? `<td>${money(s.median)}</td><td>$${s.psm.toLocaleString('en-SG')}</td><td>${s.leaseLeft ?? '—'}</td>` : '<td colspan="3" class="unit-meta">too few sales</td>') + '</tr>').join('');
+  const sales = [...RS.sales].sort((a, b) => rSort === 'price' ? b.price - a.price : 0);
+  $('#resalePanel').innerHTML = `<h2>Resale within ${radiusTxt(RS.radiusM)} · last ${RS.months} months</h2>
+    <table class="rtable"><thead><tr><th>Type</th><th>Sales</th><th>Median</th><th>$/sqm</th><th>Yrs left</th></tr></thead><tbody>${rows}</tbody></table>
+    ${btoLine()}
+    <div class="lbl">${esc(typeLabel(rType))} · median $/sqm by month</div>${trendSvg(RS.trend[rType]) || '<p class="unit-meta">Not enough monthly sales for a trend.</p>'}
+    <div class="tablehead"><div class="lbl">Recent sales</div><select id="rSort" aria-label="Sort sales"><option value="date"${rSort === 'date' ? ' selected' : ''}>Newest</option><option value="price"${rSort === 'price' ? ' selected' : ''}>Highest price</option></select></div>
+    <div class="rsales">${sales.map(x => `<div><span>${x.m} · Blk ${esc(x.blk)} ${esc(titleCase(x.street))} · ${esc(typeLabel(x.type))} · ${esc(x.storey.toLowerCase())} · ${x.sqm} sqm</span><span>${money(x.price)}</span></div>`).join('')}</div>
+    <div class="src">HDB resale transactions, data.gov.sg, up to ${esc(RS.asOf)}</div>`;
+  $('#rSort').addEventListener('change', e => { rSort = e.target.value; renderResalePanel(); });
+}
+function openResaleCard(b) {
+  const yr = +RS.asOf.slice(0, 4), left = b.lease ? b.lease + 99 - yr : null;
+  const recent = RS.sales.filter(x => x.blk === b.blk && x.street === b.street).slice(0, 10);
+  $('#resaleCard').hidden = false;
+  $('#resaleCard').innerHTML = `<div class="unit"><div class="unit-no" style="font-size:18px">Blk ${esc(b.blk)} ${esc(titleCase(b.street))}</div>
+    <div class="unit-meta">${b.lease ? `${b.lease} lease (${left} years left)` : ''}${b.storeys ? ` · ${b.storeys} storeys` : ''}</div>
+    <table class="rtable"><thead><tr><th>Type</th><th>Sales</th><th>Median</th><th>Latest</th></tr></thead><tbody>${Object.entries(b.types).map(([t, s]) =>
+      `<tr><td>${esc(typeLabel(t))}</td><td>${s.n}</td><td>${s.median ? money(s.median) : '—'}</td><td>${money(s.lastPrice)} (${s.last})</td></tr>`).join('')}</tbody></table>
+    <div class="rsales">${recent.map(x => `<div><span>${x.m} · ${esc(typeLabel(x.type))} · ${esc(x.storey.toLowerCase())}</span><span>${money(x.price)}</span></div>`).join('')}</div>
+    <div class="btns"><button class="btn" id="rClose">Close</button></div></div>`;
+  $('#rClose').addEventListener('click', () => { $('#resaleCard').hidden = true; });
+}
+function hitResale(e) {
+  const r = renderer.domElement.getBoundingClientRect();
+  mouse.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); ray.setFromCamera(mouse, camera);
+  return ray.intersectObjects(resaleMeshes.filter(m => m.visible), false)[0]?.object.userData.resale || null;
+}
+function setResaleMode(on) {
+  resaleGroup.visible = on;
+  $('#resaleTypes').hidden = !on || !RS;
+  $('#resalePanel').hidden = !on;
+  if (!on) $('#resaleCard').hidden = true;
+  if (hasLayout) for (const id of ['#unitCard', '#tableHead', '#tableWrap', '#tableNote']) $(id).hidden = on;
+  if (on && RS) {
+    renderResaleTypes(); paintResale();
+    const xs = [0], zs = [0];                                  // frame the site plus the coloured blocks
+    for (const m of resaleMeshes) if (m.visible) { xs.push(m.userData.resale.x); zs.push(m.userData.resale.z); }
+    const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cz = (Math.min(...zs) + Math.max(...zs)) / 2;
+    const d = Math.min(1500, Math.max(300, Math.hypot(Math.max(...xs) - Math.min(...xs), Math.max(...zs) - Math.min(...zs)) * 0.9));
+    camGoal = { target: new THREE.Vector3(cx, 0, cz), pos: new THREE.Vector3(cx - d * 0.3, d * 0.85, cz + d * 0.55) };
+  }
+  if (on) renderResalePanel();
+}
+
 /* ---------- State ---------- */
 const today = new Date();
 const cur = { y: today.getFullYear(), m: today.getMonth() + 1, d: today.getDate(), min: 960 };
@@ -290,6 +399,7 @@ function unitColor(u) {
   if (mode === 'pm') return ramp(u.pm / 5);
   if (mode === 'am') return amramp(u.am / 5);
   if (mode === 'type') return col(P.categories[catOf(P, u.code)].col);
+  if (mode === 'resale') return C_AWAY;
   return col(FACE[face8(u.st.faces[0])]);
 }
 function paint() {
@@ -302,6 +412,7 @@ function paint() {
 }
 const swatch = (c, t, extra = '') => `<span class="sw"><i style="background:${c};${extra}"></i>${t}</span>`;
 function renderLegend() {
+  if (mode === 'resale') { renderResaleLegend(); return; }
   if (!hasLayout) { $('#legend').innerHTML = `<div class="swatches">${swatch('#F6C47A', 'HDB site location')}${swatch('#9EA8A3', 'Existing HDB block')}</div>`; return; }
   const grad = cs => `<div class="ramp" style="background:linear-gradient(90deg,${cs.join(',')})"></div><div class="ramp-lbl"><span>0 h</span><span>2.5 h</span><span>5 h+</span></div>`;
   const note = t => `<div style="margin-top:6px">${t}</div>`;
@@ -346,7 +457,8 @@ function priceBlock(code) {
   const r = (P.resaleComparables || {})[code];
   return `<div class="pricebox"><div class="pr">${range(p.min, p.max)} <span>HDB launch range</span></div>
     <div class="unit-meta">${p.afterGrantsFrom ? `From ${money(p.afterGrantsFrom)} after grants · ` : ''}${p.sqm} sqm · ${p.units.toLocaleString('en-SG')} units · ~${p.waitingMonths} months wait</div>
-    ${r ? `<div class="unit-meta">Resale nearby: ${range(r.min, r.max)}</div>` : ''}</div>`;
+    ${r ? `<div class="unit-meta">Resale nearby: ${range(r.min, r.max)}</div>` : ''}
+    ${P.resale?.summary?.[RESALE_TYPE[code]]?.median ? `<div class="unit-meta">Resale nearby (same type, ${radiusTxt(P.resale.radiusM)}): median ${money(P.resale.summary[RESALE_TYPE[code]].median)}</div>` : ''}</div>`;
 }
 function layoutThumb(no) {
   const l = (P.layouts || {})[String(no)];
@@ -429,7 +541,7 @@ const timeIn = $('#time');
 timeIn.addEventListener('input', () => { cur.min = +timeIn.value; refreshNow(); });
 $('#modes').addEventListener('click', e => {
   const b = e.target.closest('.mode'); if (!b) return; mode = b.dataset.m;
-  document.querySelectorAll('.mode').forEach(x => x.setAttribute('aria-pressed', x === b)); paint();
+  document.querySelectorAll('.mode').forEach(x => x.setAttribute('aria-pressed', x === b)); setResaleMode(mode === 'resale'); paint();
 });
 let playing = false, lastT = 0;
 $('#play').addEventListener('click', () => { playing = !playing; $('#play').textContent = playing ? '❚❚' : '▶'; $('#play').setAttribute('aria-label', playing ? 'Pause' : 'Play the day'); lastT = performance.now(); });
@@ -445,7 +557,9 @@ function hit(e) {
 renderer.domElement.addEventListener('pointerdown', e => { downAt = [e.clientX, e.clientY]; camGoal = null; });
 renderer.domElement.addEventListener('pointerup', e => {
   if (!downAt) return; const m = Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]); downAt = null;
-  if (m > 5) return; const u = hit(e); if (u) select(u.st.no, u.floor);
+  if (m > 5) return;
+  if (mode === 'resale') { const b = hitResale(e); if (b) openResaleCard(b); return; }
+  const u = hit(e); if (u) select(u.st.no, u.floor);
 });
 let hq = false, lastMove = null;
 renderer.domElement.addEventListener('pointermove', e => {

@@ -127,3 +127,10 @@ dialog#layoutDlg::backdrop{background:rgba(29,42,46,.45)}
 #layoutImg{display:block;max-width:100%;max-height:72vh;margin:0 auto;padding:0 16px}
 .lay-foot{display:flex;gap:12px;align-items:center;padding:10px 18px 16px}
 td.price{white-space:nowrap}
+.rtable{width:100%;font-size:12.5px;margin:6px 0}.rtable td,.rtable th{padding:3px 4px}
+.btovs{margin:8px 0;padding:8px 10px;background:#EEF3FF;border-radius:8px;font-size:13px}
+.rsales{max-height:260px;overflow:auto;font-size:12px}
+.rsales div{display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-top:1px solid var(--line)}
+.rsales span:last-child{font-weight:600;white-space:nowrap}
+#resaleCard .unit{border-color:#1C5FD1}
+.src{font-size:11px;color:var(--muted);margin-top:8px}
