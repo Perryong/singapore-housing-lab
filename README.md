@@ -62,9 +62,11 @@ Projects live outside `~/Documents`: macOS revokes access when Blender is launch
   site plan and can occasionally be misread.
 
 ## Data not in this repo
-HDB owns the copyright in its site plans, sales brochures and launch annexes, so they are not committed. After
-cloning, re-create them locally: download site plans/brochures (`reference/hdb/launched.json` lists the projects),
-then run `tools/trace_siteplan.py` (writes `siteplan.jpg`) and `tools/extract_layouts.py` (floor plans). Open data
-(HDB buildings / property information, amenity layers) is re-downloaded from data.gov.sg by the tools.
-Until then the app runs without the site-plan overlay, and each unit card links to the stack's page in HDB's own
-published brochure (`project.json["brochure"]`, assets.hdb.gov.sg) instead of showing the floor-plan crop.
+HDB's site plans, sales brochures and launch annexes are not committed. After cloning, re-create them locally:
+download site plans (`reference/hdb/launched.json` lists the projects), then run `tools/trace_siteplan.py` (writes
+`siteplan.jpg`). Until then the app runs without the site-plan overlay. Open data (HDB buildings / property
+information, amenity layers, resale prices) is re-downloaded from data.gov.sg by the tools.
+
+Each stack's floor-plan crop (`projects/<id>/layouts/`, cut from HDB's sales brochure by `tools/extract_layouts.py`)
+is committed so the deployed site can show it; the unit card also links to the page in HDB's own published brochure
+(`project.json["brochure"]`, assets.hdb.gov.sg). Floor plans © Housing & Development Board.

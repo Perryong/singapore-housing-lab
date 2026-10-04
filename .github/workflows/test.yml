@@ -20,6 +20,8 @@ jobs:
           node test/sun.test.js
           node test/format_test.mjs
           node test/resale_ui_test.mjs
+      - name: Python deps
+        run: pip install pillow            # floor-plan crop size check
       - name: Python tests
         env:
           PYTHONPATH: .
