@@ -18,4 +18,6 @@ P = json.load(open('projects/kebun-baru-ridge/project.json'))
 blocks, unlinked = nearby_blocks(P)
 assert ('179', norm('ANG MO KIO AVE 5')) in blocks      # resale spelling "AVE" must link to OneMap "AVENUE"
 assert blocks[('179', norm('ANG MO KIO AVE 5'))]['storeys'] > 0
+b1 = next(b for b in A['blocks'] if b['blk'] == '1')
+assert [r['price'] for r in b1['recent']] == [900000, 810000, 1000000]   # per-block, newest first
 print('ok')

@@ -298,7 +298,7 @@ for (const b of RS?.blocks || []) {
 const titleCase = s => s.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
 const typeLabel = t => titleCase(t).replace('Multi-Generation', 'Multi-generation (3Gen)');
 function psmRange() {
-  const v = (RS?.blocks || []).map(b => b.types[rType]?.psm).filter(Boolean);
+  const v = resaleMeshes.map(m => m.userData.resale.types[rType]?.psm).filter(Boolean);   // drawn blocks only
   return v.length ? [Math.min(...v), Math.max(...v)] : [0, 0];
 }
 function paintResale() {
@@ -350,19 +350,19 @@ function renderResalePanel() {
     ${btoLine()}
     <div class="lbl">${esc(typeLabel(rType))} · median $/sqm by month</div>${trendSvg(RS.trend[rType]) || '<p class="unit-meta">Not enough monthly sales for a trend.</p>'}
     <div class="tablehead"><div class="lbl">Recent sales</div><select id="rSort" aria-label="Sort sales"><option value="date"${rSort === 'date' ? ' selected' : ''}>Newest</option><option value="price"${rSort === 'price' ? ' selected' : ''}>Highest price</option></select></div>
-    <div class="rsales">${sales.map(x => `<div><span>${x.m} · Blk ${esc(x.blk)} ${esc(titleCase(x.street))} · ${esc(typeLabel(x.type))} · ${esc(x.storey.toLowerCase())} · ${x.sqm} sqm</span><span>${money(x.price)}</span></div>`).join('')}</div>
+    <div class="rsales">${sales.map(x => `<div><span>${esc(x.m)} · Blk ${esc(x.blk)} ${esc(titleCase(x.street))} · ${esc(typeLabel(x.type))} · ${esc(x.storey.toLowerCase())} · ${x.sqm} sqm</span><span>${money(x.price)}</span></div>`).join('')}</div>
     <div class="src">HDB resale transactions, data.gov.sg, up to ${esc(RS.asOf)}</div>`;
   $('#rSort').addEventListener('change', e => { rSort = e.target.value; renderResalePanel(); });
 }
 function openResaleCard(b) {
   const yr = +RS.asOf.slice(0, 4), left = b.lease ? b.lease + 99 - yr : null;
-  const recent = RS.sales.filter(x => x.blk === b.blk && x.street === b.street).slice(0, 10);
+  const recent = b.recent || [];
   $('#resaleCard').hidden = false;
   $('#resaleCard').innerHTML = `<div class="unit"><div class="unit-no" style="font-size:18px">Blk ${esc(b.blk)} ${esc(titleCase(b.street))}</div>
     <div class="unit-meta">${b.lease ? `${b.lease} lease (${left} years left)` : ''}${b.storeys ? ` · ${b.storeys} storeys` : ''}</div>
     <table class="rtable"><thead><tr><th>Type</th><th>Sales</th><th>Median</th><th>Latest</th></tr></thead><tbody>${Object.entries(b.types).map(([t, s]) =>
-      `<tr><td>${esc(typeLabel(t))}</td><td>${s.n}</td><td>${s.median ? money(s.median) : '—'}</td><td>${money(s.lastPrice)} (${s.last})</td></tr>`).join('')}</tbody></table>
-    <div class="rsales">${recent.map(x => `<div><span>${x.m} · ${esc(typeLabel(x.type))} · ${esc(x.storey.toLowerCase())}</span><span>${money(x.price)}</span></div>`).join('')}</div>
+      `<tr><td>${esc(typeLabel(t))}</td><td>${s.n}</td><td>${s.median ? money(s.median) : '—'}</td><td>${money(s.lastPrice)} (${esc(s.last)})</td></tr>`).join('')}</tbody></table>
+    <div class="rsales">${recent.map(x => `<div><span>${esc(x.m)} · ${esc(typeLabel(x.type))} · ${esc(x.storey.toLowerCase())}</span><span>${money(x.price)}</span></div>`).join('')}</div>
     <div class="btns"><button class="btn" id="rClose">Close</button></div></div>`;
   $('#rClose').addEventListener('click', () => { $('#resaleCard').hidden = true; });
 }
@@ -565,7 +565,7 @@ let hq = false, lastMove = null;
 renderer.domElement.addEventListener('pointermove', e => {
   if (e.pointerType !== 'mouse') return; lastMove = e; if (hq) return; hq = true;
   requestAnimationFrame(() => {
-    hq = false; const u = hit(lastMove), r = stage.getBoundingClientRect();
+    hq = false; const u = mode !== 'resale' && hit(lastMove), r = stage.getBoundingClientRect();
     if (u) {
       tip.style.display = 'block'; tip.style.left = (lastMove.clientX - r.left) + 'px'; tip.style.top = (lastMove.clientY - r.top) + 'px';
       tip.textContent = `#${pad(u.floor)}-${pad(u.st.no)}  ${u.code} ${sizeOf(P, u.code)[1]} sq ft  Blk ${u.st.blk}  faces ${u.st.faces.map(card16).join('+')}  PM ${u.pm.toFixed(1)} h`;

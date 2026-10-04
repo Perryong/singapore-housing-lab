@@ -1,4 +1,5 @@
 // Resale-nearby helpers (pure; no three.js).
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 export const RESALE_TYPE = { '2RF1': '2 ROOM', '2RF2': '2 ROOM', '3RM': '3 ROOM', '4RM': '4 ROOM', '5RM': '5 ROOM', '3GEN': 'MULTI-GENERATION' };
 
 export function defaultType(resale) {
@@ -21,8 +22,8 @@ export function trendSvg(points, w = 300, h = 90) {
   const pts = points.map((p, i) => `${x(i).toFixed(1)},${y(p[1]).toFixed(1)}`).join(' ');
   return `<svg viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="Median price per sqm by month">` +
     `<polyline fill="none" stroke="#1C5FD1" stroke-width="2" points="${pts}"/>` +
-    `<text x="${pad}" y="${h - 3}" font-size="10" fill="#5B6C70">${points[0][0]}</text>` +
-    `<text x="${w - pad}" y="${h - 3}" font-size="10" fill="#5B6C70" text-anchor="end">${points.at(-1)[0]}</text>` +
+    `<text x="${pad}" y="${h - 3}" font-size="10" fill="#5B6C70">${esc(points[0][0])}</text>` +
+    `<text x="${w - pad}" y="${h - 3}" font-size="10" fill="#5B6C70" text-anchor="end">${esc(points.at(-1)[0])}</text>` +
     `<text x="${pad}" y="10" font-size="10" fill="#5B6C70">$${hi.toLocaleString('en-SG')}/sqm</text>` +
     `<text x="${pad}" y="${h - 20}" font-size="10" fill="#5B6C70" dy="-2">$${lo.toLocaleString('en-SG')}</text></svg>`;
 }

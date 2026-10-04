@@ -81,7 +81,9 @@ def aggregate(rows, blocks, as_of):
         out_blocks.append({'blk': key[0], 'street': rs[-1]['street_name'], 'x': info['x'], 'z': info['z'],
                            **({'ctx': info['ctx']} if info.get('ctx') is not None else {}),
                            'storeys': info.get('storeys'), 'lease': int(lease) if lease else info.get('lease'),
-                           'types': types})
+                           'types': types,
+                           'recent': [{'m': r['month'], 'type': r['flat_type'], 'storey': r['storey_range'], 'price': r['price']}
+                                      for r in rs[::-1][:10]]})
 
     keep.sort(key=lambda r: r['month'], reverse=True)              # stable: same-month rows keep input order
     sales = [{'m': r['month'], 'blk': r['block'], 'street': r['street_name'], 'type': r['flat_type'],
