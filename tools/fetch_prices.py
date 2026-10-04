@@ -91,13 +91,13 @@ def parse_annex(pdf):
     if len(names) != len(blocks):
         raise ValueError(f'{pdf}: {len(names)} project names but {len(blocks)} price blocks — refusing to pair by order')
     for name, blk in zip(names, blocks):
-        wait = None
+        wait = wait_max = None
         # the block's own row span first (a wider window reaches the previous project's waiting time)
         for lo, hi in ((blk[0]['i'], blk[-1]['i'] + 1), (blk[0]['i'] - 2, blk[-1]['i'] + 3)):
             for i, seg in left[max(0, lo):hi]:
-                m = re.search(r'(?<![\d$,.])(\d{2})(?![\d,])', re.sub(r'\(.*?\)', '', seg))
-                if m:
-                    wait = int(m.group(1)); break
+                m = re.search(r'(?<![\d$,.])(\d{2})(?:/(\d{2}))?(?![\d,])', re.sub(r'\(.*?\)', '', seg))
+                if m:                                         # '49/54': blocks complete at different times
+                    wait, wait_max = int(m.group(1)), m.group(2) and int(m.group(2)); break
             if wait is not None:
                 break
         prices = {}
@@ -108,6 +108,8 @@ def parse_annex(pdf):
                 code = '2RF1' if (len(rf) > 1 and r is rf[0]) else ('2RF2' if len(rf) > 1 else '2RF2')
             prices[code] = {k: r[k] for k in ('min', 'max', 'sqm', 'internalSqm', 'units')}
             prices[code]['waitingMonths'] = wait
+            if wait_max:
+                prices[code]['waitingMonthsMax'] = wait_max
         out[name] = {'prices': prices, 'resaleComparables': {}}
 
     # resale comparables tables

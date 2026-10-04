@@ -469,7 +469,8 @@ function priceBlock(code) {
   if (!p) return code === 'RENT' ? '<div class="pricebox unit-meta">Rental flat — not for sale.</div>' : '';
   const r = (P.resaleComparables || {})[code];
   return `<div class="pricebox"><div class="pr">${range(p.min, p.max)} <span>HDB launch range</span></div>
-    <div class="unit-meta">${p.afterGrantsFrom ? `From ${money(p.afterGrantsFrom)} after grants · ` : ''}${p.sqm} sqm · ${p.units.toLocaleString('en-SG')} units · ~${p.waitingMonths} months wait</div>
+    ${p.afterGrantsFrom ? `<div class="unit-meta" title="Lowest launch price minus the illustrative Enhanced CPF Housing Grant in HDB's launch materials; your grants depend on income and eligibility">From ${money(p.afterGrantsFrom)} after grants (illustrative, max. EHG)</div>` : ''}
+    <div class="unit-meta">${p.sqm} sqm incl. aircon ledge${p.internalSqm ? ` (${p.internalSqm} sqm internal)` : ''} · ${p.units.toLocaleString('en-SG')} units · ~${p.waitingMonths}${p.waitingMonthsMax ? `–${p.waitingMonthsMax}` : ''} months wait</div>
     ${r ? `<div class="unit-meta">Resale nearby: ${range(r.min, r.max)}</div>` : ''}
     ${P.resale?.summary?.[RESALE_TYPE[code]]?.median ? `<div class="unit-meta">Resale nearby (same type, ${radiusTxt(P.resale.radiusM)}): median ${money(P.resale.summary[RESALE_TYPE[code]].median)}</div>` : ''}</div>`;
 }
@@ -485,7 +486,9 @@ function layoutThumb(no) {
 const layoutDlg = $('#layoutDlg');
 function openLayout(no, which = 'typical') {
   const l = P.layouts[String(no)];
-  $('#layoutImg').src = base + l[which];
+  const img = $('#layoutImg');                                 // hide until the new plan loads: no flash of the previous stack's plan
+  const url = new URL(base + l[which], location.href).href;
+  if (img.src !== url) { img.style.visibility = 'hidden'; img.onload = () => { img.style.visibility = ''; }; img.src = url; }
   $('#layoutTitle').textContent = `Stack ${pad(no)} · ${which === 'lowest' ? 'lowest storey' : 'typical storey'}`;
   $('#layoutToggle').hidden = !l.lowest;
   $('#layoutToggle').textContent = which === 'lowest' ? 'Show typical storey' : 'Show lowest storey';

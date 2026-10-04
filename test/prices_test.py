@@ -15,3 +15,6 @@ J = parse_annex('reference/hdb/annex-jun26.pdf')
 assert J['Kebun Baru Breeze']['prices']['4RM']['waitingMonths'] == 52, J['Kebun Baru Breeze']['prices']['4RM']['waitingMonths']
 assert J['Kebun Baru Ridge']['prices']['4RM']['waitingMonths'] == 37
 print('ok waiting')
+assert J['Berlayar Rise']['prices']['4RM']['waitingMonths'] == 49 and J['Berlayar Rise']['prices']['4RM'].get('waitingMonthsMax') == 54
+assert 'waitingMonthsMax' not in J['Kebun Baru Ridge']['prices']['4RM']    # single waiting time
+print('ok waiting range')
