@@ -15,7 +15,7 @@ three.js; `node:assert` scripts; Playwright MCP.
 
 ## Global Constraints
 
-- Window: within **1000 m** of the site centre (world origin), **last 24 months** counted back from the newest
+- Window: within **900 m** of the site centre (world origin), **last 24 months** counted back from the newest
   `month` in the dataset (inclusive of that month). Medians need **≥ 3 sales**, else "too few sales".
 - Never place an unlinked block at a guessed location; count it.
 - Dataset `d_8b84c4ee58e3cfc0ece0d773c8ca6abc`, cached at `reference/resale/resale.csv` (git-ignored).
@@ -47,7 +47,7 @@ three.js; `node:assert` scripts; Playwright MCP.
 - Produces:
   - `aggregate(rows: list[dict], blocks: dict[tuple[str,str], dict], as_of: str) -> dict` — `rows` are CSV dicts
     (dataset columns, strings); `blocks` maps `(block, norm(street))` -> `{"x","z","ctx"|None,"storeys","lease"}`
-    for footprints within 1000 m; returns the spec's `resale` object (asOf, radiusM=1000, months=24, blocks,
+    for footprints within 900 m; returns the spec's `resale` object (asOf, radiusM=900, months=24, blocks,
     summary, trend, sales ≤300 newest first). `psm` = price / floor_area_sqm rounded to int; medians via
     `statistics.median` rounded to int; `leaseLeft` = median integer years from `remaining_lease`.
   - `nearby_blocks(P: dict, radius=1000) -> (dict, int)` — the `blocks` map for a project plus the count of

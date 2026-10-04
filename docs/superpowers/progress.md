@@ -82,3 +82,39 @@ site. Estate facilities OCR'd from each site plan (tools/trace_facilities.py); n
 - yishun-glade: 38/41 missing 132, 134, 136
 - TOTAL 698/828 (84%) of for-sale stacks
 - After final review: block guard removed 3 wrong-stack crops (Ping Yi Court 601/605, Fernvale Plains 482) -> 695/828; Kebun Baru Breeze waiting time corrected to 52 months.
+
+## Resale nearby — coverage (900 m, 24 months, data.gov.sg up to 2026-10)
+
+| Project | Blocks with sales | Sales | Footprints linked |
+|---|---|---|---|
+| bedok-bayshore-i-oct-2026 | 33 | 154 | 44/44 (100%) |
+| bedok-bayshore-ii-oct-2026 | 21 | 103 | 31/31 (100%) |
+| berlayar-residences | 45 | 305 | 68/68 (100%) |
+| berlayar-rise | 47 | 315 | 70/70 (100%) |
+| bishan-terraces | 148 | 621 | 207/207 (100%) |
+| chencharu-grove | 106 | 364 | 125/125 (100%) |
+| fernvale-plains | 55 | 543 | 89/89 (100%) |
+| geylang-oct-2026 | 84 | 461 | 115/115 (100%) |
+| kebun-baru-breeze | 51 | 322 | 80/80 (100%) |
+| kebun-baru-ridge | 86 | 439 | 108/108 (100%) |
+| kim-keat-crest | 131 | 722 | 207/207 (100%) |
+| lakeview-cascadia | 15 | 74 | 19/19 (100%) |
+| mount-pleasant-crest | 46 | 402 | 78/78 (100%) |
+| oak-ville-amk | 69 | 379 | 95/95 (100%) |
+| ping-yi-court | 93 | 560 | 129/129 (100%) |
+| redhill-peaks | 75 | 416 | 143/143 (100%) |
+| sembawang-brook | 35 | 243 | 49/49 (100%) |
+| sembawang-deck | 80 | 426 | 109/109 (100%) |
+| sembawang-oct-2026 | 78 | 434 | 104/104 (100%) |
+| sembawang-portico | 51 | 322 | 71/71 (100%) |
+| sembawang-voyage | 53 | 313 | 75/75 (100%) |
+| tampines-bliss | 232 | 950 | 265/266 (100%) |
+| tampines-nova | 212 | 1264 | 293/296 (99%) |
+| teban-heights | 52 | 245 | 63/63 (100%) |
+| tengah-oct-2026 | 95 | 717 | 217/217 (100%) |
+| toa-payoh-caldecott-oct-2026 | 85 | 603 | 131/131 (100%) |
+| woodgrove-acres | 76 | 353 | 111/111 (100%) |
+| yishun-chencharu-oct-2026 | 54 | 156 | 66/66 (100%) |
+| yishun-glade | 159 | 954 | 243/244 (100%) |
+
+All projects ≥ 95% (target met).
