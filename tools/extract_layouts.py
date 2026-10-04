@@ -20,13 +20,19 @@ DPI = 200
 ORD = r'(\d+)(?:ST|ND|RD|TH)'
 
 
+def brochure_url(slug):
+    """HDB's own published sales brochure, e.g. .../26FEBBTO_pdf_selection/kim_keat_crest.pdf"""
+    p = {p['slug']: p for p in json.loads((ROOT / 'reference/hdb/launched.json').read_text())}[slug]
+    mon, yr = p['launch'].split('-')[:2]                       # 'feb-2026-bto' -> 26FEBBTO
+    name = re.sub(r'[^a-z0-9@]+', '_', p['name'].lower()).strip('_').replace('@', '%40')
+    return f'https://assets.hdb.gov.sg/residential/buying-a-flat/finding-a-flat/sales-brochure/{yr[2:]}{mon.upper()}BTO_pdf_selection/{name}.pdf'
+
+
 def brochure(slug):
     f = ROOT / 'reference/hdb/brochures' / f'{slug}.pdf'
     if not f.exists():
-        launch = {p['slug']: p['launch'] for p in json.loads((ROOT / 'reference/hdb/launched.json').read_text())}[slug]
         f.parent.mkdir(parents=True, exist_ok=True)
-        subprocess.run(['curl', '-sfL', '-A', 'Mozilla/5.0', '-o', str(f),
-                        f'https://btohq.sgp1.cdn.digitaloceanspaces.com/bto/{launch}/{slug}.pdf'], check=True)
+        subprocess.run(['curl', '-sfL', '-A', 'Mozilla/5.0', '-o', str(f), brochure_url(slug)], check=True)
     return f
 
 
@@ -190,7 +196,7 @@ def extract(slug):
         if low:
             cv2.imwrite(str(out_dir / f'{no}-low.png'), low[0][3])
             layouts[no].update(lowest=f'layouts/{no}-low.png', lowestPage=low[0][2], lowestBlock=low[0][4])
-    P['layouts'] = layouts
+    P['layouts'], P['brochure'] = layouts, brochure_url(slug)   # app links here where the crops aren't deployed
     (D / 'project.json').write_text(json.dumps(P, separators=(',', ':')))
     return layouts
 

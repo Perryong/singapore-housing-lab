@@ -66,4 +66,5 @@ HDB owns the copyright in its site plans, sales brochures and launch annexes, so
 cloning, re-create them locally: download site plans/brochures (`reference/hdb/launched.json` lists the projects),
 then run `tools/trace_siteplan.py` (writes `siteplan.jpg`) and `tools/extract_layouts.py` (floor plans). Open data
 (HDB buildings / property information, amenity layers) is re-downloaded from data.gov.sg by the tools.
-Until then the app runs without the site-plan overlay and floor-plan images.
+Until then the app runs without the site-plan overlay, and each unit card links to the stack's page in HDB's own
+published brochure (`project.json["brochure"]`, assets.hdb.gov.sg) instead of showing the floor-plan crop.

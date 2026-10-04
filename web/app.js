@@ -476,7 +476,9 @@ function priceBlock(code) {
 function layoutThumb(no) {
   const l = (P.layouts || {})[String(no)];
   if (!l) return '<div class="layout-thumb none">Layout not available in HDB brochure</div>';
-  return `<button class="layout-thumb" data-a="layout" aria-label="Open floor plan"><img src="${base + l.typical}" alt="Floor plan, stack ${pad(no)}" onerror="this.parentElement.outerHTML='<div class=&quot;layout-thumb none&quot;>Floor plan image not included here (HDB copyright)</div>'"><span>Floor plan · tap to enlarge</span></button>`;
+  // HDB's crops aren't in the public repo: where the image is missing, the link to HDB's brochure page becomes the main button
+  const src = P.brochure ? `<a class="layout-src" href="${esc(P.brochure)}#page=${l.page}" target="_blank" rel="noopener">View floor plan in HDB brochure, p. ${l.page} ↗</a>` : '';
+  return `<button class="layout-thumb" data-a="layout" aria-label="Open floor plan"><img src="${base + l.typical}" alt="Floor plan, stack ${pad(no)}" onerror="const b=this.parentElement;b.nextElementSibling?.classList.add('big');b.remove()"><span>Floor plan · tap to enlarge</span></button>${src}`;
 }
 const layoutDlg = $('#layoutDlg');
 function openLayout(no, which = 'typical') {
