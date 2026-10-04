@@ -475,7 +475,9 @@ function priceBlock(code) {
 }
 function layoutThumb(no) {
   const l = (P.layouts || {})[String(no)];
-  if (!l) return '<div class="layout-thumb none">Layout not available in HDB brochure</div>';
+  if (!l) return P.brochure
+    ? `<a class="layout-src big" href="${esc(P.brochure)}" target="_blank" rel="noopener">Floor plan not extracted for this stack · open HDB brochure ↗</a>`
+    : '<div class="layout-thumb none">Floor plan not available</div>';
   // HDB's crops aren't in the public repo: where the image is missing, the link to HDB's brochure page becomes the main button
   const src = P.brochure ? `<a class="layout-src" href="${esc(P.brochure)}#page=${l.page}" target="_blank" rel="noopener">View floor plan in HDB brochure, p. ${l.page} ↗</a>` : '';
   return `<button class="layout-thumb" data-a="layout" aria-label="Open floor plan"><img src="${base + l.typical}" alt="Floor plan, stack ${pad(no)}" onerror="const b=this.parentElement;b.nextElementSibling?.classList.add('big');b.remove()"><span>Floor plan · tap to enlarge</span></button>${src}`;
@@ -511,7 +513,7 @@ function renderUnitCard() {
       <div class="stat"><b>${hrs(u.p3)}</b><span>After 3 pm</span></div>
     </div>
     ${priceBlock(st.type)}
-    ${layoutThumb(st.no)}
+    ${st.type === 'RENT' ? '' : layoutThumb(st.no)}
     <div class="verdict">${verdict(u.pm)} <span class="unit-meta">(${dateStr})</span></div>
     <div class="now">${nowTxt}</div>
     <div class="btns">
