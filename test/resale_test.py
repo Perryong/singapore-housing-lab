@@ -13,7 +13,9 @@ assert A['summary']['4 ROOM'] == {'n': 3, 'median': 900000, 'psm': 10000, 'lease
 assert A['summary']['3 ROOM']['n'] == 1 and 'median' not in A['summary']['3 ROOM']        # too few sales
 assert [s['price'] for s in A['sales']] == [900000, 810000, 500000, 1000000]                # newest first
 assert {b['blk'] for b in A['blocks']} == {'1', '2'} and A['radiusM'] == 900 and A['months'] == 24
-import json
+import json, os, sys
+if not os.path.exists('reference/hdb/hdb-buildings.geojson'):   # large data.gov.sg download, not in the repo
+    sys.exit(print('ok (linking check skipped: reference/hdb/hdb-buildings.geojson not present)'))
 P = json.load(open('projects/kebun-baru-ridge/project.json'))
 blocks, unlinked = nearby_blocks(P)
 assert ('179', norm('ANG MO KIO AVE 5')) in blocks      # resale spelling "AVE" must link to OneMap "AVENUE"

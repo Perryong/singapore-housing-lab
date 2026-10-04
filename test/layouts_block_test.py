@@ -1,7 +1,6 @@
 # Every stored crop must come from a page whose title names the stack's own block (never another stack's plan),
 # and must be wide enough to show the unit with its label.
-import json, glob
-from PIL import Image
+import json, glob, os
 bad, thin = [], []
 for f in glob.glob('projects/*/project.json'):
     P = json.load(open(f)); blk = {str(s['no']): s['block'] for s in P['stacks']}
@@ -11,7 +10,11 @@ for f in glob.glob('projects/*/project.json'):
                 pb = l.get('pageBlock' if kind == 'typical' else 'lowestBlock')
                 if pb is not None and pb.upper() != blk[no].upper() or (pb is None and 'pageBlock' not in l):
                     bad.append((f.split('/')[1], no, kind, pb, blk[no]))
-        w, h = Image.open(f.rsplit('/', 1)[0] + '/' + l['typical']).size
+        png = f.rsplit('/', 1)[0] + '/' + l['typical']
+        if not os.path.exists(png):                             # floor-plan crops are HDB images, not in the repo
+            continue
+        from PIL import Image
+        w, h = Image.open(png).size
         if w < 150:
             thin.append((f.split('/')[1], no, w))
 assert not bad, bad[:10]

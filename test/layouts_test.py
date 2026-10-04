@@ -1,4 +1,7 @@
-import json
+import json, sys
+from pathlib import Path
+if not Path('reference/hdb/brochures/kebun-baru-breeze.pdf').exists():   # HDB brochure, not in the repo
+    sys.exit(print('skipped: HDB sales brochure is not in the repo'))
 from tools.extract_layouts import extract
 L = extract('kebun-baru-breeze')
 P = json.load(open('projects/kebun-baru-breeze/project.json'))

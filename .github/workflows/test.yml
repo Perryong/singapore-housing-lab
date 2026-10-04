@@ -1,0 +1,35 @@
+name: Test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: JS tests
+        run: |
+          node test/sun.test.js
+          node test/format_test.mjs
+          node test/resale_ui_test.mjs
+      - name: Python tests
+        env:
+          PYTHONPATH: .
+        # Parts that need HDB brochures/annexes or large data.gov.sg files (not in the repo) print "skipped".
+        run: |
+          python test/resale_test.py
+          python test/prices_test.py
+          python test/layouts_test.py
+          python test/layouts_block_test.py
+      - name: Catalogue is up to date
+        run: |
+          node tools/make_index.js
+          git diff --exit-code projects/index.json
