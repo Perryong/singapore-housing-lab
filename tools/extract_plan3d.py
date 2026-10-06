@@ -218,7 +218,7 @@ def extract_page(slug, page):
         near = cv2.dilate(unit_c, np.ones((25, 25), np.uint8)).astype(bool)
         wl = (line.astype(bool) & near).astype(np.uint8)
         n, cc, stats, _ = cv2.connectedComponentsWithStats(wl)
-        wl[np.isin(cc, [i for i in range(1, n) if stats[i][4] < 150])] = 0                    # dashed door swings
+        wl[np.isin(cc, [i for i in range(1, n) if max(stats[i][2], stats[i][3]) < 25])] = 0   # dashed door swings: short dashes
         solid = cv2.morphologyEx(wl, cv2.MORPH_OPEN, np.ones((7, 7), np.uint8))
         thin = wl & (1 - solid)
         inner = cv2.erode(unit_c, np.ones((9, 9), np.uint8)).astype(bool)
