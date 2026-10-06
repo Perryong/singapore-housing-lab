@@ -1,6 +1,12 @@
 # Each stack's own flat, read off its brochure page: rooms, walls and scale (tools/extract_plan3d.py).
 import sys
 from pathlib import Path
+from tools.extract_plan3d import nearest_label
+
+# two rows of units sharing one blob: a room below the bottom-row label belongs to it, not to the top one at the same x
+L = {'100': (500, 100), '200': (520, 900)}
+assert nearest_label(505, 820, L) == '200', nearest_label(505, 820, L)
+assert nearest_label(505, 180, L) == '100', nearest_label(505, 180, L)
 if not Path('reference/hdb/brochures/kim-keat-crest.pdf').exists():   # HDB brochure, not in the repo
     sys.exit(print('skipped: HDB sales brochure is not in the repo'))
 from tools.extract_plan3d import extract_page

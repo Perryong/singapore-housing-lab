@@ -173,6 +173,11 @@ def page_north(P, labels):
     return round((P['plan']['upBearing'] + math.degrees(cmath.phase(rot))) % 360, 1)
 
 
+def nearest_label(x, y, centres):
+    """The unit label (no -> (cx, cy)) nearest to a room centroid, by 2-D distance (rows of units can share a blob)."""
+    return min(centres, key=lambda n: (centres[n][0] - x) ** 2 + (centres[n][1] - y) ** 2)
+
+
 def extract_page(slug, page):
     P = json.loads((ROOT / 'projects' / slug / 'project.json').read_text())
     stacks = {str(s['no']): s for s in P['stacks']}
@@ -214,9 +219,9 @@ def extract_page(slug, page):
         b = next((k for k, v in owner.items() if no in v), None)
         if b is None:
             out[no] = 'no coloured plan next to the unit label'; continue
-        lx = {n: (labels[n][0] + labels[n][2]) / 2 for n in owner[b]}
+        lc = {n: ((labels[n][0] + labels[n][2]) / 2, (labels[n][1] + labels[n][3]) / 2) for n in owner[b]}
         rooms = [i for i, (_, _, x, y) in enumerate(seeds) if blob[int(y), int(x)] == b
-                 and min(lx, key=lambda n: abs(lx[n] - x)) == no and (lab == i + 1).any()]
+                 and nearest_label(x, y, lc) == no and (lab == i + 1).any()]
         types = [seeds[i][0] for i in rooms]
         need = {'living', 'kitchen', 'bath'} - set(types)
         if types.count('bedroom') != BEDROOMS[st['type']] or need:
@@ -227,6 +232,9 @@ def extract_page(slug, page):
         x0, y0, x1, y1 = int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1
         if x0 < 5 or y0 < 5 or x1 > W - 5 or y1 > H - 5:
             out[no] = 'plan touches the page edge'; continue
+        inside = [n for n, (a, b_, c, d) in labels.items() if n != no and x0 < (a + c) / 2 < x1 and y0 < (b_ + d) / 2 < y1]
+        if inside:                                               # never another stack's flat
+            out[no] = f'plan region contains unit {inside[0]}'; continue
         floor = cv2.morphologyEx(np.isin(lab, [i + 1 for i in rooms if seeds[i][0] != 'ledge']).astype(np.uint8),
                                  cv2.MORPH_CLOSE, np.ones((15, 15), np.uint8))
         target = (P.get('prices') or {}).get(st['type'], {}).get('internalSqm')
