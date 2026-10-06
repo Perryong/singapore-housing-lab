@@ -186,9 +186,13 @@ def extract_page(slug, page):
     img = cv2.imread(str(png))
     H, W = img.shape[:2]
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-    line = (hsv[..., 2] < 110).astype(np.uint8)
+    v = hsv[..., 2]
+    # lines: plainly dark, or clearly darker than their neighbourhood (thin double-line walls in a darker fill shade)
+    line = ((v < 110) | (v.astype(np.int16) < cv2.medianBlur(v, 15).astype(np.int16) - 20)).astype(np.uint8)
     fill = ((hsv[..., 1] > 40) & (hsv[..., 2] > 150)).astype(np.uint8)
     words = words_px(slug, page, png)
+    for t, a, b, c, d in words:                                   # lettering is not wall
+        line[max(0, int(b) - 1):int(d) + 2, max(0, int(a) - 1):int(c) + 2] = 0
     labels, bar = unit_labels(words), scale_bar(words)
     pnorth = page_north(P, labels)
     blob_n, blob = cv2.connectedComponents(cv2.morphologyEx(fill, cv2.MORPH_CLOSE, np.ones((25, 25), np.uint8)))

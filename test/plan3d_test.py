@@ -21,6 +21,9 @@ assert abs(p['bboxPx'][2] - 850) < 15 and abs(q['bboxPx'][0] - 850) < 15, (p['bb
 assert abs(p['scale']['pxPerM'] - q['scale']['pxPerM']) / p['scale']['pxPerM'] < 0.03, (p['scale'], q['scale'])  # mirror pair
 assert abs((p['north'] + 180) % 360 - 180) < 5, p['north']           # page fitted to the site plan: page-up is north
 assert any(w['kind'] == 'window' for w in p['walls']) and any(w['kind'] == 'solid' for w in p['walls'])
+part = sum(max(r[2] - r[0], r[3] - r[1]) for w in p['walls'] if w['kind'] == 'partition'
+           for r in [w['rect']] if max(r[2] - r[0], r[3] - r[1]) >= 0.5)
+assert part >= 22, f'interior walls {part:.1f} m'                   # double-line partitions drawn in a darker fill shade
 assert all(isinstance(v, (dict, str)) for v in R.values()) and len(R) >= 4, R.keys()   # both rows of units
 S = extract_page('bishan-terraces', 14)                                # scanned page: plan or reason, never raises
 assert S and all(isinstance(v, (dict, str)) for v in S.values())
