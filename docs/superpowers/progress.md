@@ -118,3 +118,35 @@ site. Estate facilities OCR'd from each site plan (tools/trace_facilities.py); n
 | yishun-glade | 159 | 954 | 243/244 (100%) |
 
 All projects ≥ 95% (target met).
+
+## 3D floor plans — coverage (2026-10-06)
+
+| Project | Stacks with 3D / with a floor plan | % |
+|---|---|---|
+| berlayar-residences | 24/24 | 100% |
+| berlayar-rise | 48/48 | 100% |
+| bishan-terraces | 0/7 | 0% |
+| chencharu-grove | 43/51 | 84% |
+| fernvale-plains | 1/21 | 5% |
+| kebun-baru-breeze | 13/20 | 65% |
+| kebun-baru-ridge | 14/26 | 54% |
+| kim-keat-crest | 32/34 | 94% |
+| lakeview-cascadia | 39/45 | 87% |
+| mount-pleasant-crest | 22/33 | 67% |
+| oak-ville-amk | 44/64 | 69% |
+| ping-yi-court | 7/56 | 12% |
+| redhill-peaks | 2/25 | 8% |
+| sembawang-brook | 0/40 | 0% |
+| sembawang-deck | 0/23 | 0% |
+| sembawang-portico | 26/28 | 93% |
+| sembawang-voyage | 24/44 | 55% |
+| tampines-bliss | 23/28 | 82% |
+| tampines-nova | 2/21 | 10% |
+| teban-heights | 10/11 | 91% |
+| woodgrove-acres | 32/41 | 78% |
+| yishun-glade | 1/38 | 3% |
+
+Overall 407/728 (56%), below the 70% target. Brochures with real text: 90–100%. Scanned brochures
+(Bishan Terraces, Fernvale Plains, Ping Yi Court, Redhill Peaks, Sembawang Brook, Sembawang Deck, Tampines Nova,
+Yishun Glade): 0–7 stacks each — room names are outlined glyphs that OCR reads only partly, and some units are drawn
+rotated (walls are extracted axis-aligned). Those stacks keep the 2D floor plan.

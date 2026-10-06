@@ -64,11 +64,13 @@ obj('walls', bm, material('wall', WALL, 0.95))
 
 mats = {t: material(f'floor-{t}', c) for t, c in COLOURS.items()}
 for i, r in enumerate(J['rooms']):
+    if len(r['poly']) < 3:                                 # degenerate outline: no floor
+        continue
     bm = bmesh.new()
     top = [bm.verts.new((x, -z, SLAB)) for x, z in r['poly']]
     try:
         face = bm.faces.new(top)
-    except ValueError:                                     # degenerate outline: skip this floor
+    except (ValueError, TypeError):                        # self-touching outline: skip this floor
         bm.free(); continue
     if face.normal.z < 0:
         face.normal_flip()
@@ -80,5 +82,6 @@ for i, r in enumerate(J['rooms']):
     obj(f"room:{r['type']}:{i}", bm, mats.get(r['type'], mats['other']))
 
 OUT.parent.mkdir(parents=True, exist_ok=True)
-bpy.ops.export_scene.gltf(filepath=str(OUT), export_format='GLB', export_apply=False, export_yup=True)
+bpy.ops.export_scene.gltf(filepath=str(OUT), export_format='GLB', export_apply=False, export_yup=True,
+                          export_draco_mesh_compression_enable=True, export_draco_mesh_compression_level=7)
 print(f'wrote {OUT} ({OUT.stat().st_size // 1024} KB), walls {len(J["walls"])}, rooms {len(J["rooms"])}')

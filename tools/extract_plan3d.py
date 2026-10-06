@@ -45,11 +45,34 @@ def render(slug, page):
     return png
 
 
+def ocr_tiles(slug, page):
+    """OCR at 600 DPI in overlapping tiles (small outlined room names need the resolution), as 300-DPI px words."""
+    big = ROOT / 'reference/hdb/brochures/.render' / f'plan3d-{slug}-{page}-600.png'
+    if not big.exists():
+        subprocess.run(['pdftoppm', '-r', '600', '-f', str(page), '-l', str(page), '-png', '-singlefile',
+                        str(brochure(slug)), str(big.with_suffix(''))], check=True)
+    img = cv2.imread(str(big)); H, W = img.shape[:2]
+    T, O, k = 1600, 250, 600 / 72
+    out, seen = [], set()
+    tile = big.with_name(big.stem + '-tile.png')
+    for y in range(0, H, T - O):
+        for x in range(0, W, T - O):
+            cv2.imwrite(str(tile), img[y:y + T, x:x + T])
+            for t, x0, y0, x1, y1 in ocr_words(str(tile), k):
+                key = (t, round((x0 * k + x) / 40), round((y0 * k + y) / 40))     # same word seen in two tiles
+                if key not in seen:
+                    seen.add(key)
+                    out.append((t, (x0 * k + x) / 2, (y0 * k + y) / 2, (x1 * k + x) / 2, (y1 * k + y) / 2))
+    tile.unlink(missing_ok=True)
+    return out                                                     # 300-DPI px
+
+
 def words_px(slug, page, png):
-    w = _pages(slug)[page - 1][3]
-    if not any(t.upper() == 'UNIT' for t, *_ in w):          # text drawn as outlines: OCR
-        w = ocr_words(str(png), K)
-    return [(t, x0 * K, y0 * K, x1 * K, y1 * K) for t, x0, y0, x1, y1 in w]
+    w = [(t, x0 * K, y0 * K, x1 * K, y1 * K) for t, x0, y0, x1, y1 in _pages(slug)[page - 1][3]]
+    if not any(re.search(r'BEDROOM|KITCHEN', t.upper()) for t, *_ in w):      # room names drawn as outlines: OCR
+        o = ocr_tiles(slug, page)
+        w = o if not any(t.upper() == 'UNIT' for t, *_ in w) else w + [x for x in o if not re.fullmatch(r'UNIT|\d{2,4}[A-Z]?', x[0].upper())]
+    return w
 
 
 def unit_labels(words):
