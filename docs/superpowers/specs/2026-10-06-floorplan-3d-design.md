@@ -30,13 +30,17 @@ defined once in `blender/build_plan3d.py`.
 ## Data
 `projects/<id>/plans3d/<stack>.json` (committed):
 ```
-{ "stack": "584", "page": 13, "scale": {"pxPerM": 118.1, "areaSqm": 85.2, "targetSqm": 86},
+{ "stack": "584", "page": 13, "bboxPx": [x0, y0, x1, y1],
+  "scale": {"pxPerM": 33.3, "source": "scale bar" | "floor area", "targetSqm": 86, "areaSqm": 82.2},
   "rooms": [{"type": "bedroom", "name": "MAIN BEDROOM", "poly": [[x, z], ...], "label": [x, z]}],
-  "walls": [{"a": [x, z], "b": [x, z], "t": 0.2, "kind": "solid" | "window" | "partition"}],
-  "north": 270 }
+  "walls": [{"rect": [x0, z0, x1, z1], "kind": "solid" | "window" | "partition"}],
+  "north": 359.1 }
 ```
-Coordinates in metres, origin at the flat's centre, x east-ish as drawn, z down the page; `north` = bearing of the
-page's up direction, from the stack's known window-facing data.
+Coordinates in metres, origin at the flat's centre, x right and z down the page. Walls are axis-aligned rectangles
+covering the drawn wall pixels. `north` = compass bearing of page-up, from fitting the page's unit labels onto the
+same stacks on the georeferenced site plan (fallback: the stack's window side and `faces`). Scale from the page's
+"SCALE 0 … 10 METRES" bar when present (then floor area must be within 15% of HDB's internal sqm), else from floor
+area (then within 12% of the page's median scale). Unnamed coloured regions are rooms of type `other`.
 `projects/<id>/plans3d/<stack>.glb` (committed): walls + floors, floor meshes named `room:<type>:<i>`.
 `project.json["plans3d"]`: list of stacks with a model.
 
@@ -63,7 +67,8 @@ page's up direction, from the stack's known window-facing data.
 
 ## Testing
 - `test/plan3d_test.py` (skips without the brochure): Kim Keat Crest 584 has 3 bedrooms, living, kitchen, 2 baths,
-  yard and shelter; scaled area within 5% of 86 sqm; the 584/586 split lies on the shared living-room wall.
+  yard and shelter; 584 and 586 (mirror pair) have the same scale; the split lies on the shared living-room wall;
+  page-up is north; a scanned page returns plans or reasons without raising.
 - Blender check: the pilot GLB loads; wall height 2.8 m ± 0.05; floor area within 2% of the JSON.
 - Playwright sweep: for each stack with a model, opening its plan shows a 3D canvas and no page errors; stacks
   without one show the 2D image. Screenshots of the pilots: KKC 584 (4-room), a 3-room, a 2-room Flexi, a corner 5-room.
