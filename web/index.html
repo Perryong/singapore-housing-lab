@@ -7,7 +7,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2712%27 fill=%27%23E8931C%27/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=13">
+<link rel="stylesheet" href="style.css?v=14">
 <script type="importmap">
 { "imports": {
   "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
@@ -27,9 +27,11 @@
 
 <dialog id="layoutDlg" aria-labelledby="layoutTitle">
   <div class="pick-head"><h2 id="layoutTitle">Floor plan</h2><button class="x" id="layoutClose" aria-label="Close">×</button></div>
+  <div class="lay-tabs" id="layoutTabs" hidden><button class="chip" id="view3d" aria-pressed="true">3D</button><button class="chip" id="view2d" aria-pressed="false">2D</button><button class="btn" id="plan3dReset">Reset view</button></div>
+  <div id="plan3dHolder" hidden></div>
   <img id="layoutImg" alt="Floor plan">
   <div class="lay-foot"><button class="btn" id="layoutToggle" hidden></button>
-  <span class="unit-meta">From HDB's sales brochure. The coloured plan does not demarcate the flat boundary.</span></div>
+  <span class="unit-meta">Floor plan © HDB, from its sales brochure; the 3D view is built from it. The coloured plan does not demarcate the flat boundary.</span></div>
 </dialog>
 
 <dialog id="picker" aria-labelledby="pickerTitle">
@@ -108,6 +110,6 @@
   <p class="note" id="tableNote">AM and PM are average hours of direct sun on the unit's windows across all floors of the stack, split at solar noon, for the chosen date.</p>
 </aside>
 
-<script type="module" src="app.js?v=21"></script>
+<script type="module" src="app.js?v=27"></script>
 </body>
 </html>

@@ -5,6 +5,7 @@ import { buildLayout, bdir, catOf, sizeOf, deg } from './project.js';
 import { solarPos, sunVec, computeDay, computeNow } from './sun.js';
 import { money, range } from './format.js';
 import { RESALE_TYPE, defaultType, psmRamp, trendSvg } from './resale.js';
+import { openPlan3d } from './plan3d.js';
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -484,8 +485,30 @@ function layoutThumb(no) {
   return `<button class="layout-thumb" data-a="layout" aria-label="Open floor plan"><img src="${base + l.typical}" alt="Floor plan, stack ${pad(no)}" onerror="const b=this.parentElement;b.nextElementSibling?.classList.add('big');b.remove()"><span>Floor plan · tap to enlarge</span></button>${src}`;
 }
 const layoutDlg = $('#layoutDlg');
+let viewer = null, openSeq = 0;                                  // the live 3D viewer; openSeq drops stale loads
+const closeViewer = () => { openSeq++; viewer?.dispose(); viewer = null; };
+function setView(mode, no) {                                    // '3d' | '2d'
+  const is3d = mode === '3d';
+  $('#view3d').setAttribute('aria-pressed', is3d); $('#view2d').setAttribute('aria-pressed', !is3d);
+  $('#plan3dHolder').hidden = !is3d; $('#plan3dReset').hidden = !is3d;
+  $('#layoutImg').hidden = is3d; $('#layoutToggle').hidden = is3d || !P.layouts[String(no)].lowest;
+  if (!is3d) { closeViewer(); return; }
+  if (viewer) return;
+  const seq = ++openSeq, holder = $('#plan3dHolder');
+  holder.innerHTML = '<p class="p3-wait">Building 3D view…</p>';
+  openPlan3d(holder, `${base}plans3d/${no}`).then(v => {
+    if (seq !== openSeq || !layoutDlg.open) v.dispose(); else viewer = v;
+  }).catch(() => { if (seq === openSeq) { $('#layoutTabs').hidden = true; setView('2d', no); } });
+}
+$('#view3d').addEventListener('click', e => setView('3d', e.target.dataset.no));
+$('#view2d').addEventListener('click', e => setView('2d', e.target.dataset.no));
+$('#plan3dReset').addEventListener('click', () => viewer?.reset());
+layoutDlg.addEventListener('close', closeViewer);
 function openLayout(no, which = 'typical') {
   const l = P.layouts[String(no)];
+  const has3d = which === 'typical' && (P.plans3d || []).includes(String(no));
+  $('#layoutTabs').hidden = !has3d; $('#view3d').dataset.no = $('#view2d').dataset.no = no;
+  if (!layoutDlg.open || $('#view3d').dataset.shown !== String(no)) closeViewer();
   const img = $('#layoutImg');                                 // hide until the new plan loads: no flash of the previous stack's plan
   const url = new URL(base + l[which], location.href).href;
   if (img.src !== url) { img.style.visibility = 'hidden'; img.onload = () => { img.style.visibility = ''; }; img.src = url; }
@@ -494,6 +517,8 @@ function openLayout(no, which = 'typical') {
   $('#layoutToggle').textContent = which === 'lowest' ? 'Show typical storey' : 'Show lowest storey';
   $('#layoutToggle').dataset.no = no; $('#layoutToggle').dataset.next = which === 'lowest' ? 'typical' : 'lowest';
   if (!layoutDlg.open) layoutDlg.showModal();
+  $('#view3d').dataset.shown = String(no);
+  setView(has3d ? '3d' : '2d', no);
 }
 $('#layoutToggle').addEventListener('click', e => openLayout(e.target.dataset.no, e.target.dataset.next));
 $('#layoutClose').addEventListener('click', () => layoutDlg.close());
