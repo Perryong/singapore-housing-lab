@@ -496,9 +496,10 @@ function setView(mode, no) {                                    // '3d' | '2d'
   if (viewer) return;
   const seq = ++openSeq, holder = $('#plan3dHolder');
   holder.innerHTML = '<p class="p3-wait">Building 3D view…</p>';
-  openPlan3d(holder, `${base}plans3d/${no}`).then(v => {
-    if (seq !== openSeq || !layoutDlg.open) v.dispose(); else viewer = v;
-  }).catch(() => { if (seq === openSeq) { $('#layoutTabs').hidden = true; setView('2d', no); } });
+  const stale = () => seq !== openSeq || !layoutDlg.open;
+  openPlan3d(holder, `${base}plans3d/${no}`, { isStale: stale }).then(v => {
+    if (stale()) v.dispose(); else viewer = v;
+  }).catch(() => { if (!stale()) { $('#layoutTabs').hidden = true; setView('2d', no); } });
 }
 $('#view3d').addEventListener('click', e => setView('3d', e.target.dataset.no));
 $('#view2d').addEventListener('click', e => setView('2d', e.target.dataset.no));

@@ -9,12 +9,14 @@ const loader = new GLTFLoader().setDRACOLoader(                // models are Dra
 window.__plan3dViewers = 0;                                    // live viewers (test hook)
 const title = s => s.replace(/-\s+/g, '').toLowerCase().replace(/\b\w/g, c => c.toUpperCase()).replace(/\s*\/\s*/g, ' / ').replace(/\bWc\b/, 'WC');
 
-// stem = '<base>plans3d/<stack>' (no extension). Resolves to { reset, dispose }; rejects if the model can't load.
-export async function openPlan3d(holder, stem) {
+// stem = '<base>plans3d/<stack>' (no extension). Resolves to { reset, dispose }; rejects if the model can't load,
+// or with 'stale' (without touching holder) when isStale() says a newer request replaced this one.
+export async function openPlan3d(holder, stem, { isStale = () => false } = {}) {
   const [J, gltf] = await Promise.all([
     fetch(stem + '.json', { cache: 'no-cache' }).then(r => { if (!r.ok) throw new Error('no plan'); return r.json(); }),
     loader.loadAsync(stem + '.glb'),
   ]);
+  if (isStale()) throw new Error('stale');
   const w = holder.clientWidth || 600, h = holder.clientHeight || 420;
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.setSize(w, h);
@@ -82,7 +84,7 @@ export async function openPlan3d(holder, stem) {
       if (!alive) return;
       alive = false; cancelAnimationFrame(raf); controls.dispose();
       scene.traverse(o => { o.geometry?.dispose(); [].concat(o.material || []).forEach(m => m.dispose()); });
-      renderer.dispose(); renderer.forceContextLoss(); holder.replaceChildren();
+      renderer.dispose(); renderer.forceContextLoss(); renderer.domElement.remove(); layer.remove();   // only our own nodes
       window.__plan3dViewers--;
     },
   };
