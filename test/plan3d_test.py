@@ -32,9 +32,11 @@ C = extract_page('chencharu-grove', 21)                               # "UNIT 32
 assert isinstance(C['323'], dict), C['323']
 D = json.load(open('projects/sembawang-deck/project.json'))
 pg = sorted({l['page'] for l in D['layouts'].values()})[0]
-SD = extract_page('sembawang-deck', pg)                               # scanned: room names unreadable -> walls-only plan
-walls_only = [v for v in SD.values() if isinstance(v, dict) and not v['named']]
-assert walls_only, SD
-assert all(r['type'] == 'other' and not r['name'] for r in walls_only[0]['rooms'])
+SD = extract_page('sembawang-deck', pg)                               # scanned: names partly/un-readable -> still a plan
+partial = [v for v in SD.values() if isinstance(v, dict) and not v['named']]
+assert partial, SD
+assert all(r['type'] == 'other' or r['name'] for r in partial[0]['rooms'])    # unread rooms stay unlabelled
 assert all(v['named'] for v in (p, q))
+O = extract_page('oak-ville-amk', 13)                                 # diagonal label: "UNIT" garbled, number intact
+assert O['253'] != 'unit label not found on page', O['253']
 print('ok')

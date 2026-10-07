@@ -200,6 +200,10 @@ def extract_page(slug, page):
     for t, a, b, c, d in words:                                   # lettering is not wall
         line[max(0, int(b) - 1):int(d) + 2, max(0, int(a) - 1):int(c) + 2] = 0
     labels, bar = unit_labels(words), scale_bar(words)
+    for no in mine:                                               # "UNIT" garbled (diagonal text): the stack number alone,
+        hits = [w for w in words if w[0] == no]                   # when it appears exactly once on the page
+        if no not in labels and len(hits) == 1:
+            labels[no] = tuple(hits[0][1:])
     pnorth = page_north(P, labels)
     blob_n, blob = cv2.connectedComponents(cv2.morphologyEx(fill, cv2.MORPH_CLOSE, np.ones((25, 25), np.uint8)))
     # each label claims the coloured plan nearest to it (within 300 px)
@@ -237,11 +241,11 @@ def extract_page(slug, page):
         types = [seeds[i][0] for i in rooms]
         need = {'living', 'kitchen', 'bath'} - set(types)
         named = types.count('bedroom') == BEDROOMS[st['type']] and not need
-        if not named:
-            # names mostly unreadable (scanned brochure): walls-only model; names that disagree with the flat type
-            # mean a wrong region, so that stack is rejected
-            if sum(t != 'other' for t in types) >= (BEDROOMS[st['type']] + 3) / 2 or len(rooms) < 3:
-                out[no] = f"rooms found {sorted(types)} don't match a {st['type']}"; continue
+        # more rooms than the flat type has = neighbouring flats merged into the region: reject. Fewer = names OCR
+        # couldn't read (scanned brochures): keep the names that were read, the rest unlabelled
+        if (types.count('bedroom') > BEDROOMS[st['type']] or types.count('kitchen') > 2 or types.count('living') > 2
+                or len(rooms) < 3):
+            out[no] = f"rooms found {sorted(types)} don't match a {st['type']}"; continue
         unit = np.isin(lab, [i + 1 for i in rooms]).astype(np.uint8)
         unit_c = cv2.morphologyEx(unit, cv2.MORPH_CLOSE, np.ones((15, 15), np.uint8))
         ys, xs = np.nonzero(unit_c)
@@ -280,7 +284,7 @@ def extract_page(slug, page):
             r = (lab == i + 1).astype(np.uint8)
             c = max(cv2.findContours(r, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0], key=cv2.contourArea)
             c = cv2.approxPolyDP(c, 1.5, True)[:, 0]
-            room_out.append({'type': seeds[i][0] if named else 'other', 'name': seeds[i][1] if named else '', 'poly': [m(x, y) for x, y in c],
+            room_out.append({'type': seeds[i][0], 'name': seeds[i][1], 'poly': [m(x, y) for x, y in c],
                              'label': m(seeds[i][2], seeds[i][3])})
         # window side = the side of the plan with most "W1"-style window tags just outside it
         tags = [((a + c) / 2, (b + d) / 2) for t, a, b, c, d in words
