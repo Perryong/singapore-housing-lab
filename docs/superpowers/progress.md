@@ -150,3 +150,35 @@ Overall 407/728 (56%), below the 70% target. Brochures with real text: 90–100%
 (Bishan Terraces, Fernvale Plains, Ping Yi Court, Redhill Peaks, Sembawang Brook, Sembawang Deck, Tampines Nova,
 Yishun Glade): 0–7 stacks each — room names are outlined glyphs that OCR reads only partly, and some units are drawn
 rotated (walls are extracted axis-aligned). Those stacks keep the 2D floor plan.
+
+## 3D floor plans — coverage after the coverage pass (2026-10-07)
+
+| Project | Stacks with 3D / with a floor plan | % |
+|---|---|---|
+| berlayar-residences | 24/24 | 100% |
+| berlayar-rise | 48/48 | 100% |
+| bishan-terraces | 5/7 | 71% |
+| chencharu-grove | 47/51 | 92% |
+| fernvale-plains | 18/21 | 86% |
+| kebun-baru-breeze | 18/20 | 90% |
+| kebun-baru-ridge | 26/26 | 100% |
+| kim-keat-crest | 32/34 | 94% |
+| lakeview-cascadia | 45/45 | 100% |
+| mount-pleasant-crest | 32/33 | 97% |
+| oak-ville-amk | 60/64 | 94% |
+| ping-yi-court | 54/56 | 96% |
+| redhill-peaks | 19/25 | 76% |
+| sembawang-brook | 35/40 | 88% |
+| sembawang-deck | 21/23 | 91% |
+| sembawang-portico | 28/28 | 100% |
+| sembawang-voyage | 36/44 | 82% |
+| tampines-bliss | 28/28 | 100% |
+| tampines-nova | 20/21 | 95% |
+| teban-heights | 10/11 | 91% |
+| woodgrove-acres | 33/41 | 80% |
+| yishun-glade | 35/38 | 92% |
+
+Overall 674/728 (93%). Added: sideways and diagonal unit labels, labels up to 300 px from their plan,
+models with partly or un-readable room names (unread rooms unlabelled; 'Room names unavailable' note when none),
+lettering filtered out of walls. Remaining 2D-only: plans drawn at an angle, regions failing the scale/area
+checks, and regions with more rooms than the flat type (merged neighbours, rejected by design).
