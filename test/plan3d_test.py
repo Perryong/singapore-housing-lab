@@ -1,7 +1,18 @@
 # Each stack's own flat, read off its brochure page: rooms, walls and scale (tools/extract_plan3d.py).
 import sys
 from pathlib import Path
-from tools.extract_plan3d import nearest_label
+from tools.extract_plan3d import nearest_label, drop_lettering
+import cv2, numpy as np
+
+# lettering drawn as outlines (scanned brochures, unreadable by OCR) must not become walls; real walls stay
+M = np.zeros((300, 600), np.uint8)
+cv2.putText(M, 'BEDROOM', (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.9, 1, 2)          # word ~120x22 px
+cv2.line(M, (20, 150), (560, 150), 1, 1)                                         # long thin partition
+cv2.rectangle(M, (300, 200), (314, 214), 1, -1)                                  # solid column
+cv2.rectangle(M, (20, 250), (400, 259), 1, -1)                                   # thick wall
+K_ = drop_lettering(M)
+assert K_[30:70, 15:160].sum() == 0, 'lettering kept'
+assert K_[150, 20:560].all() and K_[200:215, 300:315].all() and K_[250:260, 20:400].all(), 'a wall was dropped'
 
 # two rows of units sharing one blob: a room below the bottom-row label belongs to it, not to the top one at the same x
 L = {'100': (500, 100), '200': (520, 900)}

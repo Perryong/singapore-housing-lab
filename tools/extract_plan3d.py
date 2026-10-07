@@ -179,6 +179,19 @@ def page_north(P, labels):
     return round((P['plan']['upBearing'] + math.degrees(cmath.phase(rot))) % 360, 1)
 
 
+def drop_lettering(mask):
+    """The line mask without letter-like blobs (outlined lettering OCR couldn't read): small, neither a long thin line
+    nor a solid block. Walls are long (thin lines) or dense (solid walls, columns)."""
+    out = mask.copy()
+    n, cc, st, _ = cv2.connectedComponentsWithStats(mask, connectivity=8)
+    for i in range(1, n):
+        w, h, a = st[i][2], st[i][3], st[i][4]
+        big, small = max(w, h), max(1, min(w, h))
+        if big < 160 and small < 50 and 0.08 < a / (w * h) < 0.85 and big / small < 12:
+            out[cc == i] = 0
+    return out
+
+
 def nearest_label(x, y, centres):
     """The unit label (no -> (cx, cy)) nearest to a room centroid, by 2-D distance (rows of units can share a blob)."""
     return min(centres, key=lambda n: (centres[n][0] - x) ** 2 + (centres[n][1] - y) ** 2)
@@ -199,6 +212,7 @@ def extract_page(slug, page):
     words = words_px(slug, page, png)
     for t, a, b, c, d in words:                                   # lettering is not wall
         line[max(0, int(b) - 1):int(d) + 2, max(0, int(a) - 1):int(c) + 2] = 0
+    line = drop_lettering(line)
     labels, bar = unit_labels(words), scale_bar(words)
     for no in mine:                                               # "UNIT" garbled (diagonal text): the stack number alone,
         hits = [w for w in words if w[0] == no]                   # when it appears exactly once on the page
