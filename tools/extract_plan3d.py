@@ -80,10 +80,16 @@ def unit_labels(words):
     for t, x0, y0, x1, y1 in words:
         if t.upper() != 'UNIT':
             continue
-        nxt = [w for w in words if re.fullmatch(r'\d{2,4}[A-Z]?', w[0]) and abs(w[2] - y0) < 15 and 0 <= w[1] - x1 < 40]
+        num = lambda w: re.fullmatch(r'\d{2,4}[A-Z]?', w[0])
+        nxt = [w for w in words if num(w) and abs(w[2] - y0) < 15 and 0 <= w[1] - x1 < 40]
         if nxt:
             n = min(nxt, key=lambda w: w[1])
-            out[n[0]] = (x0, y0, n[3], n[4])
+            out[n[0]] = (x0, y0, n[3], n[4]); continue
+        if y1 - y0 > 1.5 * (x1 - x0):                            # printed sideways: the number is above or below
+            col = [w for w in words if num(w) and w[1] < x1 and x0 < w[3] and (0 <= w[2] - y1 < 30 or 0 <= y0 - w[4] < 30)]
+            if col:
+                n = min(col, key=lambda w: min(abs(w[2] - y1), abs(y0 - w[4])))
+                out[n[0]] = (min(x0, n[1]), min(y0, n[2]), max(x1, n[3]), max(y1, n[4]))
     return out
 
 
@@ -196,14 +202,16 @@ def extract_page(slug, page):
     labels, bar = unit_labels(words), scale_bar(words)
     pnorth = page_north(P, labels)
     blob_n, blob = cv2.connectedComponents(cv2.morphologyEx(fill, cv2.MORPH_CLOSE, np.ones((25, 25), np.uint8)))
-    # each label claims the blob nearest to it (within 150 px above or below)
+    # each label claims the coloured plan nearest to it (within 300 px)
     owner = {}
     for no, (x0, y0, x1, y1) in labels.items():
-        ya, yb = max(0, int(y0) - 150), min(H, int(y1) + 150)
-        win = blob[ya:yb, max(0, int(x0) - 20):min(W, int(x1) + 20)]
-        ids, cnt = np.unique(win[win > 0], return_counts=True)
-        if len(ids):
-            owner.setdefault(int(ids[np.argmax(cnt)]), []).append(no)
+        lx, ly = (x0 + x1) / 2, (y0 + y1) / 2
+        ya, xa = max(0, int(ly) - 300), max(0, int(lx) - 300)
+        win = blob[ya:int(ly) + 301, xa:int(lx) + 301]
+        ys, xs = np.nonzero(win)
+        if len(xs):
+            k = np.argmin((xs + xa - lx) ** 2 + (ys + ya - ly) ** 2)
+            owner.setdefault(int(win[ys[k], xs[k]]), []).append(no)
     seeds = room_seeds(words, fill)
     passable = fill.astype(bool) & ~line.astype(bool)
     lab = grow(passable, seeds)
@@ -228,8 +236,12 @@ def extract_page(slug, page):
                  and nearest_label(x, y, lc) == no and (lab == i + 1).any()]
         types = [seeds[i][0] for i in rooms]
         need = {'living', 'kitchen', 'bath'} - set(types)
-        if types.count('bedroom') != BEDROOMS[st['type']] or need:
-            out[no] = f"rooms found {sorted(types)} don't match a {st['type']}"; continue
+        named = types.count('bedroom') == BEDROOMS[st['type']] and not need
+        if not named:
+            # names mostly unreadable (scanned brochure): walls-only model; names that disagree with the flat type
+            # mean a wrong region, so that stack is rejected
+            if sum(t != 'other' for t in types) >= (BEDROOMS[st['type']] + 3) / 2 or len(rooms) < 3:
+                out[no] = f"rooms found {sorted(types)} don't match a {st['type']}"; continue
         unit = np.isin(lab, [i + 1 for i in rooms]).astype(np.uint8)
         unit_c = cv2.morphologyEx(unit, cv2.MORPH_CLOSE, np.ones((15, 15), np.uint8))
         ys, xs = np.nonzero(unit_c)
@@ -268,7 +280,7 @@ def extract_page(slug, page):
             r = (lab == i + 1).astype(np.uint8)
             c = max(cv2.findContours(r, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0], key=cv2.contourArea)
             c = cv2.approxPolyDP(c, 1.5, True)[:, 0]
-            room_out.append({'type': seeds[i][0], 'name': seeds[i][1], 'poly': [m(x, y) for x, y in c],
+            room_out.append({'type': seeds[i][0] if named else 'other', 'name': seeds[i][1] if named else '', 'poly': [m(x, y) for x, y in c],
                              'label': m(seeds[i][2], seeds[i][3])})
         # window side = the side of the plan with most "W1"-style window tags just outside it
         tags = [((a + c) / 2, (b + d) / 2) for t, a, b, c, d in words
@@ -280,7 +292,7 @@ def extract_page(slug, page):
         out[no] = {'stack': no, 'page': page, 'bboxPx': [x0, y0, x1, y1],
                    'scale': {'pxPerM': round(ppm, 2), 'source': 'scale bar' if bar else 'floor area', 'targetSqm': target,
                              'areaSqm': round(float(floor.sum()) / ppm ** 2, 1)},
-                   'rooms': room_out, 'walls': walls, 'north': north}
+                   'rooms': room_out, 'walls': walls, 'north': north, 'named': named}
     if not bar and scales:                                       # no scale bar: one drawing scale per page
         med = float(np.median(list(scales.values())))
         for no, s in scales.items():

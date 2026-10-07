@@ -49,6 +49,9 @@ export async function openPlan3d(holder, stem, { isStale = () => false } = {}) {
   });
   const nTag = document.createElement('span'); nTag.className = 'n'; nTag.textContent = 'N'; layer.append(nTag);
   tags.push({ el: nTag, p: arrow.position.clone().add(dir.clone().multiplyScalar(1.8)) });
+  const note = document.createElement('p'); note.className = 'p3-note';      // walls-only model (scanned brochure)
+  note.textContent = 'Room names unavailable for this brochure'; note.hidden = J.named !== false;
+  layer.append(note);
   holder.replaceChildren(renderer.domElement, layer);
 
   const controls = new OrbitControls(camera, renderer.domElement);

@@ -27,4 +27,14 @@ assert part >= 22, f'interior walls {part:.1f} m'                   # double-lin
 assert all(isinstance(v, (dict, str)) for v in R.values()) and len(R) >= 4, R.keys()   # both rows of units
 S = extract_page('bishan-terraces', 14)                                # scanned page: plan or reason, never raises
 assert S and all(isinstance(v, (dict, str)) for v in S.values())
+import json
+C = extract_page('chencharu-grove', 21)                               # "UNIT 323" printed sideways
+assert isinstance(C['323'], dict), C['323']
+D = json.load(open('projects/sembawang-deck/project.json'))
+pg = sorted({l['page'] for l in D['layouts'].values()})[0]
+SD = extract_page('sembawang-deck', pg)                               # scanned: room names unreadable -> walls-only plan
+walls_only = [v for v in SD.values() if isinstance(v, dict) and not v['named']]
+assert walls_only, SD
+assert all(r['type'] == 'other' and not r['name'] for r in walls_only[0]['rooms'])
+assert all(v['named'] for v in (p, q))
 print('ok')
