@@ -16,8 +16,10 @@ class Const:                                                     # stand-in mode
     def predict(self, X): return np.full(len(X), np.log(self.v))
 
 
-est, lo, hi = predict({'mid': Const(500000), 'lo': Const(520000), 'hi': Const(480000)}, np.zeros((2, 1)))
-assert (lo <= est).all() and (est <= hi).all(), (est, lo, hi)     # crossed quantiles clamped around the estimate
+est, lo, hi = predict({'mid': Const(500000), 'band': (-0.08, 0.06)}, np.zeros((2, 1)))
+assert np.allclose(lo, 500000 * np.exp(-0.08)) and np.allclose(hi, 500000 * np.exp(0.06))   # band = recent error quantiles
+est, lo, hi = predict({'mid': Const(500000), 'band': (0.02, -0.01)}, np.zeros((2, 1)))
+assert (lo <= est).all() and (est <= hi).all(), (est, lo, hi)     # a band that excludes the estimate is widened to it
 print('ok model helpers')
 
 from pathlib import Path
@@ -34,3 +36,16 @@ mdape = float(np.median(np.abs(est / y[cut:] - 1)))
 assert mdape < 0.15, mdape                                         # small slice: loose bar; the full run reports real metrics
 assert {'d_mrt', 'd_cbd', 'd_mall', 'n_pri1k'} <= set(X.columns) and X.attrs['dropped'] >= 0
 print(f'ok slice model, MdAPE {mdape:.1%}')
+
+import json
+from tools.train_value import estimate_project
+if Path('reference/resale/value-model.pkl').exists():
+    P = json.load(open('projects/kim-keat-crest/project.json'))
+    V = estimate_project(P)
+    rent = [str(s['no']) for s in P['stacks'] if s['type'] in ('RENT', 'CCA')]
+    assert rent and all(n in V['skipped'] and n not in V['byStack'] for n in rent), V['skipped']
+    s584 = V['byStack']['584']
+    assert all(lo <= est <= hi for est, lo, hi in s584.values())
+    assert V['drivers']['584']['location'] > 0, V['drivers']['584']          # Toa Payoh: above the island-wide average
+    assert V['metrics']['mdape'] <= 7
+    print('ok estimates', s584['16'], V['drivers']['584'])
