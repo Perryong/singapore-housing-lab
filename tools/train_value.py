@@ -8,6 +8,7 @@ quantile models (10th / 90th percentile) for the range. Location features come f
 (reference/resale/geocode.json) and the amenity layers (reference/amenities/all.json).
 """
 import json, math, pickle, re, sys
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
@@ -166,6 +167,15 @@ def stack_xz(P, s):                                                     # web/pr
     return lx * math.cos(b) - lz * math.sin(b), lx * math.sin(b) + lz * math.cos(b)
 
 
+@lru_cache(maxsize=None)
+def town_average(typ, sqm, storey):
+    """Island-wide average estimate for this flat: every town at its typical location, weighted by sales."""
+    c = context()
+    T = c['towns'].loc[typ]
+    X = pd.concat([rows(c, typ, sqm, [storey], t, r.drop('w').to_dict()) for t, r in T.iterrows()], ignore_index=True)
+    return float(np.average(predict(c['M']['models'], X)[0], weights=T['w']))
+
+
 def estimate_project(P):
     c = context()
     k = lambda v: int(round(float(v), -3))
@@ -196,9 +206,7 @@ def estimate_project(P):
         out['byStack'][no] = {str(f): [k(a), k(b), k(d)] for f, a, b, d in zip(floors, e, lo, hi)}
         mid = [floors[len(floors) // 2]]
         base = predict(c['M']['models'], rows(c, typ, sqm, mid, town, loc))[0][0]
-        T = c['towns'].loc[typ]                                       # island-wide average: every town, weighted by sales
-        avg = float(np.average([predict(c['M']['models'], rows(c, typ, sqm, mid, t, r.drop('w').to_dict()))[0][0]
-                                for t, r in T.iterrows()], weights=T['w']))
+        avg = town_average(typ, float(sqm), mid[0])
         typical = predict(c['M']['models'], rows(c, typ, c['sqm'][typ], mid, town, loc))[0][0]
         out['drivers'][no] = {'location': k(base - avg), 'size': k(base - typical), 'floorRef': FLOOR_REF}
     return out

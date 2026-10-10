@@ -21,8 +21,9 @@ jobs:
           node test/format_test.mjs
           node test/resale_ui_test.mjs
           node test/nearby_test.mjs
+          node test/value_ui_test.mjs
       - name: Python deps
-        run: pip install pillow opencv-python-headless numpy   # crop size check; 3D plan extractor unit test
+        run: pip install pillow opencv-python-headless numpy pandas scikit-learn   # crop size check; 3D plan extractor unit test
       - name: Python tests
         env:
           PYTHONPATH: .
@@ -34,6 +35,7 @@ jobs:
           python test/layouts_block_test.py
           python test/plan3d_test.py
           python test/plan3d_glb_test.py
+          python test/value_test.py
       - name: Catalogue is up to date
         run: |
           node tools/make_index.js
