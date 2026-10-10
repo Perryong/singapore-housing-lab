@@ -378,6 +378,7 @@ function renderResalePanel() {
   $('#rSort').addEventListener('change', e => { rSort = e.target.value; renderResalePanel(); });
 }
 function openResaleCard(b) {
+  if (rtab === 'value') { rtab = 'sun'; applyRTab(); }             // the block card lives on the Sun tab
   const yr = +RS.asOf.slice(0, 4), left = b.lease ? b.lease + 99 - yr : null;
   const recent = b.recent || [];
   $('#resaleCard').hidden = false;
@@ -411,7 +412,7 @@ function renderValue() {
   if (!V) { box.innerHTML = '<p class="unit-meta">No value estimate for this project.</p>'; return; }
   const m = V.metrics, k = v => money(v);
   const foot = `<p class="unit-meta">Typical error ±${m.mdape}% (median, on ${m.nTest.toLocaleString('en-SG')} recent sales the model did not see);
-    the range held ${m.coverage}% of them.</p><div class="src">Model trained on HDB resale transactions (data.gov.sg), 2017–${esc(V.asOf)}. Estimate, not a valuation.</div>`;
+    the range held ${m.coverage}% of the latest three months' sales.</p><div class="src">Model trained on HDB resale transactions (data.gov.sg), 2017–${esc(V.asOf)}. Estimate, not a valuation.</div>`;
   const st = stacks.find(s => s.no === selStack), byS = st && V.byStack[String(st.no)];
   let card = '';
   if (st && !byS) card = `<p class="unit-meta">#${pad(selFloor)}-${pad(st.no)}: ${esc(V.skipped[String(st.no)] || 'no estimate for this stack')}.</p>`;
@@ -583,7 +584,6 @@ $('#layoutClose').addEventListener('click', () => layoutDlg.close());
 layoutDlg.addEventListener('click', e => { if (e.target === layoutDlg) layoutDlg.close(); });
 const verdict = pm => pm < 1 ? 'Little afternoon sun on these windows.' : pm < 3 ? 'Some afternoon sun on these windows.' : 'Strong afternoon sun on these windows.';
 function renderUnitCard() {
-  if (rtab === 'value') renderValue();
   const box = $('#unitCard'), st = stacks.find(s => s.no === selStack);
   if (!st) { box.innerHTML = `<p class="unit-meta" style="margin:0 0 14px">Tap any unit in the model, or a row below, to see its sun exposure.</p>`; return; }
   const u = st.units.find(u => u.floor === selFloor) || st.units[0], c = P.categories[catOf(P, u.code)], [sqm, sqft] = sizeOf(P, u.code);
@@ -614,6 +614,7 @@ function select(no, floor) {
   selStack = no; const st = stacks.find(s => s.no === no);
   if (st && floor == null) floor = st.units[Math.floor(st.units.length / 2)].floor;
   selFloor = floor; updateOutlines(); paint(); renderUnitCard(); renderTable();
+  if (rtab === 'value') renderValue();                            // not in renderUnitCard: that runs every frame while playing
   document.querySelector(`#tbody tr[data-s="${no}"]`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
 $('#unitCard').addEventListener('click', e => {
@@ -621,7 +622,7 @@ $('#unitCard').addEventListener('click', e => {
   if (a === 'up' && selFloor < st.floors) select(selStack, selFloor + 1);
   else if (a === 'down' && selFloor > st.first) select(selStack, selFloor - 1);
   else if (a === 'layout') openLayout(st.no);
-  else if (a === 'clear') { selStack = selFloor = null; camGoal = null; updateOutlines(); paint(); renderUnitCard(); renderTable(); }
+  else if (a === 'clear') { selStack = selFloor = null; camGoal = null; updateOutlines(); paint(); renderUnitCard(); renderTable(); if (rtab === 'value') renderValue(); }
 });
 $('#tbody').addEventListener('click', e => { const r = e.target.closest('tr'); if (r) select(+r.dataset.s); });
 $('#tbody').addEventListener('keydown', e => { if (e.key === 'Enter') { const r = e.target.closest('tr'); if (r) select(+r.dataset.s); } });
