@@ -25,7 +25,7 @@ def pts(name):
 
 
 def title(s):
-    s = ' '.join(s.split()).title()
+    s = re.sub(r"'([A-Z])\b", lambda m: "'" + m.group(1).lower(), ' '.join(s.split()).title())   # St Andrew's, not Andrew'S
     return re.sub(r'\b(Mrt|Lrt|Cc|Pte|Ltd|Sg|Chas|Ntuc)\b', lambda m: m.group(0).upper(), s)
 
 
@@ -96,6 +96,19 @@ for r in csv.DictReader(open(A / 'supermarkets.raw')):
         brand = re.sub(r'\b(Pte|Ltd|Singapore|\(.*?\)|Supermarket|Supermarkets)\b.*', '', r['licensee_name'], flags=re.I).strip(' ,.')
         add('supermarket', title(brand or r['licensee_name']), *g)
 
+# OpenStreetMap (© OpenStreetMap contributors, ODbL) via Overpass, saved as mall.raw / stations.raw:
+#   nwr["shop"="mall"](1.15,103.6,1.48,104.1);out center tags;   nwr["railway"="station"]["ref"](...);out center tags;
+osm = lambda f: json.loads((A / f).read_text())['elements'] if (A / f).exists() else []
+for e in osm('mall.raw'):
+    t, c = e.get('tags', {}), e.get('center') or e
+    my = t.get('addr:country') == 'MY' or re.search(r'johor', ' '.join(t.values()), re.I) or c['lat'] > 1.452
+    if t.get('name') and not my:                                 # bbox reaches into Johor Bahru
+        add('mall', t['name'], c['lat'], c['lon'])
+codes = {re.sub(r'\s+(MRT|LRT)\b.*', '', t['name'], flags=re.I).lower(): t['ref'].replace(';', ' ')
+         for t in (e.get('tags', {}) for e in osm('stations.raw')) if t.get('name') and t.get('ref')}
+for o in out:
+    if o['cat'] in ('mrt', 'lrt'):
+        o['lines'] = codes.get(re.sub(r'\s+(MRT|LRT)\b.*', '', o['name'], flags=re.I).lower(), '')
 (A / 'all.json').write_text(json.dumps(out, separators=(',', ':')))
 from collections import Counter
 print(len(out), dict(Counter(o['cat'] for o in out)))

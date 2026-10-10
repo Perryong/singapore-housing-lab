@@ -20,6 +20,7 @@ jobs:
           node test/sun.test.js
           node test/format_test.mjs
           node test/resale_ui_test.mjs
+          node test/nearby_test.mjs
       - name: Python deps
         run: pip install pillow opencv-python-headless numpy   # crop size check; 3D plan extractor unit test
       - name: Python tests

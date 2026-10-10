@@ -5,6 +5,7 @@ import { buildLayout, bdir, catOf, sizeOf, deg } from './project.js';
 import { solarPos, sunVec, computeDay, computeNow } from './sun.js';
 import { money, range } from './format.js';
 import { RESALE_TYPE, defaultType, psmRamp, trendSvg } from './resale.js';
+import { walkMin, schoolBands } from './nearby.js';
 import { openPlan3d } from './plan3d.js';
 
 const $ = s => document.querySelector(s);
@@ -245,7 +246,13 @@ const ACAT = {
   primary: ['Primary school', '#2E8B57', 'P'], secondary: ['Secondary school', '#3E7D6E', 'S'], preschool: ['Preschool', '#E58E26', 'K'],
   hawker: ['Hawker centre / market', '#B5651D', 'H'], supermarket: ['Supermarket', '#8A3FA0', '$'], clinic: ['Clinic (CHAS)', '#D6336C', '+'],
   polyclinic: ['Polyclinic', '#A61E4D', '+'], park: ['Park', '#3A9D23', 'T'], library: ['Library', '#5C4B8A', 'Li'], cc: ['Community club', '#1F7A8C', 'CC'],
+  mall: ['Shopping mall', '#E4572E', 'Ma'],
 };
+// MRT/LRT line colours by code prefix (LTA)
+const LINE = { NS: '#D42E12', EW: '#009645', CG: '#009645', NE: '#9900AA', CC: '#FA9E0D', CE: '#FA9E0D', DT: '#005EC4', TE: '#9D5B25', JS: '#0099AA', JE: '#0099AA', JW: '#0099AA' };
+const lineChips = a => (a.lines || '').split(' ').filter(Boolean).map(c => `<b class="line" style="background:${LINE[c.replace(/\d.*/, '')] || '#748477'}">${esc(c)}</b>`).join('');
+const dist = d => (d < 1000 ? d + ' m' : (d / 1000).toFixed(1) + ' km') + ` · ≈${walkMin(d)} min`;
+const shown = a => a.cat !== 'primary' || a.d <= 2000;          // primaries beyond 2 km are kept only for per-block bands
 function pinSprite(text, color, h = 9) {
   const c = document.createElement('canvas'), x = c.getContext('2d'), S = 64;
   c.width = S; c.height = S * 1.35;
@@ -264,20 +271,21 @@ for (const f of P.facilities || []) {
 }
 const amenSprites = [];
 (P.amenities || []).forEach((a, i) => {
+  if (!shown(a)) return;
   const [label, color, glyph] = ACAT[a.cat] || ['Amenity', '#555', '•'];
   const big = a.cat === 'mrt' || a.cat === 'lrt';
   const sp = pinSprite(glyph, color, big ? 22 : 14); sp.position.set(a.x, 1, a.z);
   sp.userData = { tip: `${a.name} · ${label} · ${a.d} m`, idx: i }; amenGroup.add(sp); pickables.push(sp); amenSprites[i] = sp;
-  if (big) { const l = makeLabel(a.name, { bg: color, size: 30, h: 9 }); l.position.set(a.x, 62, a.z); amenGroup.add(l); }
+  if (big) { const l = makeLabel(a.name + (a.lines ? ' · ' + a.lines : ''), { bg: color, size: 30, h: 9 }); l.position.set(a.x, 62, a.z); amenGroup.add(l); }
 });
 function renderAmenities() {
   const by = {};
-  (P.amenities || []).forEach((a, i) => (by[a.cat] ||= []).push([a, i]));
+  (P.amenities || []).forEach((a, i) => shown(a) && (by[a.cat] ||= []).push([a, i]));
   const facNames = [...new Map((P.facilities || []).map(f => [f.n, f.name])).entries()].sort((a, b) => a[0] - b[0]);
   $('#amenList').innerHTML =
     (facNames.length ? `<div class="acat"><h4><i style="background:#1D2A2E">#</i>In this estate</h4>${facNames.map(([n, name]) => `<div class="aitem" data-f="${n}"><span>${n} · ${esc(name)}</span></div>`).join('')}</div>` : '') +
     Object.keys(ACAT).filter(k => by[k]).map(k => `<div class="acat"><h4><i style="background:${ACAT[k][1]}">${ACAT[k][2]}</i>${ACAT[k][0]}</h4>${by[k].map(([a, i]) =>
-      `<div class="aitem" data-a="${i}"><span>${esc(a.name)}${k === 'primary' && a.d <= 1000 ? '<span class="tag1k">within 1 km</span>' : ''}</span><span>${a.d < 1000 ? a.d + ' m' : (a.d / 1000).toFixed(1) + ' km'}</span></div>`).join('')}</div>`).join('') ||
+      `<div class="aitem" data-a="${i}"><span>${esc(a.name)}${lineChips(a)}${k === 'primary' ? `<span class="tag1k">${a.d <= 1000 ? '≤1 km' : '1–2 km'}</span>` : ''}</span><span>${dist(a.d)}</span></div>`).join('')}</div>`).join('') ||
     '<p class="note">No amenity data.</p>';
 }
 let amenFocus = null;
@@ -465,6 +473,14 @@ function renderTable() {
     <td class="price">${priceOf(st.type) ? range(priceOf(st.type).min, priceOf(st.type).max) : '—'}</td></tr>`; }).join('');
 }
 const priceOf = code => (P.prices || {})[code];
+function schoolLine(st) {                                      // MOE P1 priority bands from this stack's block
+  if (!(P.amenities || []).some(a => a.cat === 'primary')) return '';
+  const { within1, within2 } = schoolBands(st, P.amenities);
+  const names = l => l.slice(0, 3).map(a => esc(a.name)).join(', ') + (l.length > 3 ? ` +${l.length - 3} more` : '');
+  return `<div class="unit-meta schools"><b>Primary schools from Blk ${esc(st.blk)}</b> (P1 distance, approx.):
+    ≤1 km: ${within1.length ? names(within1) : 'none'} · 1–2 km: ${within2.length ? names(within2) : 'none'}
+    · <a href="https://www.moe.gov.sg/schoolfinder" target="_blank" rel="noopener">check MOE SchoolFinder ↗</a></div>`;
+}
 function priceBlock(code) {
   const p = priceOf(code);
   if (!p) return code === 'RENT' ? '<div class="pricebox unit-meta">Rental flat — not for sale.</div>' : '';
@@ -542,6 +558,7 @@ function renderUnitCard() {
       <div class="stat"><b>${hrs(u.p3)}</b><span>After 3 pm</span></div>
     </div>
     ${priceBlock(st.type)}
+    ${schoolLine(st)}
     ${st.type === 'RENT' ? '' : layoutThumb(st.no)}
     <div class="verdict">${verdict(u.pm)} <span class="unit-meta">(${dateStr})</span></div>
     <div class="now">${nowTxt}</div>
