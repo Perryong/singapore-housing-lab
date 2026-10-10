@@ -49,3 +49,9 @@ if Path('reference/resale/value-model.pkl').exists():
     assert V['drivers']['584']['location'] > 0, V['drivers']['584']          # Toa Payoh: above the island-wide average
     assert V['metrics']['mdape'] <= 7
     print('ok estimates', s584['16'], V['drivers']['584'])
+    from tools.train_value import town_for, context
+    T = json.load(open('projects/tengah-oct-2026/project.json'))
+    tw = town_for(T)                                                # Tengah has no resale history: nearest trained town
+    assert tw in context()['M']['cats']['town'] and tw in ('BUKIT BATOK', 'JURONG WEST', 'CHOA CHU KANG', 'BUKIT PANJANG'), tw
+    assert town_for(P) == 'TOA PAYOH'
+    print('ok unseen town ->', tw)

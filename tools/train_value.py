@@ -3,8 +3,8 @@
 usage: python3 tools/train_value.py train              -> reference/resale/value-model.pkl + value-metrics.json
        python3 tools/train_value.py estimate projects/<id>...   -> project.json["value"]
 
-Target log(price). Gradient-boosted trees (scikit-learn HistGradientBoostingRegressor): one for the estimate, two
-quantile models (10th / 90th percentile) for the range. Location features come from the block's coordinates
+Target log(price). Gradient-boosted trees (scikit-learn HistGradientBoostingRegressor) for the estimate; the range is
+the 10th-90th percentile of log(actual/estimate) on recent sales the model did not see. Location features come from the block's coordinates
 (reference/resale/geocode.json) and the amenity layers (reference/amenities/all.json).
 """
 import json, math, pickle, re, sys
@@ -137,7 +137,10 @@ def context():
         geo = json.loads((R / 'geocode.json').read_text())
         places = Places(json.loads((ROOT / 'reference/amenities/all.json').read_text()))
         X, _ = features(df[df['month'] >= '2025-01'], geo, places)
+        ll = pd.DataFrame([geo.get(geo_key(b, st)) or [np.nan, np.nan] for b, st in zip(df['block'], df['street_name'])],
+                          columns=['lat', 'lon'])
         _ctx.update(M=M, places=places, n=df['flat_type'].value_counts().to_dict(),
+                    centroids=ll.assign(town=df['town'].to_numpy()).groupby('town')[['lat', 'lon']].mean(),
                     model=recent.groupby('flat_type')['flat_model'].agg(lambda v: v.mode()[0]).to_dict(),
                     sqm=recent.groupby('flat_type')['floor_area_sqm'].agg(lambda v: v.astype(float).median()).to_dict(),
                     towns=X.groupby(['type', 'town'], observed=True)[['d_mrt', 'd_cbd', 'd_mall', 'd_hawker', 'n_pri1k']]
@@ -176,10 +179,19 @@ def town_average(typ, sqm, storey):
     return float(np.average(predict(c['M']['models'], X)[0], weights=T['w']))
 
 
+def town_for(P):
+    """The project's town as the model knows it; a town with no resale history (e.g. Tengah) -> the nearest trained town."""
+    c, town = context(), (P.get('town') or '').upper()
+    if town in c['M']['cats']['town']:
+        return town
+    C = c['centroids']
+    return C.index[np.argmin(np.hypot(C['lat'] - P['site']['lat'], C['lon'] - P['site']['lon']))]
+
+
 def estimate_project(P):
     c = context()
     k = lambda v: int(round(float(v), -3))
-    town = (P.get('town') or '').upper()
+    town = town_for(P)
     out = {'asOf': c['metrics']['asOf'], 'metrics': c['metrics'], 'byStack': {}, 'drivers': {}, 'types': {}, 'skipped': {}}
     site = c['places'].loc(*[[v] for v in (P['site']['lat'], P['site']['lon'])]).iloc[0].to_dict()
     for code in sorted({s['type'] for s in P['stacks']}):
