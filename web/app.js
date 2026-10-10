@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { buildLayout, bdir, catOf, sizeOf, deg } from './project.js';
-import { solarPos, sunVec, computeDay, computeNow } from './sun.js';
+import { solarPos, sunVec, computeDay, computeNow, sunTimes } from './sun.js?v=2';
+import { moonAltAz, moonTimes, moonPhase, sgtNow, phaseSvg } from './moon.js?v=1';
 import { money, range } from './format.js';
 import { RESALE_TYPE, defaultType, psmRamp, trendSvg } from './resale.js';
 import { walkMin, schoolBands } from './nearby.js';
@@ -204,6 +205,21 @@ function addLabels() {
 const ring = new THREE.Mesh(new THREE.RingGeometry(538, 541, 128), new THREE.MeshBasicMaterial({ color: 0x5B6C70, transparent: true, opacity: .5 }));
 ring.rotation.x = -Math.PI / 2; ring.position.y = 0.3; scene.add(ring);
 const sunBall = new THREE.Mesh(new THREE.SphereGeometry(14, 24, 16), new THREE.MeshBasicMaterial({ color: 0xFFCF5C })); scene.add(sunBall);
+const moonTex = new THREE.CanvasTexture(document.createElement('canvas')); moonTex.colorSpace = THREE.SRGBColorSpace;
+const moonBall = new THREE.Sprite(new THREE.SpriteMaterial({ map: moonTex, depthWrite: false })); moonBall.scale.set(34, 34, 1); scene.add(moonBall);
+const moonLight = new THREE.DirectionalLight(0xC8D6F0, 0); scene.add(moonLight, moonLight.target);
+let moonDrawn = null;
+function drawMoon(illum, waxing) {                               // phase disc, redrawn only when it visibly changes
+  const key = `${Math.round(illum * 50)}${waxing}`; if (key === moonDrawn) return; moonDrawn = key;
+  const c = moonTex.image, x = c.getContext('2d'); c.width = c.height = 128; const r = 56, rx = r * Math.abs(1 - 2 * illum);
+  x.fillStyle = '#2E3A3E'; x.beginPath(); x.arc(64, 64, r, 0, Math.PI * 2); x.fill();
+  if (illum > 0.01) {
+    x.fillStyle = '#F4EFD8'; x.beginPath(); x.arc(64, 64, r, -Math.PI / 2, Math.PI / 2, !waxing);
+    x.ellipse(64, 64, rx, r, 0, Math.PI / 2, -Math.PI / 2, illum > 0.5 ? !waxing : waxing); x.fill();
+  }
+  moonTex.needsUpdate = true;
+}
+const sgMs = () => Date.UTC(cur.y, cur.m - 1, cur.d) - 8 * 3600000 + cur.min * 60000;
 const pathMat = new THREE.LineDashedMaterial({ color: 0xE8931C, dashSize: 12, gapSize: 8, transparent: true, opacity: .85 });
 let pathLine = null;
 function drawPath() {
@@ -453,8 +469,17 @@ function setResaleMode(on) {
 }
 
 /* ---------- State ---------- */
-const today = new Date();
-const cur = { y: today.getFullYear(), m: today.getMonth() + 1, d: today.getDate(), min: 960 };
+const today = sgtNow();                                         // Singapore date/time, whatever the viewer's timezone
+const cur = { y: today.y, m: today.m, d: today.d, min: today.min };
+let live = true;                                                // follow the actual time in Singapore
+function setLive(on) {
+  live = on; $('#now').setAttribute('aria-pressed', on);
+  if (!on) return;
+  const n = sgtNow(), newDay = n.y !== cur.y || n.m !== cur.m || n.d !== cur.d;
+  Object.assign(cur, n); Object.assign(today, n); timeIn.value = Math.round(n.min / 5) * 5; setDateInput();
+  newDay ? refreshDay() : refreshNow();
+}
+setInterval(() => live && setLive(true), 30000);
 let mode = 'now', selStack = null, selFloor = null, noonH = 13, sunNow = { alt: 0, az: 0, s: [0, 1, 0] };
 
 /* ---------- Painting & UI ---------- */
@@ -500,9 +525,23 @@ function updateSunUI() {
   sunLight.intensity = p.alt > 0 ? 0.9 + 2 * Math.sqrt(up) : 0; hemi.intensity = p.alt > 0 ? 1.1 + 0.6 * up : 0.7;
   sunBall.position.set(s[0] * 540, s[1] * 540, s[2] * 540); sunBall.visible = p.alt > -3;
   scene.background = skyColor(p.alt);
+  const mo = moonAltAz(site, sgMs()), ph = moonPhase(sgMs()), mv = sunVec(mo.alt, mo.az);
+  drawMoon(ph.illum, ph.waxing); moonBall.position.set(mv[0] * 520, mv[1] * 520, mv[2] * 520); moonBall.visible = mo.alt > -3;
+  moonLight.position.set(mv[0] * 1400, Math.max(mv[1], 0.02) * 1400, mv[2] * 1400);
+  moonLight.intensity = p.alt < 0 && mo.alt > 0 ? 0.35 * ph.illum : 0;
+  $('#clock').classList.toggle('night', p.alt < -6);
+  window.__sky = { sunAlt: p.alt, moonAlt: mo.alt, moonAz: mo.az, moonVisible: moonBall.visible, illum: ph.illum };   // test hook
+}
+function renderSky() {                                           // sun & moon outlook for the chosen date
+  const s = sunTimes(site, cur.y, cur.m, cur.d), mt = moonTimes(site, cur.y, cur.m, cur.d), ph = moonPhase(sgMs());
+  const t = v => v == null ? '—' : fmtTime(v), len = s.rise != null && s.set != null ? s.set - s.rise : null;
+  $('#skycard').innerHTML = `<div class="sky-row"><i class="sky-ic sun" title="Sun"></i><span>Rise <b>${t(s.rise)}</b></span><span>Set <b>${t(s.set)}</b></span>
+    <span class="unit-meta">${len != null ? `${Math.floor(len / 60)} h ${pad(Math.round(len % 60))} m of daylight` : ''}</span></div>
+    <div class="sky-row">${phaseSvg(ph.illum, ph.waxing)}<span>Rise <b>${t(mt.rise)}</b></span><span>Set <b>${t(mt.set)}</b></span>
+    <span class="unit-meta">${ph.name}, ${Math.round(ph.illum * 100)}% lit</span></div>`;
 }
 function refreshNow() { sunNow = computeNow(L, site, cur.y, cur.m, cur.d, cur.min); updateSunUI(); if (mode === 'now') paint(); renderUnitCard(); }
-function refreshDay() { noonH = computeDay(L, site, cur.y, cur.m, cur.d); drawPath(); sunNow = computeNow(L, site, cur.y, cur.m, cur.d, cur.min); updateSunUI(); paint(); renderUnitCard(); renderTable(); }
+function refreshDay() { noonH = computeDay(L, site, cur.y, cur.m, cur.d); drawPath(); renderSky(); sunNow = computeNow(L, site, cur.y, cur.m, cur.d, cur.min); updateSunUI(); paint(); renderUnitCard(); renderTable(); }
 
 function renderTable() {
   const by = $('#sort').value, list = [...stacks];
@@ -510,8 +549,8 @@ function renderTable() {
   $('#tableTitle').textContent = by === 'pm' ? 'Stacks by afternoon sun' : by === 'am' ? 'Stacks by morning sun' : 'All stacks';
   $('#tbody').innerHTML = list.map(st => { const c = P.categories[catOf(P, st.type)]; return `<tr data-s="${st.no}" class="${st.no === selStack ? 'on' : ''}" tabindex="0">
     <td><b>${pad(st.no)}</b></td><td>${st.blk}</td><td title="${c.name}, ${sizeOf(P, st.type)[1]} sq ft"><i class="tsw" style="background:${c.col}"></i>${st.type}</td><td>${st.faces.map(card16).join(' + ')}</td>
-    <td>${st.am.toFixed(1)}<span class="bar am" style="width:${Math.min(40, st.am * 8)}px"></span></td>
-    <td>${st.pm.toFixed(1)}<span class="bar" style="width:${Math.min(40, st.pm * 8)}px"></span></td>
+    <td>${st.am.toFixed(1)}<span class="bar am" style="width:${Math.min(20, st.am * 4)}px"></span></td>
+    <td>${st.pm.toFixed(1)}<span class="bar" style="width:${Math.min(20, st.pm * 4)}px"></span></td>
     <td class="price">${priceOf(st.type) ? range(priceOf(st.type).min, priceOf(st.type).max) : '—'}</td></tr>`; }).join('');
 }
 const priceOf = code => (P.prices || {})[code];
@@ -634,23 +673,25 @@ function setDateInput() {
   dateIn.value = `${cur.y}-${pad(cur.m)}-${pad(cur.d)}`;
   document.querySelectorAll('#presets .chip').forEach(c => {
     const d = c.dataset.d;
-    c.setAttribute('aria-pressed', d === 'today' ? (cur.y === today.getFullYear() && cur.m === today.getMonth() + 1 && cur.d === today.getDate()) : `${pad(cur.m)}-${pad(cur.d)}` === d);
+    c.setAttribute('aria-pressed', d === 'today' ? (cur.y === today.y && cur.m === today.m && cur.d === today.d) : `${pad(cur.m)}-${pad(cur.d)}` === d);
   });
 }
-dateIn.addEventListener('change', () => { const v = dateIn.value.split('-').map(Number); if (v.length === 3 && v[0]) { [cur.y, cur.m, cur.d] = v; setDateInput(); refreshDay(); } });
+dateIn.addEventListener('change', () => { const v = dateIn.value.split('-').map(Number); if (v.length === 3 && v[0]) { setLive(false); [cur.y, cur.m, cur.d] = v; setDateInput(); refreshDay(); } });
 $('#presets').addEventListener('click', e => {
   const d = e.target.closest('.chip')?.dataset.d; if (!d) return;
-  if (d === 'today') Object.assign(cur, { y: today.getFullYear(), m: today.getMonth() + 1, d: today.getDate() }); else [cur.m, cur.d] = d.split('-').map(Number);
+  setLive(false);
+  if (d === 'today') Object.assign(cur, { y: today.y, m: today.m, d: today.d }); else [cur.m, cur.d] = d.split('-').map(Number);
   setDateInput(); refreshDay();
 });
 const timeIn = $('#time');
-timeIn.addEventListener('input', () => { cur.min = +timeIn.value; refreshNow(); });
+timeIn.addEventListener('input', () => { setLive(false); cur.min = +timeIn.value; refreshNow(); });
+$('#now').addEventListener('click', () => setLive(true));
 $('#modes').addEventListener('click', e => {
   const b = e.target.closest('.mode'); if (!b) return; mode = b.dataset.m;
   document.querySelectorAll('.mode').forEach(x => x.setAttribute('aria-pressed', x === b)); setResaleMode(mode === 'resale'); paint();
 });
 let playing = false, lastT = 0;
-$('#play').addEventListener('click', () => { playing = !playing; $('#play').textContent = playing ? '❚❚' : '▶'; $('#play').setAttribute('aria-label', playing ? 'Pause' : 'Play the day'); lastT = performance.now(); });
+$('#play').addEventListener('click', () => { playing = !playing; if (playing) setLive(false); $('#play').textContent = playing ? '❚❚' : '▶'; $('#play').setAttribute('aria-label', playing ? 'Pause' : 'Play the day'); lastT = performance.now(); });
 
 /* ---------- Picking ---------- */
 const ray = new THREE.Raycaster(), mouse = new THREE.Vector2(), tip = $('#tip'); let downAt = null;
@@ -689,7 +730,7 @@ renderer.domElement.addEventListener('pointerleave', () => { tip.style.display =
 function resize() { const w = stage.clientWidth, h = stage.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / Math.max(1, h); camera.updateProjectionMatrix(); }
 new ResizeObserver(resize).observe(stage); resize();
 function loop(now) {
-  if (playing) { const dt = (now - lastT) / 1000; lastT = now; cur.min += dt * 30; if (cur.min > 1170) cur.min = 390; timeIn.value = Math.round(cur.min / 5) * 5; refreshNow(); }
+  if (playing) { const dt = (now - lastT) / 1000; lastT = now; cur.min += dt * 30; if (cur.min > 1435) cur.min = 0; timeIn.value = Math.round(cur.min / 5) * 5; refreshNow(); }
   if (camGoal) {
     controls.target.lerp(camGoal.target, 0.08); camera.position.lerp(camGoal.pos, 0.08);
     if (camera.position.distanceTo(camGoal.pos) < 1) camGoal = null;
@@ -697,6 +738,6 @@ function loop(now) {
   if (selGroup.visible) unitBox.material.opacity = 0.25 + 0.2 * Math.sin(now / 250);
   controls.update(); renderer.render(scene, camera); requestAnimationFrame(loop);
 }
-setDateInput(); refreshDay(); addLabels();
+timeIn.value = Math.round(cur.min / 5) * 5; setDateInput(); refreshDay(); addLabels();
 document.fonts?.ready.then(addLabels);
 requestAnimationFrame(t => { lastT = t; loop(t); });

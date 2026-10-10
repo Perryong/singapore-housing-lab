@@ -7,7 +7,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2712%27 fill=%27%23E8931C%27/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=17">
+<link rel="stylesheet" href="style.css?v=25">
 <script type="importmap">
 { "imports": {
   "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
@@ -49,13 +49,14 @@
 <aside class="panel left">
   <h1 id="name" class="vh">Sun study</h1>
   <p class="sub" id="tagline"></p>
-  <div class="clock" id="clock">4:00 pm</div>
+  <div class="clock-row"><div class="clock" id="clock">4:00 pm</div><span class="tz">SGT</span><button class="chip live" id="now" aria-pressed="true" title="Follow the actual time in Singapore">Now</button></div>
   <p class="sub" id="sunline"></p>
+  <div class="skycard" id="skycard"></div>
 
   <label class="lbl" for="time">Time of day</label>
   <div class="row">
     <button id="play" class="play" aria-label="Play the day">▶</button>
-    <input id="time" type="range" min="390" max="1170" step="5" value="960">
+    <input id="time" type="range" min="0" max="1435" step="5" value="960">
   </div>
 
   <label class="lbl" for="date">Date</label>
@@ -112,6 +113,6 @@
   <p class="note" id="tableNote">AM and PM are average hours of direct sun on the unit's windows across all floors of the stack, split at solar noon, for the chosen date.</p>
 </aside>
 
-<script type="module" src="app.js?v=33"></script>
+<script type="module" src="app.js?v=38"></script>
 </body>
 </html>

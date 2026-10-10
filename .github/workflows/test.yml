@@ -22,6 +22,7 @@ jobs:
           node test/resale_ui_test.mjs
           node test/nearby_test.mjs
           node test/value_ui_test.mjs
+          node test/sky_test.mjs
       - name: Python deps
         run: pip install pillow opencv-python-headless numpy pandas scikit-learn   # crop size check; 3D plan extractor unit test
       - name: Python tests

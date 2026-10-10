@@ -102,3 +102,11 @@ export function computeNow(L, site, y, m, d, minutes) {
   }
   return p;
 }
+
+// Sunrise, solar noon, sunset (local minutes) where the sun's centre is 0.833° below the horizon (refraction + radius).
+export function sunTimes(site, y, m, d) {
+  const f = min => solarPos(site, y, m, d, min / 60).alt + 0.833;
+  const noon = solarPos(site, y, m, d, 12).noon * 60;
+  const cross = (a, b) => { for (let i = 0; i < 40; i++) { const c = (a + b) / 2; (f(a) < 0) === (f(c) < 0) ? a = c : b = c; } return (a + b) / 2; };
+  return { rise: f(0) < 0 && f(noon) > 0 ? cross(0, noon) : null, noon, set: f(noon) > 0 && f(1439) < 0 ? cross(noon, 1439) : null };
+}
