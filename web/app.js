@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { buildLayout, bdir, catOf, sizeOf, deg } from './project.js';
 import { solarPos, sunVec, computeDay, computeNow, sunTimes } from './sun.js?v=2';
 import { moonAltAz, moonTimes, moonPhase, sgtNow, phaseSvg } from './moon.js?v=1';
@@ -325,6 +326,19 @@ renderAmenities();
 const RS = P.resale;
 const radiusTxt = m => m >= 1000 ? `${m / 1000} km` : `${m} m`;
 let rType = RS ? defaultType(RS) : null, rSort = 'date';
+// simple 3D surroundings (tools/fetch_surround.py): outer-ring HDB, malls and MRT/LRT station buildings, one mesh per kind
+const surroundGroup = new THREE.Group(); scene.add(surroundGroup);
+const SURROUND = { hdb: 0xC9CEC8, mall: 0xEFA48E, mrt: 0xE58A8A };
+for (const [k, color] of Object.entries(SURROUND)) {
+  const geos = (P.surround || []).filter(s => s.k === k).map(s => {
+    const g = new THREE.ExtrudeGeometry(new THREE.Shape(s.p.map(q => new THREE.Vector2(q[0], -q[1]))), { depth: s.h, bevelEnabled: false });
+    g.rotateX(-Math.PI / 2); return g;
+  });
+  if (!geos.length) continue;
+  const m = new THREE.Mesh(mergeGeometries(geos), new THREE.MeshLambertMaterial({ color }));
+  m.receiveShadow = true; surroundGroup.add(m); geos.forEach(g => g.dispose());
+}
+$('#showSurround').addEventListener('change', e => { surroundGroup.visible = e.target.checked; });
 const resaleGroup = new THREE.Group(); resaleGroup.visible = false; scene.add(resaleGroup);
 const resaleMeshes = [];
 for (const b of RS?.blocks || []) {
