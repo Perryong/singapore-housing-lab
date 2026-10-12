@@ -16,7 +16,8 @@ Redhill Peaks II, plus the 7 upcoming Oct 2026 sites)
   backtest. Its price range is calibrated with split conformal prediction to hold 80.5% of unseen sales (target 80%).
   See [docs/model](docs/model/README.md).
 - **3D in the browser:** 120 fps with up to about 300 extruded surrounding buildings, and about 1 MB downloaded per project.
-  A size budget is enforced in CI. See [docs/performance.md](docs/performance.md).
+  A size budget is enforced in CI. Lighthouse: Performance 95 on desktop and 84 on mobile, and 100 for Accessibility,
+  Best Practices and SEO. See [docs/performance.md](docs/performance.md).
 - **Accuracy of the sun model:** sunrise, solar noon and sunset are within 2 minutes of the US Naval Observatory, and
   moonrise and moonset within 5 minutes (`test/sky_test.mjs`).
 
