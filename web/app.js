@@ -83,20 +83,20 @@ addSitePlan(scene, P, base, renderer);
 
 /* ---------- Blender model ---------- */
 let unitMesh = null, vUnit = null;
-const gltf = await new GLTFLoader().loadAsync(base + 'model.glb').catch(() => null);
-$('#loading').remove();
-if (!gltf) throw new Error(`Missing ${base}model.glb, run: node tools/build.js projects/${pid}`);
 if (!hasLayout) { const l = makeLabel('Site · layout not released', { bg: '#E8931C', fg: '#2A1A00' }); l.position.set(0, 72, 0); scene.add(l); }
-gltf.scene.traverse(o => {
-  if (!o.isMesh) return;
-  o.castShadow = o.receiveShadow = true;
-  if (o.geometry.attributes._unit) {
-    unitMesh = o; vUnit = o.geometry.attributes._unit.array;
-    o.geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(vUnit.length * 3), 3));
-    o.material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.8 });
-  }
-});
-scene.add(gltf.scene);
+// not awaited: the map, neighbours and surroundings draw while the model (~1 MB) downloads, then units are painted
+new GLTFLoader().loadAsync(base + 'model.glb').then(gltf => {
+  gltf.scene.traverse(o => {
+    if (!o.isMesh) return;
+    o.castShadow = o.receiveShadow = true;
+    if (o.geometry.attributes._unit) {
+      unitMesh = o; vUnit = o.geometry.attributes._unit.array;
+      o.geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(vUnit.length * 3), 3));
+      o.material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.8 });
+    }
+  });
+  scene.add(gltf.scene); $('#loading').remove(); paint();
+}).catch(() => { $('#loading').textContent = `Missing ${base}model.glb, run: node tools/build.js projects/${pid}`; });
 
 /* ---------- Labels, compass, sun path, selection ---------- */
 const blockLabels = new THREE.Group(), stackLabels = new THREE.Group(), compass = new THREE.Group();

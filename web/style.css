@@ -5,7 +5,7 @@ html,body{margin:0;height:100%;background:#CFDDE3;color:var(--ink);font:14px/1.4
 button,select,input{font:inherit;color:inherit}
 #stage{position:fixed;inset:0}
 #stage canvas{display:block;width:100%;height:100%}
-#loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-weight:600}
+#loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-weight:600;pointer-events:none}
 #tip{position:absolute;display:none;pointer-events:none;transform:translate(12px,12px);background:rgba(29,42,46,.9);color:#F4F7F6;padding:6px 9px;border-radius:6px;font-size:12px;white-space:pre}
 
 .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
@@ -187,7 +187,7 @@ td.price{white-space:nowrap}
   --ease:cubic-bezier(.2,.7,.2,1);
 }
 html,body{line-height:1.45;-webkit-font-smoothing:antialiased}
-.brand span{color:#B86A00}
+.brand span{color:#A15C00}
 
 /* surfaces */
 .panel{border-radius:var(--r-lg);box-shadow:var(--sh-2);padding:18px}
@@ -268,6 +268,7 @@ tbody tr:hover{background:var(--surface-2)}
 @media (max-width:820px){
   body{display:flex;flex-direction:column}
   body>*{flex:none}
+  .ident-text{min-height:44px}                                  /* name + meta line, filled in by JS */
   .topbar{order:0}#stage{order:1}.right{order:2;width:auto}.left{order:3}
   .tablewrap{max-height:none}
 }
