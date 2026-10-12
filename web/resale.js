@@ -1,5 +1,5 @@
 // Resale-nearby helpers (pure; no three.js).
-const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+import { money, range, esc, titleCase } from './format.js';
 export const RESALE_TYPE = { '2RF1': '2 ROOM', '2RF2': '2 ROOM', '3RM': '3 ROOM', '4RM': '4 ROOM', '5RM': '5 ROOM', '3GEN': 'MULTI-GENERATION' };
 
 export function defaultType(resale) {
@@ -33,4 +33,54 @@ const CMP_ORDER = ['4 ROOM', '5 ROOM', '3 ROOM', '2 ROOM'];
 export function compareType(prices, summary = {}) {
   const sold = new Set(Object.keys(prices || {}).map(c => RESALE_TYPE[c]));
   return CMP_ORDER.find(t => sold.size ? sold.has(t) : summary[t]?.median) || null;
+}
+
+export const radiusTxt = m => m >= 1000 ? `${m / 1000} km` : `${m} m`;
+export const typeLabel = t => titleCase(t).replace('Multi-Generation', 'Multi-generation (3Gen)');
+
+// colour key for the resale map; [lo, hi] = $/sqm range of the coloured blocks (0 when none)
+export function resaleLegendHtml(RS, rType, [lo, hi]) {
+  return !RS ? '<div>No resale data for this project.</div>' : lo
+    ? `<div class="ramp" style="background:linear-gradient(90deg,${psmRamp(lo, lo, hi)},${psmRamp(hi, lo, hi)})"></div>
+       <div class="ramp-lbl"><span>$${lo.toLocaleString('en-SG')}/sqm</span><span>$${hi.toLocaleString('en-SG')}/sqm</span></div>
+       <div style="margin-top:6px">Median resale price per sqm, ${typeLabel(rType)}, last ${RS.months} months. Grey blocks: fewer than 3 such sales.</div>`
+    : `<div>No block within ${radiusTxt(RS.radiusM)} has 3+ ${typeLabel(rType)} resales in the last ${RS.months} months.</div>`;
+}
+
+export const resaleTypesHtml = (RS, rType) => Object.keys(RS.summary).map(t =>
+  `<button class="chip" data-t="${esc(t)}" aria-pressed="${t === rType}">${esc(typeLabel(t))}</button>`).join('');
+
+function btoLine(P, RS, rType) {
+  const codes = Object.keys(P.prices || {}).filter(c => RESALE_TYPE[c] === rType);
+  const s = RS.summary[rType];
+  if (!codes.length || !s?.median) return '';
+  const lo = Math.min(...codes.map(c => P.prices[c].min)), hi = Math.max(...codes.map(c => P.prices[c].max));
+  return `<div class="btovs">This BTO ${esc(typeLabel(rType))}: <b>${range(lo, hi)}</b> · Resale nearby median <b>${money(s.median)}</b>${s.leaseLeft ? ` (${s.leaseLeft} yrs left)` : ''}</div>`;
+}
+
+// side panel in resale mode; rSort 'date' | 'price'
+export function resalePanelHtml(P, rType, rSort) {
+  const RS = P.resale;
+  if (!RS) return '<p class="unit-meta">No resale data for this project.</p>';
+  const rows = Object.entries(RS.summary).map(([t, s]) => `<tr${t === rType ? ' class="on"' : ''}><td>${esc(typeLabel(t))}</td><td>${s.n}</td>` +
+    (s.median ? `<td>${money(s.median)}</td><td>$${s.psm.toLocaleString('en-SG')}</td><td>${s.leaseLeft ?? '—'}</td>` : '<td colspan="3" class="unit-meta">too few sales</td>') + '</tr>').join('');
+  const sales = [...RS.sales].sort((a, b) => rSort === 'price' ? b.price - a.price : 0);
+  return `<h2>Resale within ${radiusTxt(RS.radiusM)} · last ${RS.months} months</h2>
+    <table class="rtable"><thead><tr><th>Type</th><th>Sales</th><th>Median</th><th>$/sqm</th><th>Yrs left</th></tr></thead><tbody>${rows}</tbody></table>
+    ${btoLine(P, RS, rType)}
+    <div class="lbl">${esc(typeLabel(rType))} · median $/sqm by month</div>${trendSvg(RS.trend[rType]) || '<p class="unit-meta">Not enough monthly sales for a trend.</p>'}
+    <div class="tablehead"><div class="lbl">Recent sales</div><select id="rSort" aria-label="Sort sales"><option value="date"${rSort === 'date' ? ' selected' : ''}>Newest</option><option value="price"${rSort === 'price' ? ' selected' : ''}>Highest price</option></select></div>
+    <div class="rsales">${sales.map(x => `<div><span>${esc(x.m)} · Blk ${esc(x.blk)} ${esc(titleCase(x.street))} · ${esc(typeLabel(x.type))} · ${esc(x.storey.toLowerCase())} · ${x.sqm} sqm</span><span>${money(x.price)}</span></div>`).join('')}</div>
+    <div class="src">HDB resale transactions, data.gov.sg, up to ${esc(RS.asOf)}</div>`;
+}
+
+// card for one resale block b (from P.resale.blocks); asOf 'YYYY-MM'
+export function resaleCardHtml(b, asOf) {
+  const yr = +asOf.slice(0, 4), left = b.lease ? b.lease + 99 - yr : null;
+  return `<div class="unit"><div class="unit-no" style="font-size:18px">Blk ${esc(b.blk)} ${esc(titleCase(b.street))}</div>
+    <div class="unit-meta">${b.lease ? `${b.lease} lease (${left} years left)` : ''}${b.storeys ? ` · ${b.storeys} storeys` : ''}</div>
+    <table class="rtable"><thead><tr><th>Type</th><th>Sales</th><th>Median</th><th>Latest</th></tr></thead><tbody>${Object.entries(b.types).map(([t, s]) =>
+      `<tr><td>${esc(typeLabel(t))}</td><td>${s.n}</td><td>${s.median ? money(s.median) : '—'}</td><td>${money(s.lastPrice)} (${esc(s.last)})</td></tr>`).join('')}</tbody></table>
+    <div class="rsales">${(b.recent || []).map(x => `<div><span>${esc(x.m)} · ${esc(typeLabel(x.type))} · ${esc(x.storey.toLowerCase())}</span><span>${money(x.price)}</span></div>`).join('')}</div>
+    <div class="btns"><button class="btn" id="rClose">Close</button></div></div>`;
 }
