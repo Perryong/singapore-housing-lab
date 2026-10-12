@@ -29,8 +29,8 @@ export function amenitiesHtml(P) {
   const by = {};
   (P.amenities || []).forEach((a, i) => shown(a) && (by[a.cat] ||= []).push([a, i]));
   const facNames = [...new Map((P.facilities || []).map(f => [f.n, f.name])).entries()].sort((a, b) => a[0] - b[0]);
-  return (facNames.length ? `<div class="acat"><h4><i style="background:#1D2A2E">#</i>In this estate</h4>${facNames.map(([n, name]) => `<div class="aitem" data-f="${n}"><span>${n} · ${esc(name)}</span></div>`).join('')}</div>` : '') +
-    Object.keys(ACAT).filter(k => by[k]).map(k => `<div class="acat"><h4><i style="background:${ACAT[k][1]}">${ACAT[k][2]}</i>${ACAT[k][0]}</h4>${by[k].map(([a, i]) =>
+  return (facNames.length ? `<div class="acat"><h3><i style="background:#1D2A2E">#</i>In this estate</h3>${facNames.map(([n, name]) => `<div class="aitem" data-f="${n}"><span>${n} · ${esc(name)}</span></div>`).join('')}</div>` : '') +
+    Object.keys(ACAT).filter(k => by[k]).map(k => `<div class="acat"><h3><i style="background:${ACAT[k][1]}">${ACAT[k][2]}</i>${ACAT[k][0]}</h3>${by[k].map(([a, i]) =>
       `<div class="aitem" data-a="${i}"><span>${esc(a.name)}${lineChips(a)}${k === 'primary' ? `<span class="tag1k">${a.d <= 1000 ? '≤1 km' : '1–2 km'}</span>` : ''}</span><span>${dist(a.d)}</span></div>`).join('')}</div>`).join('') ||
     '<p class="note">No amenity data.</p>';
 }

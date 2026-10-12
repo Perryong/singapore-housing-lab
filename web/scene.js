@@ -67,9 +67,11 @@ export function addSitePlan(scene, P, base, renderer) {
     mast.position.y = 30; mast.castShadow = true; scene.add(mast);
     return;
   }
+  // HDB's site plans aren't published (copyright): only a local checkout with reference data has the image
+  if (!/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return;
   const { pxPerM: PX, upBearing, origin: [OX, OY], image: IMG } = P.plan;
   const planGroup = new THREE.Group(); planGroup.rotation.y = -upBearing * deg; scene.add(planGroup);
-  let plan;                                                     // shown only once the image loads: HDB plans aren't in the public repo
+  let plan;                                                     // shown only once the image loads (it may not exist locally either)
   const tex = new THREE.TextureLoader().load(base + IMG.file, () => { plan.visible = true; });
   tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
   plan = new THREE.Mesh(new THREE.PlaneGeometry(IMG.w / PX, IMG.h / PX), new THREE.MeshLambertMaterial({ map: tex }));
