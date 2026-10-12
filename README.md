@@ -1,13 +1,13 @@
-# singapore-housing-lab
+# BTOlab: Singapore BTO sun study
 
-Interactive sun study for Singapore HDB BTO projects: which stacks get
-morning or afternoon sun, hour by hour. The header always shows which project and launch is on screen;
-"Change project" opens the catalogue (grouped by launch, upcoming on top, searchable).
+Pick a unit in an HDB BTO project and see how much direct sun reaches its windows, hour by hour and for any date. The
+3D model is built from HDB's own site plan, with the real neighbouring blocks, schools, malls and MRT stations around
+it, plus nearby resale prices and a machine-learning estimate of what the unit would resell for.
 
-Covered: every BTO launched in Oct 2025, Feb 2026 and Jun 2026 (except Redhill Peaks II — site plan not
-available), and the 7 upcoming Oct 2026 sites ("Layout not released": site pin + existing HDB blocks only).
+**Live:** https://singapore-housing-lab.vercel.app · 29 projects (every BTO launched from Oct 2025 to Jun 2026 except
+Redhill Peaks II, plus the 7 upcoming Oct 2026 sites)
 
-**Live:** https://singapore-housing-lab.vercel.app
+![Sun moving across Kim Keat Crest from 7 am to 7 pm](docs/demo.gif)
 
 ## Results
 
@@ -16,8 +16,60 @@ available), and the 7 upcoming Oct 2026 sites ("Layout not released": site pin +
   backtest. See [docs/model](docs/model/README.md).
 - **3D in the browser:** 120 fps with up to about 300 extruded surrounding buildings, and about 1 MB downloaded per project.
   A size budget is enforced in CI. See [docs/performance.md](docs/performance.md).
-- **Pipeline:** HDB site-plan PDFs → OpenCV tracing → Blender (headless) GLB → three.js; data.gov.sg resale data →
-  scikit-learn → Value tab. 15 test scripts run in CI on every push.
+- **Accuracy of the sun model:** sunrise, solar noon and sunset are within 2 minutes of the US Naval Observatory, and
+  moonrise and moonset within 5 minutes (`test/sky_test.mjs`).
+
+## How it works
+
+```mermaid
+flowchart LR
+  subgraph Offline["Offline pipeline (Python, Blender)"]
+    A[HDB site plan PDF] -->|OpenCV: scale bar, colour regions, OCR| B[trace.json: blocks, stacks, flat types]
+    B --> C[project.json]
+    D[data.gov.sg: HDB footprints, property info] -->|register to the plan| C
+    E[OpenStreetMap / OneMap: malls, MRT, schools] --> C
+    B -->|headless Blender| F[model.glb]
+    G[HDB brochure floor plans] -->|OpenCV + Blender| H[plans3d/*.glb]
+    I[data.gov.sg: 240k resale sales] -->|scikit-learn gradient boosting| J[value estimates]
+    J --> C
+  end
+  subgraph Browser["Browser (no build step)"]
+    C --> K[app.js: state and events]
+    F --> L[three.js scene]
+    K --> L
+    K --> M[panel HTML: pure, unit-tested modules]
+    N[sun.js / moon.js: NOAA and Meeus maths] --> K
+  end
+```
+
+- **Sun and shade:** for each window the app computes the sun's position (NOAA equations, Singapore time). It then
+  casts a ray towards the sun against the project's own blocks (as boxes) and the footprints of the neighbouring HDB
+  blocks. A window counts as sunlit only when it faces the sun and nothing blocks the ray. The outer ring of
+  surrounding buildings is shown for context but not used for shading.
+- **Static site:** plain ES modules and an import map, hosted on Vercel. Each project is one JSON file plus one GLB.
+
+## Key decisions
+
+| Decision | Why |
+|---|---|
+| Split train and test by time, not at random | The model prices the future from the past. A random split leaks each block's own recent sales and flatters the error. |
+| Compare with town-median and linear baselines | A model error means little without a simple baseline beside it. |
+| Never place a block at a guessed location | Unlinked blocks are dropped rather than drawn wrong; a wrong shadow is worse than none. |
+| Bake the models in Blender offline | The browser downloads a small, ready-made GLB instead of building geometry at load time. |
+| Merge the surroundings into one mesh per kind | About 300 extra buildings cost 3 draw calls, so the frame rate stays at 120 fps. |
+| Don't publish HDB brochures and site plans | Copyright: the app links to HDB's own pages, and only the floor-plan crops are published. |
+
+## Tests
+
+17 test scripts run in CI on every push (`.github/workflows/test.yml`):
+- sun and moon times against the US Naval Observatory;
+- the side-panel HTML renderers on a real project;
+- the resale model's quality bars;
+- per-project download budgets;
+- the site-plan tracer and the floor-plan and surroundings extractors;
+- that the project catalogue is up to date.
+
+## Development
 
 ```
 projects/index.json          catalogue (node tools/make_index.js)
