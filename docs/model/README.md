@@ -20,8 +20,8 @@ The Value tab estimates what a BTO unit would resell for today. Numbers below we
 ## Model
 
 - **Algorithm:** gradient-boosted trees (scikit-learn `HistGradientBoostingRegressor`, 500 iterations, native categorical splits). The target is `log(price)`, so errors are relative.
-- **Price range:** the Value tab shows a range as well as the estimate. The range is the 10th to 90th percentile of `log(actual / estimate)` on recent sales the model had not seen.
-- **How the range is checked:** the band is fitted on months 1–3 of the test window and checked on months 4–6, so the check doesn't reuse the data that set the band.
+- **Price range:** an 80% range built with split conformal prediction plus a drift allowance (see *Calibrating the
+  price range* below).
 
 ## Validation: time-based split
 
@@ -39,9 +39,35 @@ training and make the error look smaller than it is.
 | Town × flat-type median $/sqm × floor area | 9.6% |
 
 - 71% of estimates are within 5% of the actual price, and 93% are within 10%.
-- The 10–90% range contains the actual price **77%** of the time. The target is 80%, so the range is slightly too narrow.
+- The calibrated price range contains the actual price **80.5%** of the time. The target is 80%.
 
 ![Estimate vs actual](pred-vs-actual.svg)
+
+## Calibrating the price range
+
+The range is the band of `log(actual / estimate)` measured on sales the model never saw: months 1–3 after the training
+cut-off set the band, and months 4–6 check it.
+
+A plain 10th–90th percentile band held only **77%** of the later sales. Prices spread out more in the months after
+the calibration window than within it, so a band fitted on months 1–3 is too narrow for months 4–6. Re-centring the
+band or fitting one band per flat type didn't help (77.2–77.3%).
+
+**The fix: split conformal prediction with a drift allowance (`tools/train_value.py`).**
+1. On 4 earlier windows (cut-offs 6, 12, 18 and 24 months before the latest), find the tail level whose months-1–3
+   band holds 80% of months 4–6. The levels were 7.0%, 8.0%, 9.25% and 9.0%.
+2. Use their mean (8.3%) on the latest window, and check it on that window's months 4–6. The latest window played
+   no part in choosing the level.
+
+| Band | Holds (latest months 4–6) | Median width |
+|---|---|---|
+| Plain 10–90% | 77.2% | 12.0% of the estimate |
+| **Drift-adjusted (8.3–91.7%)** | **80.5%** | 13.2% of the estimate |
+
+The estimates themselves are unchanged; only the ranges are wider. `test/model_eval_test.py` fails the build if the
+coverage leaves 78–85%.
+
+**Still uneven:** coverage was lower for 5-room (72%) and Executive (74%) flats than for 4-room (81%), measured with
+the plain band. A per-type drift allowance would need more sales per window than these types have.
 
 ## Stable over time (backtest)
 

@@ -13,7 +13,8 @@ Redhill Peaks II, plus the 7 upcoming Oct 2026 sites)
 
 - **Resale value model:** 3.0% median error on 11,878 unseen recent sales. That is 3× more accurate than the town
   median price (9.2%) and 2× more accurate than a linear model (6.5%). The error holds at 2.9–3.7% across a 3-year
-  backtest. See [docs/model](docs/model/README.md).
+  backtest. Its price range is calibrated with split conformal prediction to hold 80.5% of unseen sales (target 80%).
+  See [docs/model](docs/model/README.md).
 - **3D in the browser:** 120 fps with up to about 300 extruded surrounding buildings, and about 1 MB downloaded per project.
   A size budget is enforced in CI. See [docs/performance.md](docs/performance.md).
 - **Accuracy of the sun model:** sunrise, solar noon and sunset are within 2 minutes of the US Naval Observatory, and

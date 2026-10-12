@@ -4,7 +4,7 @@ usage: python3 tools/train_value.py train              -> reference/resale/value
        python3 tools/train_value.py estimate projects/<id>...   -> project.json["value"]
 
 Target log(price). Gradient-boosted trees (scikit-learn HistGradientBoostingRegressor) for the estimate; the range is
-the 10th-90th percentile of log(actual/estimate) on recent sales the model did not see. Location features come from the block's coordinates
+an 80% band of log(actual/estimate) on recent sales the model did not see, widened for drift (see train()). Location features come from the block's coordinates
 (reference/resale/geocode.json) and the amenity layers (reference/amenities/all.json).
 """
 import json, math, pickle, re, sys
@@ -25,6 +25,7 @@ CBD = (1.2839, 103.8515)                                          # Raffles Plac
 LAT0, LON0 = 1.35, 103.82
 NUM = ['sqm', 'storey', 'lease', 'mi', 'd_mrt', 'd_cbd', 'd_mall', 'd_hawker', 'n_pri1k']
 CAT = ['type', 'model', 'town']
+TARGET = 0.80                                                     # the price range should hold 80% of sales
 
 
 def storey_mid(s):
@@ -85,7 +86,7 @@ def fit(X, y, band=(-0.1, 0.1)):
 
 
 def predict(models, X):
-    """Estimate and range; the range is the 10th-90th percentile of log(actual/estimate) on recent unseen sales."""
+    """Estimate and range; the range is the calibrated 80% band of log(actual/estimate) on recent unseen sales."""
     est = np.exp(models['mid'].predict(X))
     q10, q90 = models['band']
     return est, est * np.exp(min(q10, 0)), est * np.exp(max(q90, 0))
@@ -98,23 +99,40 @@ def load():
     return df, geo, places
 
 
+def residuals(X, y, cut):
+    """log(actual / estimate) for the 6 months after `cut` from a model trained up to it, split months 1-3 / 4-6."""
+    tr, te = (X['mi'] <= cut).to_numpy(), ((X['mi'] > cut) & (X['mi'] <= cut + 6)).to_numpy()
+    r = np.log(y[te] / np.exp(fit(X[tr], y[tr])['mid'].predict(X[te])))
+    early = (X.loc[te, 'mi'] <= cut + 3).to_numpy()
+    return r[early], r[~early], te
+
+
+def level_for(cal, chk, target=TARGET):
+    """Tail level a such that the [a, 1-a] quantile band of `cal` holds `target` of `chk`."""
+    for a in np.arange(0.10, 0.02, -0.0025):
+        lo, hi = np.quantile(cal, [a, 1 - a])
+        if np.mean((chk >= lo) & (chk <= hi)) >= target:
+            return float(a)
+    return 0.025
+
+
 def train():
     df, geo, places = load()
     X, d = features(df, geo, places)
     y = d['resale_price'].astype(float).to_numpy()
     as_of = d['month'].max()
     cut = month_index(as_of) - 6                                   # test = the last 6 months
-    tr, te = X['mi'] <= cut, X['mi'] > cut
-    m = fit(X[tr], y[tr])
-    est = np.exp(m['mid'].predict(X[te]))
-    yt, r = y[te], np.log(y[te] / est)
-    early = (X.loc[te, 'mi'] <= cut + 3).to_numpy()                # band from months 1-3 of the test window,
-    band = (float(np.quantile(r[early], 0.1)), float(np.quantile(r[early], 0.9)))   # coverage measured on months 4-6
-    lo, hi = est * np.exp(band[0]), est * np.exp(band[1])
-    metrics = {'asOf': as_of, 'mdape': round(float(np.median(np.abs(est / yt - 1))) * 100, 1),
-               'coverage': round(float(np.mean(((yt >= lo) & (yt <= hi))[~early])) * 100, 1),
-               'band': [round(band[0], 4), round(band[1], 4)],
-               'nTrain': int(tr.sum()), 'nTest': int(te.sum()), 'dropped': X.attrs['dropped']}
+    # Prices spread out more in the months after a calibration window than within it, so a plain 10-90% band
+    # under-covers (~77%). Split conformal with a drift allowance: on 4 earlier windows, find the tail level whose
+    # months-1-3 band holds 80% of months 4-6; use their mean here, then check it on the latest window it never saw.
+    level = float(np.mean([level_for(*residuals(X, y, cut - back)[:2]) for back in (24, 18, 12, 6)]))
+    cal, chk, te = residuals(X, y, cut)
+    band = tuple(float(v) for v in np.quantile(cal, [level, 1 - level]))
+    r = np.r_[cal, chk]
+    metrics = {'asOf': as_of, 'mdape': round(float(np.median(np.abs(np.exp(-r) - 1))) * 100, 1),
+               'coverage': round(float(np.mean((chk >= band[0]) & (chk <= band[1]))) * 100, 1),
+               'band': [round(band[0], 4), round(band[1], 4)], 'bandLevel': round(level, 4),
+               'nTrain': int((X['mi'] <= cut).sum()), 'nTest': int(te.sum()), 'dropped': X.attrs['dropped']}
     print('validation', metrics)
     models = fit(X, y, band)                                       # final model uses every sale
     (R / 'value-model.pkl').write_bytes(pickle.dumps({'models': models, 'columns': list(X.columns),

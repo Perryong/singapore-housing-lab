@@ -5,10 +5,19 @@ assert geo_key('406', 'ANG MO KIO AVE 10') == geo_key('406 ', 'Ang Mo Kio Avenue
 print('ok')
 
 import numpy as np
-from tools.train_value import storey_mid, lease_years, predict
+from tools.train_value import storey_mid, lease_years, predict, level_for
 
 assert storey_mid('10 TO 12') == 11 and storey_mid('01 TO 03') == 2
 assert abs(lease_years('61 years 04 months') - 61.33) < 0.01 and lease_years('94 years') == 94
+
+# band calibration: when later errors spread wider than the calibration window's, the tail level drops (band widens)
+rng = np.random.default_rng(0)
+cal = rng.normal(0, 0.05, 20000)
+assert abs(level_for(cal, rng.normal(0, 0.05, 20000)) - 0.10) < 0.01                    # same spread: plain 10-90%
+wide = level_for(cal, rng.normal(0, 0.06, 20000))
+assert wide < 0.09, wide                                                                # wider later errors: wider band
+lo, hi = np.quantile(cal, [wide, 1 - wide]); later = rng.normal(0, 0.06, 20000)
+assert 0.78 <= np.mean((later >= lo) & (later <= hi)) <= 0.83                           # holds ~80% of the later sales
 
 
 class Const:                                                     # stand-in model returning fixed log prices

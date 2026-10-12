@@ -15,4 +15,5 @@ for f in Path('projects').glob('*/project.json'):
     v = json.loads(f.read_text()).get('value')
     if v:
         assert v['metrics']['mdape'] <= 4.0, (f, v['metrics'])
+        assert 78 <= v['metrics']['coverage'] <= 85, (f, v['metrics'])                 # price range holds ~80% of unseen sales
 print('ok', {'mdape': m, 'baselines': r['baselines'], 'worst backtest': max(w['mdape'] for w in r['backtest'])})
