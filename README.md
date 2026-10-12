@@ -7,6 +7,18 @@ morning or afternoon sun, hour by hour. The header always shows which project an
 Covered: every BTO launched in Oct 2025, Feb 2026 and Jun 2026 (except Redhill Peaks II — site plan not
 available), and the 7 upcoming Oct 2026 sites ("Layout not released": site pin + existing HDB blocks only).
 
+**Live:** https://singapore-housing-lab.vercel.app
+
+## Results
+
+- **Resale value model:** 3.0% median error on 11,878 unseen recent sales. That is 3× more accurate than the town
+  median price (9.2%) and 2× more accurate than a linear model (6.5%). The error holds at 2.9–3.7% across a 3-year
+  backtest. See [docs/model](docs/model/README.md).
+- **3D in the browser:** 120 fps with up to about 300 extruded surrounding buildings, and about 1 MB downloaded per project.
+  A size budget is enforced in CI. See [docs/performance.md](docs/performance.md).
+- **Pipeline:** HDB site-plan PDFs → OpenCV tracing → Blender (headless) GLB → three.js; data.gov.sg resale data →
+  scikit-learn → Value tab. 15 test scripts run in CI on every push.
+
 ```
 projects/index.json          catalogue (node tools/make_index.js)
 projects/<id>/project.json   site, plan scale/north, blocks, stacks, unit types, neighbouring blocks

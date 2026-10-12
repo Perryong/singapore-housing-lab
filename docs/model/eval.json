@@ -1,0 +1,238 @@
+{
+ "asOf": "2026-10",
+ "nTrain": 230042,
+ "nTest": 11878,
+ "model": {
+  "mdape": 3.03,
+  "within5": 70.9,
+  "within10": 93.2
+ },
+ "baselines": {
+  "Town x type median price": 9.17,
+  "Town x type median $/sqm x area": 9.62,
+  "Linear model (same features)": 6.48
+ },
+ "byType": [
+  {
+   "k": "1 ROOM",
+   "n": 4,
+   "mdape": 4.2
+  },
+  {
+   "k": "2 ROOM",
+   "n": 357,
+   "mdape": 2.96
+  },
+  {
+   "k": "3 ROOM",
+   "n": 2620,
+   "mdape": 3.09
+  },
+  {
+   "k": "4 ROOM",
+   "n": 5225,
+   "mdape": 2.85
+  },
+  {
+   "k": "5 ROOM",
+   "n": 2858,
+   "mdape": 3.26
+  },
+  {
+   "k": "EXECUTIVE",
+   "n": 809,
+   "mdape": 3.25
+  },
+  {
+   "k": "MULTI-GENERATION",
+   "n": 5,
+   "mdape": 11.59
+  }
+ ],
+ "byFloors": [
+  {
+   "k": "1-6",
+   "n": 4665,
+   "mdape": 3.09
+  },
+  {
+   "k": "7-12",
+   "n": 4688,
+   "mdape": 2.95
+  },
+  {
+   "k": "13-24",
+   "n": 2184,
+   "mdape": 3.05
+  },
+  {
+   "k": "25+",
+   "n": 341,
+   "mdape": 3.16
+  }
+ ],
+ "byTown": [
+  {
+   "k": "MARINE PARADE",
+   "n": 65,
+   "mdape": 5.54
+  },
+  {
+   "k": "BUKIT TIMAH",
+   "n": 27,
+   "mdape": 5.23
+  },
+  {
+   "k": "CENTRAL AREA",
+   "n": 87,
+   "mdape": 4.96
+  },
+  {
+   "k": "BUKIT MERAH",
+   "n": 427,
+   "mdape": 4.12
+  },
+  {
+   "k": "TOA PAYOH",
+   "n": 459,
+   "mdape": 4.1
+  },
+  {
+   "k": "KALLANG/WHAMPOA",
+   "n": 375,
+   "mdape": 4.05
+  },
+  {
+   "k": "BISHAN",
+   "n": 213,
+   "mdape": 3.99
+  },
+  {
+   "k": "QUEENSTOWN",
+   "n": 386,
+   "mdape": 3.81
+  },
+  {
+   "k": "ANG MO KIO",
+   "n": 398,
+   "mdape": 3.77
+  },
+  {
+   "k": "CLEMENTI",
+   "n": 237,
+   "mdape": 3.68
+  },
+  {
+   "k": "JURONG EAST",
+   "n": 231,
+   "mdape": 3.53
+  },
+  {
+   "k": "GEYLANG",
+   "n": 285,
+   "mdape": 3.49
+  },
+  {
+   "k": "SERANGOON",
+   "n": 196,
+   "mdape": 3.46
+  },
+  {
+   "k": "BUKIT PANJANG",
+   "n": 361,
+   "mdape": 3.36
+  },
+  {
+   "k": "BEDOK",
+   "n": 658,
+   "mdape": 3.33
+  },
+  {
+   "k": "HOUGANG",
+   "n": 616,
+   "mdape": 2.99
+  },
+  {
+   "k": "JURONG WEST",
+   "n": 672,
+   "mdape": 2.93
+  },
+  {
+   "k": "SEMBAWANG",
+   "n": 364,
+   "mdape": 2.92
+  },
+  {
+   "k": "SENGKANG",
+   "n": 857,
+   "mdape": 2.91
+  },
+  {
+   "k": "WOODLANDS",
+   "n": 846,
+   "mdape": 2.86
+  },
+  {
+   "k": "YISHUN",
+   "n": 740,
+   "mdape": 2.79
+  },
+  {
+   "k": "PUNGGOL",
+   "n": 829,
+   "mdape": 2.73
+  },
+  {
+   "k": "BUKIT BATOK",
+   "n": 671,
+   "mdape": 2.57
+  },
+  {
+   "k": "CHOA CHU KANG",
+   "n": 482,
+   "mdape": 2.57
+  },
+  {
+   "k": "PASIR RIS",
+   "n": 381,
+   "mdape": 2.46
+  },
+  {
+   "k": "TAMPINES",
+   "n": 1015,
+   "mdape": 2.36
+  }
+ ],
+ "backtest": [
+  {
+   "test": "2023-11 +6 mo",
+   "n": 13292,
+   "mdape": 3.27
+  },
+  {
+   "test": "2024-05 +6 mo",
+   "n": 14631,
+   "mdape": 3.68
+  },
+  {
+   "test": "2024-11 +6 mo",
+   "n": 12641,
+   "mdape": 3.2
+  },
+  {
+   "test": "2025-05 +6 mo",
+   "n": 12803,
+   "mdape": 2.86
+  },
+  {
+   "test": "2025-11 +6 mo",
+   "n": 11657,
+   "mdape": 2.94
+  },
+  {
+   "test": "latest 6 months",
+   "n": 11878,
+   "mdape": 3.03
+  }
+ ]
+}

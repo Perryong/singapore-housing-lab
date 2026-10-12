@@ -38,6 +38,7 @@ jobs:
           python test/plan3d_glb_test.py
           python test/value_test.py
           python test/surround_test.py
+          python test/budget_test.py
       - name: Catalogue is up to date
         run: |
           node tools/make_index.js
