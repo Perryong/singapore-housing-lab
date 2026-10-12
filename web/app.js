@@ -393,7 +393,8 @@ function select(no, floor) {
   if (st && floor == null) floor = st.units[Math.floor(st.units.length / 2)].floor;
   selFloor = floor; updateOutlines(); paint(); renderUnitCard(); renderTable();
   if (rtab === 'value') renderValue();                            // not in renderUnitCard: that runs every frame while playing
-  document.querySelector(`#tbody tr[data-s="${no}"]`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  const phone = matchMedia('(max-width:820px)').matches;            // phones: the card sits under the 3D view, the table further down
+  (phone ? $('#unitCard') : document.querySelector(`#tbody tr[data-s="${no}"]`))?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
 $('#unitCard').addEventListener('click', e => {
   const a = e.target.closest('button')?.dataset.a, st = stacks.find(s => s.no === selStack); if (!a || !st) return;

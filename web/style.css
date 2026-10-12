@@ -263,3 +263,11 @@ tbody tr:hover{background:var(--surface-2)}
 #tableWrap th,#tableWrap td{padding-left:3px;padding-right:3px}
 .right{width:384px}
 .sky-row b{white-space:nowrap}
+
+/* phones: the unit card and stack table come right under the 3D view; the time and colour controls follow */
+@media (max-width:820px){
+  body{display:flex;flex-direction:column}
+  body>*{flex:none}
+  .topbar{order:0}#stage{order:1}.right{order:2;width:auto}.left{order:3}
+  .tablewrap{max-height:none}
+}
