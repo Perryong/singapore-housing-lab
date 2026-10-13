@@ -210,7 +210,7 @@ def estimate_project(P):
     c = context()
     k = lambda v: int(round(float(v), -3))
     town = town_for(P)
-    out = {'asOf': c['metrics']['asOf'], 'metrics': c['metrics'], 'byStack': {}, 'drivers': {}, 'types': {}, 'skipped': {}}
+    out = {'asOf': c['metrics']['asOf'], 'metrics': c['metrics'], 'lease': LEASE, 'byStack': {}, 'drivers': {}, 'types': {}, 'skipped': {}}
     site = c['places'].loc(*[[v] for v in (P['site']['lat'], P['site']['lon'])]).iloc[0].to_dict()
     for code in sorted({s['type'] for s in P['stacks']}):
         typ = TYPE.get(code)

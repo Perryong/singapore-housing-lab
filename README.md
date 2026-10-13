@@ -63,12 +63,14 @@ flowchart LR
 
 ## Tests
 
-17 test scripts run in CI on every push (`.github/workflows/test.yml`):
+18 test scripts run in CI on every push (`npm test`, the same command locally). The parts that need HDB's brochures,
+site plans or large data.gov.sg files print "skipped" in CI and only run on a machine that has them:
 - sun and moon times against the US Naval Observatory;
 - the side-panel HTML renderers on a real project;
 - the resale model's quality bars;
 - per-project download budgets;
 - the site-plan tracer and the floor-plan and surroundings extractors;
+- the app in a real browser (Playwright): it loads, and a unit can be picked again after clearing the selection;
 - that the project catalogue is up to date.
 
 ## Development
@@ -90,7 +92,7 @@ test/sun.test.js             ported logic must reproduce the original Thomson Re
 
 ```
 python3 -m http.server 8781          # then open http://localhost:8781/web/
-node test/sun.test.js
+npm test
 ```
 
 ## Add a launched BTO
