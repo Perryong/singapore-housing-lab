@@ -2,8 +2,8 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { buildLayout, bdir, catOf, sizeOf, deg } from './project.js';
-import { solarPos, sunVec, computeDay, computeNow, sunTimes } from './sun.js?v=2';
-import { moonAltAz, moonTimes, moonPhase, sgtNow, phaseSvg } from './moon.js?v=1';
+import { solarPos, sunVec, computeDay, computeNow, sunTimes } from './sun.js';
+import { moonAltAz, moonTimes, moonPhase, sgtNow, phaseSvg } from './moon.js';
 import { esc, pad, fmtTime } from './format.js';
 import { defaultType, psmRamp, resaleLegendHtml, resaleTypesHtml, resalePanelHtml, resaleCardHtml } from './resale.js';
 import { ACAT, shown, amenitiesHtml } from './nearby.js';
@@ -82,7 +82,7 @@ addMapTiles(scene, site);
 addSitePlan(scene, P, base, renderer);
 
 /* ---------- Blender model ---------- */
-let unitMesh = null, vUnit = null;
+let unitMesh = null, vUnit = null, model = null;
 if (!hasLayout) { const l = makeLabel('Site · layout not released', { bg: '#E8931C', fg: '#2A1A00' }); l.position.set(0, 72, 0); scene.add(l); }
 // not awaited: the map, neighbours and surroundings draw while the model (~1 MB) downloads, then units are painted
 new GLTFLoader().loadAsync(base + 'model.glb').then(gltf => {
@@ -95,7 +95,7 @@ new GLTFLoader().loadAsync(base + 'model.glb').then(gltf => {
       o.material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.8 });
     }
   });
-  scene.add(gltf.scene); $('#loading').remove(); paint();
+  model = gltf.scene; scene.add(model); $('#loading').remove(); paint();
 }).catch(() => { $('#loading').textContent = `Missing ${base}model.glb, run: node tools/build.js projects/${pid}`; });
 
 /* ---------- Labels, compass, sun path, selection ---------- */
@@ -438,7 +438,8 @@ const ray = new THREE.Raycaster(), mouse = new THREE.Vector2(), tip = $('#tip');
 function hit(e) {
   const r = renderer.domElement.getBoundingClientRect();
   mouse.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); ray.setFromCamera(mouse, camera);
-  const h = ray.intersectObject(scene, true).find(h => h.object.isMesh && h.object.name !== 'Detail'); // thin slabs/fins shouldn't swallow clicks
+  // only the model: three.js raycasting ignores .visible, so the hidden selection box would swallow clicks
+  const h = model && ray.intersectObject(model, true).find(h => h.object.isMesh && h.object.name !== 'Detail'); // thin slabs/fins shouldn't swallow clicks
   return h && h.object === unitMesh ? units[vUnit[h.face.a]] : null;
 }
 renderer.domElement.addEventListener('pointerdown', e => { downAt = [e.clientX, e.clientY]; camGoal = null; });

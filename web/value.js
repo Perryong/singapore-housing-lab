@@ -10,7 +10,7 @@ export function gapText(est, lo, hi) {
 
 // what drives the estimate, in dollars: bars scaled to the largest effect
 export function driverBars(d) {
-  const items = [['Location', d.location, 'vs the average HDB flat of this type'], ['Floor', d.floor, `vs floor ${d.floorRef ?? 8}`],
+  const items = [['Location', d.location, 'vs the average HDB flat of this type'], ['Floor', d.floor, `vs floor ${d.floorRef}`],
     ['Size', d.size, 'vs a typical unit of this type']].filter(([, v]) => v != null);
   const max = Math.max(1, ...items.map(([, v]) => Math.abs(v)));
   return items.map(([k, v, why]) => `<div class="drv"><span class="k">${k}</span><span class="track"><i class="bar ${v >= 0 ? 'pos' : 'neg'}"
@@ -31,7 +31,7 @@ export function valueHtml(P, stacks, selStack, selFloor) {
     const fl = Object.keys(byS).map(Number), f = fl.reduce((a, b) => Math.abs(b - selFloor) < Math.abs(a - selFloor) ? b : a);
     const [est, lo, hi] = byS[f], ref = byS[V.drivers[st.no].floorRef] || byS[Math.min(...fl)], pr = (P.prices || {})[st.type];
     card = `<div class="unit"><div class="unit-no">#${pad(f)}-${pad(st.no)}</div>
-      <div class="vest">${k(est)}</div><div class="unit-meta">Range ${k(lo)}–${k(hi)} · a flat like this, resold today with ~94 years of lease left</div>
+      <div class="vest">${k(est)}</div><div class="unit-meta">Range ${k(lo)}–${k(hi)} · a flat like this, resold today with ~${V.lease} years of lease left</div>
       ${pr ? `<div class="btovs">${gapText(est, pr.min, pr.max)} (BTO ${range(pr.min, pr.max)})</div>` : ''}
       <div class="lbl">What drives it</div>${driverBars({ ...V.drivers[st.no], floor: est - ref[0] })}
       ${/Plus|Prime/.test(P.classification || '') ? `<p class="unit-meta caveat">HDB ${esc(P.classification)} flats have a 10-year minimum occupation period and a subsidy clawback on resale; this estimate ignores both.</p>` : ''}</div>`;

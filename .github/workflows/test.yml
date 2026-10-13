@@ -15,32 +15,14 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.13'
-      - name: JS tests
-        run: |
-          node test/sun.test.js
-          node test/format_test.mjs
-          node test/resale_ui_test.mjs
-          node test/nearby_test.mjs
-          node test/value_ui_test.mjs
-          node test/sky_test.mjs
-          node test/panels_test.mjs
       - name: Python deps
-        run: pip install pillow opencv-python-headless numpy pandas scikit-learn   # crop size check; 3D plan extractor unit test
-      - name: Python tests
-        env:
-          PYTHONPATH: .
-        # Parts that need HDB brochures/annexes or large data.gov.sg files (not in the repo) print "skipped".
+        # crop size check, 3D plan extractor unit test, browser smoke test
         run: |
-          python test/resale_test.py
-          python test/prices_test.py
-          python test/layouts_test.py
-          python test/layouts_block_test.py
-          python test/plan3d_test.py
-          python test/plan3d_glb_test.py
-          python test/value_test.py
-          python test/surround_test.py
-          python test/budget_test.py
-          python test/model_eval_test.py
+          pip install pillow opencv-python-headless numpy pandas scikit-learn playwright
+          playwright install --with-deps chromium
+      - name: Tests
+        # Parts that need HDB brochures/annexes or large data.gov.sg files (not in the repo) print "skipped".
+        run: npm test
       - name: Catalogue is up to date
         run: |
           node tools/make_index.js

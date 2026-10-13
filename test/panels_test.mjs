@@ -54,6 +54,7 @@ assert.match(valueHtml(P, stacks, null, null), /Pick a unit[\s\S]*Every stack/);
 const vs = Object.keys(P.value.byStack)[0], vst = stacks.find(s => String(s.no) === vs);
 assert.match(valueHtml(P, stacks, vst.no, vst.units[0].floor), /What drives it/);
 assert.match(valueHtml({}, stacks, null, null), /No value estimate/);
+assert.match(valueHtml({ ...P, value: { ...P.value, lease: 90 } }, stacks, vst.no, vst.units[0].floor), /~90 years of lease left/);   // the model's lease, not a copy
 assert.match(resalePanelHtml(P, '4 ROOM', 'price'), /<option value="price" selected>/);
 assert.match(resalePanelHtml({}, '4 ROOM', 'date'), /No resale data/);
 assert.match(resaleCardHtml(P.resale.blocks[0], P.resale.asOf), /id="rClose"/);
