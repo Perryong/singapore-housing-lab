@@ -21,3 +21,6 @@ __pycache__/
 reference/hdb/*.jpg
 .!*
 reference/resale/
+# secrets
+.env
+reference/transit/

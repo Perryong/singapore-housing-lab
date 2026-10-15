@@ -30,6 +30,7 @@ flowchart LR
     B --> C[project.json]
     D[data.gov.sg: HDB footprints, property info] -->|register to the plan| C
     E[OpenStreetMap / OneMap: malls, MRT, schools] --> C
+    T[LTA DataMall: bus stops, routes, frequencies] -->|transit graph, door-to-hub search| C
     B -->|headless Blender| F[model.glb]
     G[HDB brochure floor plans] -->|OpenCV + Blender| H[plans3d/*.glb]
     I[data.gov.sg: 240k resale sales] -->|scikit-learn gradient boosting| J[value estimates]
@@ -115,7 +116,11 @@ npm test
    (legend + markers, OCR); `python3 tools/fetch_amenities.py projects/<slug>` adds nearby MRT/LRT, bus stops,
    schools, preschools, hawker centres, supermarkets, clinics, parks, libraries and CCs from
    `reference/amenities/all.json` (built by `python3 tools/build_amenities.py` from data.gov.sg + OneMap).
-7. `node tools/build.js projects/<slug>`, `node tools/make_index.js`.
+7. Commute: `python3 tools/fetch_transit.py` caches LTA DataMall bus data in `reference/transit/` (needs a free
+   [DataMall key](https://datamall.lta.gov.sg/content/datamall/en/request-for-api.html) as `LTA_KEY=...` in a git-ignored `.env`)
+   and ~45 MB of OSM bus/rail route relations from Overpass (`--osm` refreshes only those; no LTA key), then
+   `python3 tools/build_commute.py projects/*/` writes `projects/<slug>/transit.json` and `web/rail.json` from both.
+8. `node tools/build.js projects/<slug>`, `node tools/make_index.js`.
 
 Projects live outside `~/Documents`: macOS revokes access when Blender is launched on files there.
 
@@ -126,6 +131,10 @@ Projects live outside `~/Documents`: macOS revokes access when Blender is launch
 - Neighbouring blocks are fitted to the plan where the sheet draws them; greenfield sheets (e.g. Sembawang, Mount
   Pleasant) show none, so those sites keep their address/pin placement (typically within ~20 m).
 - Base map: OneMap Grey tiles © Singapore Land Authority, loaded live around each site.
+- Transit: LTA DataMall bus stops, routes and frequencies (Singapore Open Data Licence). Commute times are a
+  weekday-08:00 estimate from timetables and frequencies, not live data.
+- Bus route shapes and MRT lines © OpenStreetMap contributors (ODbL), via Overpass; a service whose OSM route strays
+  over 300 m from one of its stops is drawn stop to stop instead.
 - Amenity distances are straight-line from the site centre, not walking routes; facility numbers are OCR'd from the
   site plan and can occasionally be misread.
 

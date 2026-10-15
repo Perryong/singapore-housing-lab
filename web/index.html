@@ -52,7 +52,7 @@
   <div id="pickList"></div>
 </dialog>
 
-<div id="stage"><div id="tip" role="tooltip"></div><div class="attrib">Map: OneMap © Singapore Land Authority · Malls, MRT lines © OpenStreetMap contributors</div><div id="loading">Loading model…</div></div>
+<div id="stage"><div id="tip" role="tooltip"></div><div class="attrib">Map: OneMap © Singapore Land Authority · Malls, MRT lines, bus routes © OpenStreetMap contributors · Transit: LTA DataMall (Singapore Open Data Licence)</div><div id="loading">Loading model…</div></div>
 
 <aside class="panel left">
   <h1 id="name" class="vh">Sun study</h1>
@@ -99,8 +99,9 @@
 </aside>
 
 <aside class="panel right">
-  <div class="rtabs" role="tablist"><button role="tab" data-t="sun" aria-selected="true">Sun</button><button role="tab" data-t="value" aria-selected="false">Value</button></div>
+  <div class="rtabs" role="tablist"><button role="tab" data-t="sun" aria-selected="true">Sun</button><button role="tab" data-t="value" aria-selected="false">Value</button><button role="tab" data-t="commute" aria-selected="false">Commute</button></div>
   <div id="valuePanel" hidden></div>
+  <div id="commutePanel" hidden></div>
   <div id="unitCard"><p class="unit-meta" style="margin:0 0 14px">Tap any unit in the model, or a row below, to see its sun exposure.</p></div>
   <div id="upcomingCard" hidden></div>
   <div id="resaleCard" hidden></div>
