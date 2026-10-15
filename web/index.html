@@ -24,8 +24,14 @@
     <span class="badge" id="badge"></span>
     <div class="ident-text"><strong id="projName">Sun study</strong><span id="projMeta"></span></div>
   </div>
+  <button class="btn how" id="how" aria-haspopup="dialog">How it works</button>
   <button class="change" id="change" aria-haspopup="dialog">Change project</button>
 </header>
+
+<dialog id="howDlg" aria-labelledby="howTitle">
+  <div class="pick-head"><h2 id="howTitle">How it works</h2><button class="x" id="howClose" aria-label="Close">×</button></div>
+  <div id="howBody"></div>
+</dialog>
 
 <dialog id="layoutDlg" aria-labelledby="layoutTitle">
   <div class="pick-head"><h2 id="layoutTitle">Floor plan</h2><button class="x" id="layoutClose" aria-label="Close">×</button></div>

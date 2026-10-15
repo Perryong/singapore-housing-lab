@@ -38,6 +38,21 @@ picker.addEventListener('click', e => { if (e.target === picker) picker.close();
 $('#pickSearch').addEventListener('input', e => renderPicker(e.target.value));
 if (!asked) { renderPicker(); picker.showModal(); }
 
+// "How it works": the heliodon figure, fetched and started only when opened; fresh DOM each time
+const howDlg = $('#howDlg'); let howHtml = null, stopHow = null;
+$('#how').addEventListener('click', async () => {
+  howDlg.showModal();
+  try {
+    howHtml ??= await fetch('heliodon.html').then(r => { if (!r.ok) throw new Error(r.status); return r.text(); });
+    const { mount } = await import('./heliodon.js');
+    if (!howDlg.open) return;
+    $('#howBody').innerHTML = howHtml; stopHow = mount($('#howBody .helio'));
+  } catch { $('#howBody').innerHTML = '<p class="unit-meta">Could not load the figure. Check your connection and try again.</p>'; }
+});
+$('#howClose').addEventListener('click', () => howDlg.close());
+howDlg.addEventListener('click', e => { if (e.target === howDlg) howDlg.close(); });
+howDlg.addEventListener('close', () => { stopHow?.(); stopHow = null; $('#howBody').replaceChildren(); });
+
 if (!hasLayout) {
   for (const id of ['#labelsRow', '#unitCard', '#tableHead', '#tableWrap', '#tableNote']) $(id).hidden = true;
   document.querySelectorAll('#modes .mode').forEach(b => { b.hidden = b.dataset.m !== 'resale'; });

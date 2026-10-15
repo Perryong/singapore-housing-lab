@@ -24,6 +24,10 @@ button,select,input{font:inherit;color:inherit}
 .change{flex:none;padding:8px 14px;border-radius:8px;border:0;background:var(--accent);color:#2A1A00;font-weight:600;cursor:pointer}
 dialog#picker{width:min(720px,calc(100vw - 32px));max-height:min(80vh,760px);padding:0;border:1px solid var(--line);border-radius:14px;box-shadow:0 20px 60px rgba(29,42,46,.25);background:#FAFBF9;color:var(--ink)}
 dialog#picker::backdrop{background:rgba(29,42,46,.35)}
+dialog#howDlg{width:min(720px,calc(100vw - 32px));max-height:92vh;padding:0 0 16px;border:1px solid var(--line);border-radius:14px;box-shadow:0 20px 60px rgba(29,42,46,.25);background:#FAFBF9;color:var(--ink)}
+dialog#howDlg::backdrop{background:rgba(29,42,46,.35)}
+#howBody{padding:0 16px}
+.how{flex:none}
 .pick-head{display:flex;justify-content:space-between;align-items:center;padding:16px 18px 8px}
 .pick-head h2{font-size:18px}
 .x{border:0;background:none;font-size:26px;line-height:1;cursor:pointer;color:var(--muted)}
