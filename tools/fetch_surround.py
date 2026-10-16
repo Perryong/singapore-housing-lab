@@ -19,18 +19,21 @@ OSM = ROOT / 'reference/amenities/osm-buildings.raw'
 _feats = _floors = None
 
 
+def rdp(seg, tol=0.5):
+    """Ramer-Douglas-Peucker on an open polyline (metres), keeping both ends."""
+    (ax, az), (bx, bz) = seg[0], seg[-1]
+    L = math.hypot(bx - ax, bz - az) or 1e-9
+    d = [abs((bx - ax) * (az - z) - (ax - x) * (bz - az)) / L for x, z in seg[1:-1]]
+    if not d or max(d) <= tol:
+        return [seg[0], seg[-1]]
+    i = d.index(max(d)) + 1
+    return rdp(seg[:i + 1], tol)[:-1] + rdp(seg[i:], tol)
+
+
 def simplify(pts, tol=0.5):
     """Ramer-Douglas-Peucker on a closed ring (metres): drop points within tol of the line through their neighbours."""
-    def rdp(seg):
-        (ax, az), (bx, bz) = seg[0], seg[-1]
-        L = math.hypot(bx - ax, bz - az) or 1e-9
-        d = [abs((bx - ax) * (az - z) - (ax - x) * (bz - az)) / L for x, z in seg[1:-1]]
-        if not d or max(d) <= tol:
-            return [seg[0], seg[-1]]
-        i = d.index(max(d)) + 1
-        return rdp(seg[:i + 1])[:-1] + rdp(seg[i:])
     far = max(range(len(pts)), key=lambda i: math.dist(pts[0], pts[i]))       # split the ring at its farthest point
-    out = rdp(pts[:far + 1] + [])[:-1] + rdp(pts[far:] + [pts[0]])[:-1]
+    out = rdp(pts[:far + 1] + [], tol)[:-1] + rdp(pts[far:] + [pts[0]], tol)[:-1]
     return out
 
 

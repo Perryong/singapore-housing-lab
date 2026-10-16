@@ -282,3 +282,22 @@ tbody tr:hover{background:var(--surface-2)}
 
 /* reserve the space JS fills in on load, so the panels don't jump (Lighthouse CLS) */
 #tagline{min-height:2.9em}#sunline{min-height:2.9em}#skycard{min-height:96px;box-sizing:border-box}
+.reach{width:100%;max-width:420px;margin:0 auto;height:auto;display:block}
+.commute{width:100%;font-size:13px;margin:6px 0}
+.commute th{padding:4px;text-align:left;font-weight:500;color:var(--muted)}.commute td{padding:4px;vertical-align:top}.commute td:nth-child(2){white-space:nowrap}
+.reach-key{display:flex;align-items:center;gap:4px 6px;flex-wrap:wrap}.reach-key i{width:10px;height:10px;border-radius:2px;background:var(--accent);margin-left:4px}
+.commute td:last-child{white-space:normal;text-align:left;line-height:22px}.commute .line{margin:0 1px}
+/* Commute: bus stops, service chips, station and service cards */
+#commutePanel .stop,#commutePanel .station{border-top:1px solid var(--line);padding:4px 0}
+#commutePanel .stop .aitem .note{margin:0}
+#commutePanel .stop .live{margin:2px 0 4px;padding:0 8px}
+#commutePanel .svcs{display:flex;flex-wrap:wrap;gap:4px;padding:2px 8px 4px}
+#commutePanel .svc{min-width:34px;min-height:24px;padding:0 7px;border:1px solid #2F6DB5;border-radius:4px;background:#fff;color:#2F6DB5;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+#commutePanel .svc[aria-pressed=true]{background:#2F6DB5;color:#fff}
+#commutePanel .svc-card,#commutePanel .station-card{margin:4px 8px 6px;padding:6px 10px;border:1px solid var(--line);border-left:3px solid #2F6DB5;border-radius:8px;background:#fff;font-size:13px}
+#commutePanel .station-card{border-left-color:#D42E12}
+#commutePanel .svc-card p,#commutePanel .station-card p{margin:3px 0}
+#commutePanel .station .line{margin:0 1px}
+#commutePanel .stn{min-height:28px;padding:2px 8px;border:0;border-radius:6px;background:none;color:var(--ink);font-weight:600;cursor:pointer}
+#commutePanel .stn:hover,#commutePanel .stn[aria-pressed=true]{background:var(--rs-soft)}
+#commutePanel .flash{background:var(--accent-soft)}

@@ -19,7 +19,7 @@ export const ACAT = {
   mall: ['Shopping mall', '#E4572E', 'Ma'],
 };
 // MRT/LRT line colours by code prefix (LTA)
-const LINE = { NS: '#D42E12', EW: '#009645', CG: '#009645', NE: '#9900AA', CC: '#FA9E0D', CE: '#FA9E0D', DT: '#005EC4', TE: '#9D5B25', JS: '#0099AA', JE: '#0099AA', JW: '#0099AA' };
+export const LINE = { NS: '#D42E12', EW: '#009645', CG: '#009645', NE: '#9900AA', CC: '#FA9E0D', CE: '#FA9E0D', DT: '#005EC4', TE: '#9D5B25', JS: '#0099AA', JE: '#0099AA', JW: '#0099AA' };
 export const lineChips = a => (a.lines || '').split(' ').filter(Boolean).map(c => `<b class="line" style="background:${LINE[c.replace(/\d.*/, '')] || '#748477'}">${esc(c)}</b>`).join('');
 export const dist = d => (d < 1000 ? d + ' m' : (d / 1000).toFixed(1) + ' km') + ` · ≈${walkMin(d)} min`;
 export const shown = a => a.cat !== 'primary' || a.d <= 2000;   // primaries beyond 2 km are kept only for per-block bands

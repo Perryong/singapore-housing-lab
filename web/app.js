@@ -8,6 +8,8 @@ import { esc, pad, fmtTime } from './format.js';
 import { defaultType, psmRamp, resaleLegendHtml, resaleTypesHtml, resalePanelHtml, resaleCardHtml } from './resale.js';
 import { ACAT, shown, amenitiesHtml } from './nearby.js';
 import { valueHtml } from './value.js';
+import { commuteHtml } from './commute.js';
+import { API, fetchArrivals, liveLine } from './live.js';
 import { BADGE, pickerHtml } from './picker.js';
 import { card16, face8, RAMP_PM, RAMP_AM, FACE, unitCardHtml, stackTable, legendHtml } from './unit.js';
 import { col, mkRamp, skyColor, makeLabel, pinSprite, addMapTiles, addSitePlan, buildSurround, makeMoon } from './scene.js';
@@ -194,6 +196,10 @@ const amenSprites = [];
 });
 function renderAmenities() { $('#amenList').innerHTML = amenitiesHtml(P); }
 let amenFocus = null;
+function frame(x, z) {                                           // ease the camera to show the site and the point (x, z)
+  const d = Math.max(220, Math.hypot(x, z) * 1.4);
+  camGoal = { target: new THREE.Vector3(x / 2, 0, z / 2), pos: new THREE.Vector3(x / 2 - d * 0.5, d * 0.9, z / 2 + d * 0.7) };
+}
 $('#amenList').addEventListener('click', e => {
   const it = e.target.closest('.aitem'); if (!it) return;
   document.querySelectorAll('.aitem.on').forEach(x => x.classList.remove('on')); it.classList.add('on');
@@ -202,9 +208,92 @@ $('#amenList').addEventListener('click', e => {
   else { const f = P.facilities.find(f => f.n === +it.dataset.f); x = f.x; z = f.z; s = facGroup.children[P.facilities.indexOf(f)]; facGroup.visible = true; $('#showFac').checked = true; }
   if (amenFocus) amenFocus.scale.multiplyScalar(1 / 1.8);
   amenFocus = s; if (s) s.scale.multiplyScalar(1.8);
-  const d = Math.max(220, Math.hypot(x, z) * 1.4);
-  camGoal = { target: new THREE.Vector3(x / 2, 0, z / 2), pos: new THREE.Vector3(x / 2 - d * 0.5, d * 0.9, z / 2 + d * 0.7) };
+  frame(x, z);
 });
+/* ---------- Commute: bus stops, services, MRT exits (projects/<id>/transit.json + rail.json, loaded on first open) ---------- */
+let T, R, pick = {}, transitLoad = null, focus = null;           // T: undefined loading, object, or false on failure
+const transitGroup = new THREE.Group(); transitGroup.visible = false; scene.add(transitGroup);
+let exitObjs = [], exitKey, ribbon = null, ribbonKey;
+const segGeo = new THREE.BoxGeometry(1, 0.4, 1), segMat = new THREE.MeshBasicMaterial({ color: 0x2F6DB5, transparent: true, opacity: .85 });
+function shownBlk() {                                            // same rule as commuteHtml: selected stack's block, else near
+  const C = P.commute, st = stacks.find(s => s.no === selStack);
+  return C && (st && C.hubs[st.blk] ? st.blk : C.near);
+}
+function loadTransit() {
+  transitLoad ??= Promise.all([base + 'transit.json', 'rail.json'].map(u => fetch(u).then(r => { if (!r.ok) throw new Error(u); return r.json(); })))
+    .then(([t, r]) => { T = t; R = r; }, () => { T = false; })
+    .then(() => { updateTransit3d(); if (rtab === 'commute') renderCommute(); });
+}
+function updateTransit3d() {
+  transitGroup.visible = rtab === 'commute';
+  if (!T) return;
+  const blk = shownBlk();
+  if (blk !== exitKey) {                                         // exit labels carry walk minutes for the shown block
+    exitKey = blk;
+    for (const o of exitObjs) { transitGroup.remove(o); o.material.map.dispose(); o.material.dispose(); const i = pickables.indexOf(o); if (i >= 0) pickables.splice(i, 1); }
+    exitObjs = [];
+    for (const st of T.stations) st.exits.forEach((e, i) => {
+      const m = e.walk?.[blk], t = `Exit ${e.exit}${m != null ? ` · ${m}′` : ''}`;
+      const pin = pinSprite(e.exit, '#D42E12', 12); pin.position.set(e.x, 1, e.z);
+      pin.userData = { tip: `${st.name} · ${t}`, station: st.name }; pickables.push(pin);
+      // exits of one station sit metres apart: stack their labels so they don't overprint, above pins and roofs
+      const l = makeLabel(t, { bg: '#D42E12', size: 28, h: 10 }); l.position.set(e.x, 14 + i * 11, e.z);   // under the MRT name label at 62
+      l.material.depthTest = false; l.renderOrder = 6;
+      exitObjs.push(pin, l); transitGroup.add(pin, l);
+    });
+  }
+  if (pick.svc !== ribbonKey) {                                  // blue ribbon of the selected service, clipped to 1.5 km
+    ribbonKey = pick.svc;
+    if (ribbon) transitGroup.remove(ribbon);
+    ribbon = new THREE.Group(); transitGroup.add(ribbon);
+    const p = T.services[pick.svc]?.path || [];
+    for (let i = 1; i < p.length; i++) {
+      // clip the segment to the 1.5 km circle: |a + t(b - a)| <= 1500 for t in [t0, t1]
+      const [px, pz] = p[i - 1], dx = p[i][0] - px, dz = p[i][1] - pz;
+      const A = dx * dx + dz * dz, B = px * dx + pz * dz, D = B * B - A * (px * px + pz * pz - 1500 ** 2);
+      if (!A || D <= 0) continue;
+      const t0 = Math.max(0, (-B - Math.sqrt(D)) / A), t1 = Math.min(1, (-B + Math.sqrt(D)) / A);
+      if (t0 >= t1) continue;
+      const ax = px + t0 * dx, az = pz + t0 * dz, bx = px + t1 * dx, bz = pz + t1 * dz;
+      const s = new THREE.Mesh(segGeo, segMat); s.position.set((ax + bx) / 2, 2, (az + bz) / 2);
+      s.rotation.y = Math.atan2(-(bz - az), bx - ax); s.scale.set(Math.hypot(bx - ax, bz - az) + 6, 1, 6); ribbon.add(s);
+    }
+  }
+}
+function keepPick() {                                            // block changed: keep the service only if its stop is still listed
+  const b = shownBlk();
+  if (pick.stop && !(b in (T?.stops?.find(s => s.code === pick.stop)?.walk || {}))) pick.svc = pick.stop = null;
+  updateTransit3d(); syncLive();
+}
+$('#commutePanel').addEventListener('click', e => {
+  const c = e.target.closest('button.svc'), s = e.target.closest('button.stn');
+  if (c) { const on = pick.svc === c.dataset.svc && pick.stop === c.dataset.stop; pick.svc = on ? null : c.dataset.svc; pick.stop = on ? null : c.dataset.stop; }
+  else if (s) {
+    pick.station = pick.station === s.dataset.station ? null : s.dataset.station;
+    const ex = T.stations.find(st => st.name === pick.station)?.exits;
+    if (ex) frame(ex.reduce((a, e) => a + e.x, 0) / ex.length, ex.reduce((a, e) => a + e.z, 0) / ex.length);
+  }
+  else if (e.target.closest('.stop > .aitem')) pick.svc = pick.stop = null;
+  else return;
+  syncLive(); renderCommute(); updateTransit3d();
+});
+// 3D tap on a bus stop pin or an exit pin: open the Commute tab there
+function openCommuteAt(f) { focus = f; if (rtab === 'commute') renderCommute(); else { rtab = 'commute'; applyRTab(); } }
+function tapPin(o) {
+  const u = o?.userData;
+  if (u?.station) { pick.station = u.station; openCommuteAt(() => $('#commutePanel .station-card')); return true; }
+  const a = u?.idx != null && P.amenities[u.idx];
+  if (a?.cat !== 'bus') return false;
+  openCommuteAt(() => { const s = T.stops.find(s => Math.hypot(s.x - a.x, s.z - a.z) <= 30); return s && $(`#commutePanel .stop[data-stop="${CSS.escape(s.code)}"]`); });
+  return true;
+}
+window.__pinScreen = () => {                                    // test hook: screen point of each visible exit / bus pin
+  const r = renderer.domElement.getBoundingClientRect(), v = new THREE.Vector3();
+  return pickables.filter(o => o.parent.visible && (o.userData.station || P.amenities?.[o.userData.idx]?.cat === 'bus')).map(o => {
+    v.copy(o.position); v.y += 6; v.project(camera);
+    return { station: o.userData.station, tip: o.userData.tip, x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height };
+  }).filter(p => p.x > r.left + 10 && p.x < r.right - 10 && p.y > r.top + 10 && p.y < r.bottom - 10);
+};
 $('#showFac').addEventListener('change', e => { facGroup.visible = e.target.checked; });
 $('#showAmen').addEventListener('change', e => { amenGroup.visible = e.target.checked; });
 renderAmenities();
@@ -255,7 +344,7 @@ function renderResalePanel() {
   $('#rSort')?.addEventListener('change', e => { rSort = e.target.value; renderResalePanel(); });
 }
 function openResaleCard(b) {
-  if (rtab === 'value') { rtab = 'sun'; applyRTab(); }             // the block card lives on the Sun tab
+  if (rtab !== 'sun') { rtab = 'sun'; applyRTab(); }             // the block card lives on the Sun tab
   $('#resaleCard').hidden = false;
   $('#resaleCard').innerHTML = resaleCardHtml(b, RS.asOf);
   $('#rClose').addEventListener('click', () => { $('#resaleCard').hidden = true; });
@@ -268,15 +357,51 @@ function hitResale(e) {
 /* ---------- Value tab: ML resale estimate (tools/train_value.py -> P.value) ---------- */
 let rtab = 'sun';
 function applyRTab() {
-  const v = rtab === 'value';
+  const v = rtab !== 'sun';
   document.querySelectorAll('.rtabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.t === rtab));
-  $('#valuePanel').hidden = !v;
+  $('#valuePanel').hidden = rtab !== 'value';
+  $('#commutePanel').hidden = rtab !== 'commute';
   for (const id of ['#unitCard', '#tableHead', '#tableWrap', '#tableNote']) $(id).hidden = v || !hasLayout || mode === 'resale';
   $('#upcomingCard').hidden = v || hasLayout;
   $('#resalePanel').hidden = v || mode !== 'resale';
-  if (v) { $('#resaleCard').hidden = true; renderValue(); }
+  syncLive();                                                     // before rendering: it may drop stale live data
+  if (v) { $('#resaleCard').hidden = true; if (rtab === 'value') renderValue(); else renderCommute(); }
+  if (rtab === 'commute') loadTransit();
+  updateTransit3d();
 }
 $('.rtabs').addEventListener('click', e => { const t = e.target.closest('button')?.dataset.t; if (t) { rtab = t; applyRTab(); } });
+function renderCommute() {
+  const a = document.activeElement, sel = a?.matches?.('#commutePanel button.svc') ? `button.svc[data-svc="${CSS.escape(a.dataset.svc)}"][data-stop="${CSS.escape(a.dataset.stop)}"]`
+    : a?.matches?.('#commutePanel button.stn') ? `button.stn[data-station="${CSS.escape(a.dataset.station)}"]` : null;   // keep keyboard focus across re-renders
+  $('#commutePanel').innerHTML = commuteHtml(P, stacks, selStack, T, R, pick, bus && bus.stop === pick.stop ? { ...bus, nowMs: liveNow() } : null);
+  if (sel) $('#commutePanel').querySelector(sel)?.focus({ preventScroll: true });
+  if (!focus || T === undefined) return;                         // still loading: the post-load render scrolls
+  const el = T && focus(); focus = null;
+  if (el) { el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1500); }
+}
+/* ---------- Live arrivals for the picked stop (web/live.js), polled only while Commute is open and the page visible ---------- */
+let bus = null, liveAbort = null, livePoll = 0, liveTick = 0;      // bus: {stop, data, updatedMs, failed, offsetMs}; times on the server clock
+const liveNow = () => Date.now() + (bus?.offsetMs || 0);
+function syncLive() {
+  const want = API && rtab === 'commute' && document.visibilityState === 'visible' ? pick.stop : null;
+  if (want && livePoll && bus?.stop === want) return;                // already polling this stop
+  liveAbort?.abort(); clearInterval(livePoll); clearInterval(liveTick); livePoll = liveTick = 0;
+  if (!want) return;
+  if (bus?.stop !== want || liveNow() - bus.updatedMs >= 90000) bus = { stop: want, data: null, updatedMs: 0, failed: false, offsetMs: 0 };
+  const poll = () => {
+    liveAbort?.abort(); const ac = liveAbort = new AbortController();
+    fetchArrivals(want, ac.signal).catch(() => null).then(r => {
+      if (ac.signal.aborted || pick.stop !== want) return;             // late answer for a stop no longer picked
+      if (r) { const off = Number.isFinite(r.offsetMs) ? r.offsetMs : 0; bus = { stop: want, data: r.data, offsetMs: off, updatedMs: Date.now() + off, failed: false }; }
+      else if (!bus.data || liveNow() - bus.updatedMs >= 90000) bus = { ...bus, data: null, failed: true };   // keep good data 90 s
+      clearInterval(liveTick);
+      liveTick = bus.data ? setInterval(() => document.querySelectorAll('#commutePanel .live').forEach(el => { el.textContent = liveLine(bus.updatedMs, liveNow(), false); }), 1000) : 0;
+      renderCommute();
+    });
+  };
+  poll(); livePoll = setInterval(poll, window.__liveInterval || 30000);   // test hook: window.__liveInterval (ms)
+}
+document.addEventListener('visibilitychange', syncLive);
 function renderValue() { $('#valuePanel').innerHTML = valueHtml(P, stacks, selStack, selFloor); }
 $('#valuePanel').addEventListener('click', e => { const r = e.target.closest('tr[data-s]'); if (r) select(+r.dataset.s); });
 function setResaleMode(on) {
@@ -285,7 +410,7 @@ function setResaleMode(on) {
   $('#resalePanel').hidden = !on;
   if (!on) $('#resaleCard').hidden = true;
   if (hasLayout) for (const id of ['#unitCard', '#tableHead', '#tableWrap', '#tableNote']) $(id).hidden = on;
-  if (rtab === 'value') queueMicrotask(applyRTab);
+  if (rtab !== 'sun') queueMicrotask(applyRTab);
   if (on && RS) {
     renderResaleTypes(); paintResale();
     const xs = [0], zs = [0];                                  // frame the site plus the coloured blocks
@@ -406,8 +531,8 @@ function renderUnitCard() {
 function select(no, floor) {
   selStack = no; const st = stacks.find(s => s.no === no);
   if (st && floor == null) floor = st.units[Math.floor(st.units.length / 2)].floor;
-  selFloor = floor; updateOutlines(); paint(); renderUnitCard(); renderTable();
-  if (rtab === 'value') renderValue();                            // not in renderUnitCard: that runs every frame while playing
+  selFloor = floor; updateOutlines(); paint(); renderUnitCard(); renderTable(); keepPick();
+  if (rtab === 'value') renderValue(); else if (rtab === 'commute') renderCommute();   // not in renderUnitCard: that runs every frame while playing
   const phone = matchMedia('(max-width:820px)').matches;            // phones: the card sits under the 3D view, the table further down
   (phone ? $('#unitCard') : document.querySelector(`#tbody tr[data-s="${no}"]`))?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
@@ -416,7 +541,7 @@ $('#unitCard').addEventListener('click', e => {
   if (a === 'up' && selFloor < st.floors) select(selStack, selFloor + 1);
   else if (a === 'down' && selFloor > st.first) select(selStack, selFloor - 1);
   else if (a === 'layout') openLayout(st.no);
-  else if (a === 'clear') { selStack = selFloor = null; camGoal = null; updateOutlines(); paint(); renderUnitCard(); renderTable(); if (rtab === 'value') renderValue(); }
+  else if (a === 'clear') { selStack = selFloor = null; camGoal = null; updateOutlines(); paint(); renderUnitCard(); renderTable(); keepPick(); if (rtab === 'value') renderValue(); else if (rtab === 'commute') renderCommute(); }
 });
 $('#tbody').addEventListener('click', e => { const r = e.target.closest('tr'); if (r) select(+r.dataset.s); });
 $('#tbody').addEventListener('keydown', e => { if (e.key === 'Enter') { const r = e.target.closest('tr'); if (r) select(+r.dataset.s); } });
@@ -450,9 +575,12 @@ $('#play').addEventListener('click', () => { playing = !playing; if (playing) se
 
 /* ---------- Picking ---------- */
 const ray = new THREE.Raycaster(), mouse = new THREE.Vector2(), tip = $('#tip'); let downAt = null;
-function hit(e) {
+function aim(e) {
   const r = renderer.domElement.getBoundingClientRect();
   mouse.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); ray.setFromCamera(mouse, camera);
+}
+function hit(e) {
+  aim(e);
   // only the model: three.js raycasting ignores .visible, so the hidden selection box would swallow clicks
   const h = model && ray.intersectObject(model, true).find(h => h.object.isMesh && h.object.name !== 'Detail'); // thin slabs/fins shouldn't swallow clicks
   return h && h.object === unitMesh ? units[vUnit[h.face.a]] : null;
@@ -461,6 +589,7 @@ renderer.domElement.addEventListener('pointerdown', e => { downAt = [e.clientX, 
 renderer.domElement.addEventListener('pointerup', e => {
   if (!downAt) return; const m = Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]); downAt = null;
   if (m > 5) return;
+  aim(e); if (ray.intersectObjects(pickables.filter(o => o.parent.visible), false).some(h => tapPin(h.object))) return;   // an MRT pin may cover an exit pin
   if (mode === 'resale') { const b = hitResale(e); if (b) openResaleCard(b); return; }
   const u = hit(e); if (u) select(u.st.no, u.floor);
 });
