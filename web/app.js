@@ -9,6 +9,7 @@ import { defaultType, psmRamp, resaleLegendHtml, resaleTypesHtml, resalePanelHtm
 import { ACAT, shown, amenitiesHtml } from './nearby.js';
 import { valueHtml } from './value.js';
 import { commuteHtml } from './commute.js';
+import { API, fetchArrivals, liveLine } from './live.js';
 import { BADGE, pickerHtml } from './picker.js';
 import { card16, face8, RAMP_PM, RAMP_AM, FACE, unitCardHtml, stackTable, legendHtml } from './unit.js';
 import { col, mkRamp, skyColor, makeLabel, pinSprite, addMapTiles, addSitePlan, buildSurround, makeMoon } from './scene.js';
@@ -262,7 +263,7 @@ function updateTransit3d() {
 function keepPick() {                                            // block changed: keep the service only if its stop is still listed
   const b = shownBlk();
   if (pick.stop && !(b in (T?.stops?.find(s => s.code === pick.stop)?.walk || {}))) pick.svc = pick.stop = null;
-  updateTransit3d();
+  updateTransit3d(); syncLive();
 }
 $('#commutePanel').addEventListener('click', e => {
   const c = e.target.closest('button.svc'), s = e.target.closest('button.stn');
@@ -274,7 +275,7 @@ $('#commutePanel').addEventListener('click', e => {
   }
   else if (e.target.closest('.stop > .aitem')) pick.svc = pick.stop = null;
   else return;
-  renderCommute(); updateTransit3d();
+  syncLive(); renderCommute(); updateTransit3d();
 });
 // 3D tap on a bus stop pin or an exit pin: open the Commute tab there
 function openCommuteAt(f) { focus = f; if (rtab === 'commute') renderCommute(); else { rtab = 'commute'; applyRTab(); } }
@@ -363,17 +364,44 @@ function applyRTab() {
   for (const id of ['#unitCard', '#tableHead', '#tableWrap', '#tableNote']) $(id).hidden = v || !hasLayout || mode === 'resale';
   $('#upcomingCard').hidden = v || hasLayout;
   $('#resalePanel').hidden = v || mode !== 'resale';
+  syncLive();                                                     // before rendering: it may drop stale live data
   if (v) { $('#resaleCard').hidden = true; if (rtab === 'value') renderValue(); else renderCommute(); }
   if (rtab === 'commute') loadTransit();
   updateTransit3d();
 }
 $('.rtabs').addEventListener('click', e => { const t = e.target.closest('button')?.dataset.t; if (t) { rtab = t; applyRTab(); } });
 function renderCommute() {
-  $('#commutePanel').innerHTML = commuteHtml(P, stacks, selStack, T, R, pick);
+  const a = document.activeElement, sel = a?.matches?.('#commutePanel button.svc') ? `button.svc[data-svc="${CSS.escape(a.dataset.svc)}"][data-stop="${CSS.escape(a.dataset.stop)}"]`
+    : a?.matches?.('#commutePanel button.stn') ? `button.stn[data-station="${CSS.escape(a.dataset.station)}"]` : null;   // keep keyboard focus across re-renders
+  $('#commutePanel').innerHTML = commuteHtml(P, stacks, selStack, T, R, pick, bus && bus.stop === pick.stop ? { ...bus, nowMs: liveNow() } : null);
+  if (sel) $('#commutePanel').querySelector(sel)?.focus({ preventScroll: true });
   if (!focus || T === undefined) return;                         // still loading: the post-load render scrolls
   const el = T && focus(); focus = null;
   if (el) { el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1500); }
 }
+/* ---------- Live arrivals for the picked stop (web/live.js), polled only while Commute is open and the page visible ---------- */
+let bus = null, liveAbort = null, livePoll = 0, liveTick = 0;      // bus: {stop, data, updatedMs, failed, offsetMs}; times on the server clock
+const liveNow = () => Date.now() + (bus?.offsetMs || 0);
+function syncLive() {
+  const want = API && rtab === 'commute' && document.visibilityState === 'visible' ? pick.stop : null;
+  if (want && livePoll && bus?.stop === want) return;                // already polling this stop
+  liveAbort?.abort(); clearInterval(livePoll); clearInterval(liveTick); livePoll = liveTick = 0;
+  if (!want) return;
+  if (bus?.stop !== want || liveNow() - bus.updatedMs >= 90000) bus = { stop: want, data: null, updatedMs: 0, failed: false, offsetMs: 0 };
+  const poll = () => {
+    liveAbort?.abort(); const ac = liveAbort = new AbortController();
+    fetchArrivals(want, ac.signal).catch(() => null).then(r => {
+      if (ac.signal.aborted || pick.stop !== want) return;             // late answer for a stop no longer picked
+      if (r) { const off = Number.isFinite(r.offsetMs) ? r.offsetMs : 0; bus = { stop: want, data: r.data, offsetMs: off, updatedMs: Date.now() + off, failed: false }; }
+      else if (!bus.data || liveNow() - bus.updatedMs >= 90000) bus = { ...bus, data: null, failed: true };   // keep good data 90 s
+      clearInterval(liveTick);
+      liveTick = bus.data ? setInterval(() => document.querySelectorAll('#commutePanel .live').forEach(el => { el.textContent = liveLine(bus.updatedMs, liveNow(), false); }), 1000) : 0;
+      renderCommute();
+    });
+  };
+  poll(); livePoll = setInterval(poll, window.__liveInterval || 30000);   // test hook: window.__liveInterval (ms)
+}
+document.addEventListener('visibilitychange', syncLive);
 function renderValue() { $('#valuePanel').innerHTML = valueHtml(P, stacks, selStack, selFloor); }
 $('#valuePanel').addEventListener('click', e => { const r = e.target.closest('tr[data-s]'); if (r) select(+r.dataset.s); });
 function setResaleMode(on) {

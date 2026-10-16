@@ -120,6 +120,8 @@ npm test
    [DataMall key](https://datamall.lta.gov.sg/content/datamall/en/request-for-api.html) as `LTA_KEY=...` in a git-ignored `.env`)
    and ~45 MB of OSM bus/rail route relations from Overpass (`--osm` refreshes only those; no LTA key), then
    `python3 tools/build_commute.py projects/*/` writes `projects/<slug>/transit.json` and `web/rail.json` from both.
+   Live arrivals for the selected stop come from the separate `sg-bus-api` API (github.com/Perryong/sg-bus-api) (LTA BusArrival), polled every
+   30 s, from https://sg-bus-api.vercel.app (`PROD_API` in `web/live.js`); locally, run that API on `:8010` to see live minutes.
 8. `node tools/build.js projects/<slug>`, `node tools/make_index.js`.
 
 Projects live outside `~/Documents`: macOS revokes access when Blender is launched on files there.

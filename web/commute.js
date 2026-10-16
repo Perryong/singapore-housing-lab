@@ -38,7 +38,7 @@ export function reachSvg(C, R = null, svc = null, site = null) {
     `<rect x="${-s}" y="${-s}" width="${2 * s}" height="${2 * s}" transform="rotate(45)" fill="var(--accent)" stroke="#fff"/></svg>`;
 }
 
-export function commuteHtml(P, stacks, selStack, T = null, R = null, pick = {}) {
+export function commuteHtml(P, stacks, selStack, T = null, R = null, pick = {}, live = null) {
   const C = P.commute;
   if (!C) return '<p class="note">No commute data for this project.</p>';
   const sel = stacks.find(s => s.no === selStack);
@@ -51,12 +51,14 @@ export function commuteHtml(P, stacks, selStack, T = null, R = null, pick = {}) 
     `<p class="note">${s.svc.map(([no, a, b]) => `${esc(no)} ${esc(a)}–${esc(b)}`).join(' · ')}</p>`).join('');
   const shown = new Set(obj ? Object.keys(T.services) : []);
   const svc = obj && pick.svc && shown.has(pick.svc) ? T.services[pick.svc] : null;
+  const liveShown = obj && live?.data && T.stops.some(s => s.code === live.stop && s.walk && blk in s.walk);   // same stops stopsHtml lists
   return `<h3>Door to hub, weekday 8 am · ${where}</h3>` +
     (sel ? (sel.blk === blk ? '' : `<p class="note">No times for this block; showing ${where}</p>`) : blk !== 'site' ? '<p class="note">Pick a unit to see its block</p>' : '') +
     `<table class="commute"><thead><tr><th>Hub</th><th>Time</th><th>Route</th></tr></thead><tbody>${rows}</tbody></table>` +
-    (obj ? stopsHtml(T, blk, pick.svc || null, pick.stop ?? null) + stationsHtml(T, blk, pick.station || null)
+    (obj ? stopsHtml(T, blk, pick.svc || null, pick.stop ?? null, live) + stationsHtml(T, blk, pick.station || null)
       : `<h3>Nearest bus stops</h3>${stops || '<p class="note">None within range.</p>'}` +
         (T === false ? '<p class="note">Bus and MRT details unavailable</p>' : '<p class="note">Loading bus and MRT details…</p>')) +
     `<h3>Reach map</h3>${key(obj && R, svc)}${reachSvg({ ...C, near: blk }, obj ? R : null, svc, P.site)}` +
-    '<p class="note">Estimated from LTA timetables and service frequencies, not live data; times are to the hub\'s MRT platform; real trips vary.</p>';
+    (liveShown ? '<p class="note">Hub times are estimated from LTA timetables and service frequencies; times are to the hub\'s MRT platform; real trips vary. Live minutes for the selected stop: LTA DataMall.</p>'
+      : '<p class="note">Estimated from LTA timetables and service frequencies, not live data; times are to the hub\'s MRT platform; real trips vary.</p>');
 }

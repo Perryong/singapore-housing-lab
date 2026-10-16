@@ -1,6 +1,7 @@
 // Commute tab: bus stops, services, MRT stations, and their SVG layers. Pure string builders (data from tools/build_commute.py).
 import { esc } from './format.js';
 import { LINE } from './nearby.js';
+import { liveChip, nextBuses, liveLine } from './live.js';
 
 export const toXZ = (site, lat, lon) => [Math.round((lon - site.lon) * 111320 * Math.cos(site.lat * Math.PI / 180)), Math.round(-(lat - site.lat) * 110574)];
 const prefix = c => c.replace(/\d.*/, '');
@@ -14,27 +15,30 @@ export function svcKey(T, stop, no) {
   return ks.sort((a, b) => at(a) - at(b))[0] || null;
 }
 
-export function serviceCard(svc, stopCode) {
+export function serviceCard(svc, stopCode, live = null) {
   const t = svc.times?.[stopCode];
   return `<div class="svc-card"><p><b>${esc(svc.no)}</b> · ${esc(svc.from)} → ${esc(svc.to)} · ${svc.n} stops</p>` +
     (t ? `<p class="note">Here ${esc(t[0])}–${esc(t[1])}</p>` : '') +
+    (live?.data ? `<p class="note">Next buses: ${esc(live.arr?.length ? nextBuses(live.arr, live.nowMs) : '–')}</p>` : '') +
     `<p class="note">every ${esc(svc.band)} min at 8 am${svc.road === false ? ' · route shape approximate' : ''}</p></div>`;
 }
 
-export function stopsHtml(T, blk, selSvc, selStop = null) {
+export function stopsHtml(T, blk, selSvc, selStop = null, live = null) {
   const stops = T.stops.filter(s => s.walk && blk in s.walk).sort((a, b) => w(a, blk) - w(b, blk));
   // no stop given: fall back to the nearest stop carrying the service
   const at = selStop ?? stops.find(s => s.svc.some(no => svcKey(T, s, no) === selSvc))?.code;
   const rows = stops.map(s => {
     let card = '';
+    const lv = live && live.stop === s.code ? live : null;
+    const arrOf = no => lv.data.services?.find(x => x.no === no)?.arrivals || [];
     const chips = s.svc.map(no => {
       const k = svcKey(T, s, no);
       if (!k) return '';
       const on = k === selSvc && s.code === at;
-      if (on) card = serviceCard(T.services[k], s.code);
-      return `<button class="svc" data-svc="${esc(k)}" data-stop="${esc(s.code)}" aria-pressed="${on}">${esc(no)}</button>`;
+      if (on) card = serviceCard(T.services[k], s.code, lv?.data && { data: 1, arr: arrOf(no), nowMs: lv.nowMs });
+      return `<button class="svc" data-svc="${esc(k)}" data-stop="${esc(s.code)}" aria-pressed="${on}">${esc(lv?.data ? `${no} · ${liveChip(arrOf(no), lv.nowMs)}` : no)}</button>`;
     }).join('');
-    return `<div class="stop" data-stop="${esc(s.code)}"><div class="aitem"><span>${esc(s.name)} <span class="note">${esc(s.code)}</span></span><span>≈${s.walk[blk]} min</span></div><div class="svcs">${chips}</div>${card}</div>`;
+    return `<div class="stop" data-stop="${esc(s.code)}"><div class="aitem"><span>${esc(s.name)} <span class="note">${esc(s.code)}</span></span><span>≈${s.walk[blk]} min</span></div>${lv && (lv.data || lv.failed) ? `<p class="note live">${esc(liveLine(lv.updatedMs, lv.nowMs, !lv.data))}</p>` : ''}<div class="svcs">${chips}</div>${card}</div>`;
   }).join('');
   return `<h3>${blk === 'site' ? 'Bus stops near the site' : 'Bus stops near Blk ' + esc(blk)}</h3>${rows || '<p class="note">None within range.</p>'}`;
 }

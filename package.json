@@ -1,1 +1,1 @@
-{ "type": "module", "private": true, "scripts": { "test": "set -e; for f in test/sun.test.js test/*.mjs; do node $f; done; for f in test/*_test.py; do PYTHONPATH=. python3 $f; done", "build": "node tools/build.js" } }
+{ "type": "module", "private": true, "scripts": { "test": "set -e; for f in web/*.js; do node --check $f; done; for f in test/sun.test.js test/*.mjs; do node $f; done; for f in test/*_test.py; do PYTHONPATH=. python3 $f; done", "build": "node tools/build.js" } }

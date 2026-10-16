@@ -290,8 +290,9 @@ tbody tr:hover{background:var(--surface-2)}
 /* Commute: bus stops, service chips, station and service cards */
 #commutePanel .stop,#commutePanel .station{border-top:1px solid var(--line);padding:4px 0}
 #commutePanel .stop .aitem .note{margin:0}
+#commutePanel .stop .live{margin:2px 0 4px;padding:0 8px}
 #commutePanel .svcs{display:flex;flex-wrap:wrap;gap:4px;padding:2px 8px 4px}
-#commutePanel .svc{min-width:34px;min-height:24px;padding:0 7px;border:1px solid #2F6DB5;border-radius:4px;background:#fff;color:#2F6DB5;font-size:12px;font-weight:700;cursor:pointer}
+#commutePanel .svc{min-width:34px;min-height:24px;padding:0 7px;border:1px solid #2F6DB5;border-radius:4px;background:#fff;color:#2F6DB5;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
 #commutePanel .svc[aria-pressed=true]{background:#2F6DB5;color:#fff}
 #commutePanel .svc-card,#commutePanel .station-card{margin:4px 8px 6px;padding:6px 10px;border:1px solid var(--line);border-left:3px solid #2F6DB5;border-radius:8px;background:#fff;font-size:13px}
 #commutePanel .station-card{border-left-color:#D42E12}

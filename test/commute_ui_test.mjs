@@ -109,4 +109,30 @@ const hh = commuteHtml(P, stacks, 301, H, R, { svc: 'k"<b>/1', stop: 'c"<&', sta
 assert.doesNotMatch(hh, /<b>\/|<i>|<u>|c"<|n"x|E<</);
 assert.match(hh, /data-svc="k&quot;&lt;b&gt;\/1" data-stop="c&quot;&lt;&amp;"/);
 assert.match(hh, /h&lt;u&gt;&amp; \(NS\)/);
+// --- live arrivals ---
+import { createHash } from 'node:crypto';
+const sel = { svc: '88/2', stop: '2' };
+const base = commuteHtml(P, stacks, 301, T, R, sel);
+assert.equal(createHash('sha256').update(base).digest('hex'), 'afcb1c289c94f7a2c9308f76c4a7203e74573dc571d2c0275b60dd7961e42611'); // pre-change output
+assert.equal(commuteHtml(P, stacks, 301, T, R, sel, null), base);
+const nowMs = Date.parse('2026-10-16T08:00:00Z'), at = m => new Date(nowMs + m * 60000).toISOString();
+const live = { stop: '2', data: { stop: '2', at: at(0), services: [{ no: '88', arrivals: [at(3.5), at(9.5), at(15.5)] }, { no: '9<', arrivals: [at(1)] }] }, updatedMs: nowMs - 5000, failed: false, nowMs };
+const hl = commuteHtml(P, stacks, 301, T, R, sel, live);
+assert.match(hl, /aria-pressed="true">88 · 3′<\/button>/);
+assert.match(hl, />9 · –<\/button>/);                                                  // exact match: '9<' is not '9'
+assert.match(hl, /data-stop="1"><div class="aitem">.*?<button[^>]*aria-pressed="false">88<\/button>/s); // other stop plain
+assert.match(hl, /Next buses: 3 min · 9 min · 15 min/);
+assert.match(hl, /<p class="note live">Live · updated 5 s ago<\/p>/);
+assert.match(hl, /Hub times are estimated.*Live minutes for the selected stop: LTA DataMall\./);
+assert.doesNotMatch(hl, /not live data/);
+const hx = commuteHtml(P, stacks, 301, T, R, { svc: '9/1', stop: '2' }, live);
+assert.match(hx, /Next buses: –/);
+const esc9 = commuteHtml(P, stacks, 301, T, R, sel, { ...live, data: { ...live.data, services: [{ no: '88', arrivals: ['<i>'] }] } });
+assert.doesNotMatch(esc9, /<i>/);
+const hf = commuteHtml(P, stacks, 301, T, R, sel, { stop: '2', data: null, updatedMs: null, failed: true, nowMs });
+assert.match(hf, /<p class="note live">Live times unavailable, showing the timetable<\/p>/);
+assert.match(hf, /not live data/);
+assert.doesNotMatch(hf, /class="svc"[^>]*>[^<]* · /);
+assert.equal(commuteHtml(P, stacks, 301, T, R, sel, { stop: '2', data: null, updatedMs: null, failed: false, nowMs }), base);
+assert.equal(commuteHtml(P, stacks, 301, T, R, sel, { ...live, stop: '999' }), base);
 console.log('ok');
