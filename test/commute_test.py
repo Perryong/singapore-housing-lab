@@ -136,6 +136,13 @@ off = [A, (1.34, 103.80), B]                                    # OSM relation o
 assert route_path(fwd, off) == (off, False)
 mid = [A, (1.31, 103.81), B]                                    # mid-segment stop, far from every vertex: still on the road
 assert route_path(fwd, mid) == ([A, (1.32, 103.82), B], True)
+# the trim keeps the first pass of the first stop and the last pass of the last stop (71A, 20A, 980 pass an end stop twice)
+X1, X2, B2 = (1.32, 103.82), (1.38, 103.88), (B[0] + 0.0003, B[1])     # B2 ~33 m from B: the route's final arrival
+lasso = rel('71A', A, B, [[A, X1, B, X2, B2]])                          # passes the terminus, loops out, comes back
+assert route_path(lasso, [A, X1, X2, B]) == ([A, X1, B, X2, B2], True)
+A2, Y1, Y2 = (A[0] + 0.0003, A[1]), (1.30, 103.77), (1.29, 103.78)
+twice = rel('980', A, B, [[A2, Y1, Y2, A, X1, B]])                      # starts by the first stop, loops, passes it again
+assert route_path(twice, [A, Y1, Y2, X1, B]) == ([A2, Y1, Y2, A, X1, B], True)
 st = lambda codes: [{'lat': 1.3 + i / 100, 'lon': 103.8, 'lines': c} for i, c in enumerate(codes)]
 assert rail_order(st(['NS3', 'NS1', 'NS2'])) == {'NS': ['NS1', 'NS2', 'NS3']}
 assert rail_order(st(['TE23', 'TE22A', 'TE22']))['TE'] == ['TE22', 'TE22A', 'TE23']

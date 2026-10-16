@@ -107,9 +107,12 @@ def route_path(rel, stop_lls):
         return list(stop_lls), False
     a, b = stop_lls[0], stop_lls[-1]
     if dist_m(a, b) >= 300:   # not a loop: cut the tail past the end stops, keeping the stretch between them
-        i = min(range(len(path)), key=lambda k: dist_m(path[k], a))
-        j = min(range(i, len(path)), key=lambda k: dist_m(path[k], b))
-        path = path[i:j + 1]
+        # a route can pass an end stop twice (71A, 20A, 980): start at the first pass of a, end at the last pass of b
+        da, db = [dist_m(p, a) for p in path], [dist_m(p, b) for p in path]
+        i = next(k for k, d in enumerate(da) if d <= min(da) + 50)
+        j = max(k for k, d in enumerate(db) if d <= min(db) + 50)
+        if i < j:
+            path = path[i:j + 1]
     if any(off_path_m(path, s) > 300 for s in stop_lls):   # relation out of date mid-route: don't draw a wrong road
         return list(stop_lls), False
     return path, True
