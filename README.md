@@ -47,8 +47,9 @@ flowchart LR
 
 - **Sun and shade:** for each window the app computes the sun's position (NOAA equations, Singapore time). It then
   casts a ray towards the sun against the project's own blocks (as boxes) and the footprints of the neighbouring HDB
-  blocks. A window counts as sunlit only when it faces the sun and nothing blocks the ray. The outer ring of
-  surrounding buildings is shown for context but not used for shading.
+  blocks. A window counts as sunlit only when it faces the sun and nothing blocks the ray.
+  Schools, community clubs, libraries, hawker centres, hospitals and polyclinics near the site also block sun. The outer ring of
+  surrounding HDB blocks is shown for context but not used for shading.
 - **Static site:** plain ES modules and an import map, hosted on Vercel. Each project is one JSON file plus one GLB.
 
 ## Key decisions

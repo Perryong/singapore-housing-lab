@@ -2,6 +2,8 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { deg } from './project.js';
+import { ACAT } from './nearby.js';
+import { kindColour, isGround, offsetOutline, hostRingShapes } from './surround.js';
 
 export const col = h => new THREE.Color(h);
 export function mkRamp(hexes) { const cs = hexes.map(col); return v => { v = Math.max(0, Math.min(1, v)); const x = v * (cs.length - 1), i = Math.min(cs.length - 2, Math.floor(x)); return cs[i].clone().lerp(cs[i + 1], x - i); }; }
@@ -80,18 +82,36 @@ export function addSitePlan(scene, P, base, renderer) {
   plan.receiveShadow = true; planGroup.add(plan);
 }
 
-// simple 3D surroundings (tools/fetch_surround.py): outer-ring HDB, malls and MRT/LRT station buildings, one mesh per kind
+// simple 3D surroundings (tools/fetch_surround.py): outer-ring HDB, malls, MRT/LRT stations, schools, CCs, libraries, hawker centres,
+// health buildings, parks; one mesh per kind. Ground areas (h <= 0.2) are flat at y = 0.15, translucent for campus/park.
 const SURROUND = { hdb: 0xC9CEC8, mall: 0xEFA48E, mrt: 0xE58A8A };
+const shape2d = p => new THREE.Shape(p.map(q => new THREE.Vector2(q[0], -q[1])));
 export function buildSurround(shapes = []) {
   const group = new THREE.Group();
-  for (const [k, color] of Object.entries(SURROUND)) {
+  for (const k of new Set(shapes.map(s => s.k))) {
+    const color = SURROUND[k] ?? kindColour(k); if (color == null) continue;
     const geos = shapes.filter(s => s.k === k).map(s => {
-      const g = new THREE.ExtrudeGeometry(new THREE.Shape(s.p.map(q => new THREE.Vector2(q[0], -q[1]))), { depth: s.h, bevelEnabled: false });
-      g.rotateX(-Math.PI / 2); return g;
+      const g = new THREE.ExtrudeGeometry(shape2d(s.p), { depth: isGround(s) ? 0.02 : s.h, bevelEnabled: false });
+      g.rotateX(-Math.PI / 2); if (isGround(s)) g.translate(0, 0.15, 0); return g;
     });
-    if (!geos.length) continue;
-    const m = new THREE.Mesh(mergeGeometries(geos), new THREE.MeshLambertMaterial({ color }));
+    const tint = k === 'campus' || k === 'park';
+    const m = new THREE.Mesh(mergeGeometries(geos), new THREE.MeshLambertMaterial({ color, transparent: tint, opacity: tint ? 0.55 : 1 }));
     m.receiveShadow = true; group.add(m); geos.forEach(g => g.dispose());
+  }
+  return group;
+}
+
+const RING_IN = 0.3, RING_OUT = 0.5;   // ring wall runs 0.3 m to 0.5 m outside the outline (0.2 m thick)
+// 4 m tall thin ring 0.3 m outside each host outline (clinic/supermarket/preschool), one merged mesh per category
+export function buildHostRings(P) {
+  const group = new THREE.Group();
+  for (const [cat, outlines] of Object.entries(hostRingShapes(P))) {
+    const geos = outlines.map(p => {
+      const sh = shape2d(offsetOutline(p, RING_OUT)); sh.holes.push(shape2d(offsetOutline(p, RING_IN)));
+      const g = new THREE.ExtrudeGeometry(sh, { depth: 4, bevelEnabled: false }); g.rotateX(-Math.PI / 2); return g;
+    });
+    group.add(new THREE.Mesh(mergeGeometries(geos), new THREE.MeshLambertMaterial({ color: ACAT[cat][1] })));
+    geos.forEach(g => g.dispose());
   }
   return group;
 }

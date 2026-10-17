@@ -192,7 +192,7 @@ const body = k.plateHtml({
     { mark: 'raised', label: 'Your block (white) and a taller neighbour' },
     { mark: 'dashed', label: 'Ray stopped by a building' },
   ],
-  caption: 'For every window, every 10 minutes, the app does what this heliodon does: it puts the sun where it really is for your date and time in Singapore, then draws a straight line from the window towards it. The window counts as sunlit only if it faces the sun and that line reaches the sky without hitting a block. This is 21 December: the west-facing window gets no sun in the morning, is lit from about 1:20 pm, and falls into the neighbour\'s shadow at about 4:10 pm.',
+  caption: 'For every window, every 10 minutes, the app does what this heliodon does: it puts the sun where it really is for your date and time in Singapore, then draws a straight line from the window towards it. The window counts as sunlit only if it faces the sun and that line reaches the sky without hitting a block. This is 21 December: the west-facing window gets no sun in the morning, is lit from about 1:20 pm, and falls into the neighbour\'s shadow at about 4:10 pm. Schools, community clubs, libraries, hawker centres, hospitals and polyclinics near the site also block sun.',
   body: `<div class="iso-stage" tabindex="0" role="slider" aria-label="Time of day on 21 December: arrow keys move the sun" aria-valuemin="${T0}" aria-valuemax="${T1}" aria-valuenow="900">${svg}</div>`,
 });
 

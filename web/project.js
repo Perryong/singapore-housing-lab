@@ -46,10 +46,12 @@ export function buildLayout(P) {
     cores.push({ blk: +blk, cx, cz, ax, az, fx, fz, hx, hz, floors: B.floors, H: B.floors * FH + 3 });
     boxes.push({ own: -1, blk: +blk, cx, cz, ax, az, fx, fz, hx, hz, H: B.floors * FH + 4 });
   }
-  const context = P.context.map(b => {
+  // feature buildings (P.blockers) shade like context, appended so P.context indices stay valid
+  // k: what the shade text names ('hdb' for P.context, the feature kind for blockers)
+  const context = [...P.context.map(b => [b, 'hdb']), ...(P.blockers || []).map(b => [b, b.k || 'hdb'])].map(([b, k]) => {
     const xs = b.p.map(q => q[0]), zs = b.p.map(q => q[1]);
     const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cz = (Math.min(...zs) + Math.max(...zs)) / 2;
-    return { h: b.h, p: b.p, cx, cz, r: Math.max(...b.p.map(q => Math.hypot(q[0] - cx, q[1] - cz))) };
+    return { k, h: b.h, p: b.p, cx, cz, r: Math.max(...b.p.map(q => Math.hypot(q[0] - cx, q[1] - cz))) };
   });
   return { FH, stacks, units, boxes, cores, context };
 }

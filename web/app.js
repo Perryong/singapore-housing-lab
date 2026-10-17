@@ -11,8 +11,9 @@ import { valueHtml } from './value.js';
 import { commuteHtml } from './commute.js';
 import { API, fetchArrivals, liveLine } from './live.js';
 import { BADGE, pickerHtml } from './picker.js';
+import { kindColour } from './surround.js';
 import { card16, face8, RAMP_PM, RAMP_AM, FACE, unitCardHtml, stackTable, legendHtml } from './unit.js';
-import { col, mkRamp, skyColor, makeLabel, pinSprite, addMapTiles, addSitePlan, buildSurround, makeMoon } from './scene.js';
+import { col, mkRamp, skyColor, makeLabel, pinSprite, addMapTiles, addSitePlan, buildSurround, buildHostRings, makeMoon } from './scene.js';
 import { openPlan3d } from './plan3d.js';
 
 const $ = s => document.querySelector(s);
@@ -301,7 +302,13 @@ renderAmenities();
 /* ---------- Resale nearby (HDB resale transactions, data.gov.sg) ---------- */
 const RS = P.resale;
 let rType = RS ? defaultType(RS) : null, rSort = 'date';
-const surroundGroup = buildSurround(P.surround); scene.add(surroundGroup);
+const surroundGroup = buildSurround(P.surround); surroundGroup.add(buildHostRings(P)); scene.add(surroundGroup);
+{ // compact swatches for the feature kinds actually drawn; nothing is added when there are none
+  const SW = { school: 'School', campus: 'School', cc: 'Community club', library: 'Library', hawker: 'Hawker', health: 'Health', park: 'Park' };
+  const names = [...new Set((P.surround || []).map(s => s.k).filter(k => SW[k]).map(k => SW[k]))];
+  if (names.length) $('#showSurround').closest('label').insertAdjacentHTML('afterend', `<div class="unit-meta" id="surroundKey">${names.map(n =>
+    `<span style="white-space:nowrap;margin-right:8px"><i style="display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:3px;background:${kindColour(Object.keys(SW).find(k => SW[k] === n))}"></i>${n}</span>`).join('')}</div>`);
+}
 $('#showSurround').addEventListener('change', e => { surroundGroup.visible = e.target.checked; });
 const resaleGroup = new THREE.Group(); resaleGroup.visible = false; scene.add(resaleGroup);
 const resaleMeshes = [];

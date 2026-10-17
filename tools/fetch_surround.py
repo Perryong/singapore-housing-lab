@@ -1,22 +1,31 @@
 """Simple 3D surroundings for the map: malls and MRT/LRT station buildings (OpenStreetMap) and HDB blocks out to 1.5 km.
 
-usage: python3 tools/fetch_surround.py projects/<id>...   -> project.json["surround"] = [{k: hdb|mall|mrt, h, p, n?}]
+usage: python3 tools/fetch_surround.py projects/<id>...   -> project.json["surround"] = [{k, h, p, n?}], ["blockers"] = [{k, h, p}]
+
+Kinds: hdb|mall|mrt, plus OSM features school|campus|cc|library|hawker|health|park (cached at
+reference/amenities/osm-features.raw). Feature buildings within 900 m (the context radius) also go to `blockers` for the
+sun calculation; campus/park are flat ground areas.
 
 Footprints are measured from the project's site point, the same reference the registered `context` uses, so they line
 up with the existing neighbours. HDB blocks already in `context` are skipped. Heights: HDB storeys from HDB property
 data (road via the cached OneMap lookups only; 12 storeys when unknown); OSM height / building:levels, else defaults.
 Malls/stations come from one island-wide Overpass query cached at reference/amenities/osm-buildings.raw.
 """
-import csv, json, math, subprocess, sys, time
+import csv, json, math, re, subprocess, sys, time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'tools'))
 from fetch_context import local_xz, norm, CACHE, REF, STOREY_M, ROOF_M   # noqa: E402
 
-RADIUS, LEVEL_M, DEFAULT_H = 1500, 4.0, {'mall': 16.0, 'mrt': 12.0}
+RADIUS, LEVEL_M, BLOCK_R = 1500, 4.0, 900
+DEFAULT_H = {'mall': 16.0, 'mrt': 12.0, 'school': 12.0, 'cc': 10.0, 'library': 12.0, 'hawker': 8.0, 'health': 20.0}
+GROUND = ('campus', 'park')                                       # flat areas, 0.2 m, never blockers
+CAMPUS_BLDG = {'yes', 'school', 'education', 'kindergarten', 'sports_hall', 'dormitory', 'service'}
 OSM = ROOT / 'reference/amenities/osm-buildings.raw'
-_feats = _floors = None
+FEATURES = ROOT / 'reference/amenities/osm-features.raw'
+_feats = _floors = _osmf = _projects = None
+cen = lambda p: (sum(q[0] for q in p) / len(p), sum(q[1] for q in p) / len(p))
 
 
 def rdp(seg, tol=0.5):
@@ -71,37 +80,170 @@ def raw_hdb(P, radius=RADIUS):
     return out
 
 
-def osm_buildings():
-    if not OSM.exists():
-        q = ('[out:json][timeout:170];(way["shop"="mall"](1.2,103.6,1.47,104.05);relation["shop"="mall"](1.2,103.6,1.47,104.05);'
-             'way["building"="train_station"](1.2,103.6,1.47,104.05);'
-             'way["railway"="station"]["building"](1.2,103.6,1.47,104.05););out geom tags;')
+def overpass(path, q):
+    """Run one Overpass query once and cache the raw JSON at path; returns its elements."""
+    if not path.exists():
         for t in range(6):                                         # public Overpass servers are often busy: retry, alternate
             time.sleep(20 * t)
             url = ('https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter')[t % 2]
             r = subprocess.run(['curl', '-sf', '--max-time', '180', '-A', 'BTOlab/1.0 (personal project)', url,
                                 '--data-urlencode', f'data={q}'], capture_output=True, text=True)
             if r.returncode == 0 and r.stdout.lstrip().startswith('{'):
-                OSM.write_text(r.stdout); break
+                path.write_text(r.stdout); break
         else:
             raise SystemExit('Overpass unavailable; try again later')
-    return json.loads(OSM.read_text())['elements']
+    return json.loads(path.read_text())['elements']
+
+
+def osm_buildings():
+    return overpass(OSM, '[out:json][timeout:170];(way["shop"="mall"](1.2,103.6,1.47,104.05);relation["shop"="mall"](1.2,103.6,1.47,104.05);'
+                    'way["building"="train_station"](1.2,103.6,1.47,104.05);'
+                    'way["railway"="station"]["building"](1.2,103.6,1.47,104.05););out geom tags;')
+
+
+def osm_features():
+    global _osmf
+    if _osmf is None:
+        b = '(1.2,103.6,1.47,104.05)'
+        _osmf = overpass(FEATURES, f'[out:json][timeout:170];(way["amenity"="school"]{b};relation["amenity"="school"]{b};)->.s;'
+                         '.s map_to_area->.a;(.s;way["building"](area.a);'      # buildings inside school grounds
+                         + ''.join(f'way[{t}]{b};relation[{t}]{b};' for t in (
+                             '"building"="school"', '"amenity"="community_centre"', '"amenity"="library"',
+                             '"amenity"~"^(marketplace|food_court)$"', '"amenity"~"^(hospital|clinic)$"', '"leisure"="park"'))
+                         + ');out geom tags;')
+    return _osmf
+
+
+def classify(t):
+    a = t.get('amenity')
+    if a == 'school':
+        return 'school' if t.get('building') else None if t.get('leisure') or t.get('sport') else 'campus'
+    return ({'community_centre': 'cc', 'library': 'library', 'marketplace': 'hawker', 'food_court': 'hawker',
+             'hospital': 'health', 'clinic': 'health'}.get(a)
+            or ('school' if t.get('building') == 'school' else 'park' if t.get('leisure') == 'park' else None))
+
+
+def solid(t, kind):
+    """Only real buildings are extruded and block sun; amenity grounds without a building tag stay flat."""
+    return kind not in GROUND and bool(t.get('building'))
+
+
+def campus_building(t):
+    return t.get('building') in CAMPUS_BLDG and not (t.get('amenity') or t.get('religion') or t.get('leisure'))
+
+
+def feature_height(t, kind):
+    return height(t, kind) if solid(t, kind) else 0.2
+
+
+def outline(e):
+    """A way's ring, or a multipolygon's largest outer ring (inner rings and members without geometry ignored)."""
+    # shortcut: a ring split over several member ways comes back partial (under-shades, the safe direction); stitch
+    # the member ways if gaps show on the map
+    if e['type'] == 'relation':
+        return max((m.get('geometry') or [] for m in e.get('members', []) if m.get('role') == 'outer'), key=len, default=[])
+    return e.get('geometry') or []
+
+
+def stack_xz(P):
+    """World (x, z) of each of P's stacks, in P.stacks order (plan -> world as p2w in tools/anchor_fit.py)."""
+    if not P.get('stacks'):
+        return []
+    pl = P['plan']; PX = pl['pxPerM']; ox, oy = pl['origin']; b = math.radians(pl['upBearing'])
+    out = []
+    for s in P['stacks']:
+        lx, lz = (s['px'] - ox) / PX, (s['py'] - oy) / PX
+        out.append((lx * math.cos(b) - lz * math.sin(b), lx * math.sin(b) + lz * math.cos(b)))
+    return out
+
+
+def all_stacks(P, others=None):
+    """P's stacks plus every other project's (others: project dicts, default every projects/*/project.json), in P's
+    site-local metres, within reach of P's features: OSM can still map what stood on any BTO site."""
+    global _projects
+    if others is None:
+        _projects = _projects or [json.loads(f.read_text()) for f in sorted((ROOT / 'projects').glob('*/project.json'))]
+        others = _projects
+    lat0, lon0 = P['site']['lat'], P['site']['lon']
+    out = stack_xz(P)
+    for Q in others:
+        la, lo = Q['site']['lat'], Q['site']['lon']
+        for x, z in stack_xz(Q):                                  # Q-local metres -> lat/lon -> P-local (inverse of local_xz)
+            q = local_xz(lat0, lon0, lo + x / (111_320.0 * math.cos(math.radians(la))), la - z / 110_574.0)
+            if math.hypot(*q) <= RADIUS + 500:
+                out.append(q)
+    return out
+
+
+def near(pt, poly, d):
+    """pt inside poly or closer than d metres to its outline."""
+    def seg(a, b):
+        dx, dz = b[0] - a[0], b[1] - a[1]
+        u = max(0.0, min(1.0, ((pt[0] - a[0]) * dx + (pt[1] - a[1]) * dz) / ((dx * dx + dz * dz) or 1e-9)))
+        return math.hypot(pt[0] - a[0] - u * dx, pt[1] - a[1] - u * dz)
+    return inside(*pt, poly) or any(seg(a, b) < d for a, b in zip(poly, poly[1:] + poly[:1]))
+
+
+def overlap(p, others, step=5.0):
+    """Share of p's area inside any of others: grid points every step metres inside p (centre if p is tiny)."""
+    xs, zs = [q[0] for q in p], [q[1] for q in p]
+    bb = lambda o: (min(q[0] for q in o), min(q[1] for q in o), max(q[0] for q in o), max(q[1] for q in o))
+    near = [(b, o) for o in others for b in [bb(o)] if b[0] < max(xs) and b[2] > min(xs) and b[1] < max(zs) and b[3] > min(zs)]
+    if not near:
+        return 0.0
+    g = [(min(xs) + step * (i + .5), min(zs) + step * (j + .5)) for i in range(int((max(xs) - min(xs)) / step) + 1)
+         for j in range(int((max(zs) - min(zs)) / step) + 1)]
+    g = [q for q in g if inside(*q, p)] or [cen(p)]
+    return sum(any(b[0] <= x <= b[2] and b[1] <= z <= b[3] and inside(x, z, o) for b, o in near) for x, z in g) / len(g)
+
+
+def features(P, elements=None, existing=None, others=None):
+    """(surround entries, blockers) for the OSM feature kinds around P's site. existing: outlines already drawn
+    (default: P.surround hdb/mall/mrt); P.context blocks always count too. others: projects whose stacks also drop
+    stale features (default: every project, see all_stacks)."""
+    lat0, lon0 = P['site']['lat'], P['site']['lon']
+    if existing is None:
+        existing = [s['p'] for s in P.get('surround', []) if s['k'] in ('hdb', 'mall', 'mrt')]
+    existing = existing + [c['p'] for c in P.get('context', [])]
+    items = []
+    for e in osm_features() if elements is None else elements:
+        geom = [g for g in outline(e) if g]
+        if len(geom) >= 4:
+            items.append((e.get('tags', {}), [local_xz(lat0, lon0, g['lon'], g['lat']) for g in geom][:-1]))
+    campuses = [p for t, p in items if classify(t) == 'campus']
+    stacks = all_stacks(P, others)
+    dead = [q for q in campuses if any(inside(*st, q) for st in stacks)]
+    out, blockers = [], []
+    for t, pts in items:
+        c = cen(pts)
+        if math.hypot(*c) > RADIUS + 100:                           # far: skip early (final rule below, after simplify)
+            continue
+        kind = classify(t) or ('school' if campus_building(t) and any(inside(*c, q) for q in campuses) else None)
+        if not kind:
+            continue
+        p = simplify([[round(x, 1), round(z, 1)] for x, z in pts])
+        if len(p) < 3 or math.hypot(*cen(p)) > RADIUS or overlap(p, existing) > 0.5:
+            continue
+        if any(near(st, p, 5.0 if solid(t, kind) else 0.0) for st in stacks) or \
+                (kind == 'school' and any(inside(*cen(p), q) for q in dead)):
+            continue
+        out.append({'k': kind, 'h': round(feature_height(t, kind), 1), 'p': p, **({'n': t['name']} if t.get('name') else {})})
+        if solid(t, kind) and math.hypot(*cen(p)) <= BLOCK_R:
+            blockers.append({k: out[-1][k] for k in 'khp'})
+    return out, blockers
 
 
 def height(t, kind):
-    try:
-        h = float(str(t.get('height', '')).replace('m', '').strip())
-        if h > 0:
-            return h
-    except ValueError:
-        pass
-    lv = t.get('building:levels') or ''
-    return float(lv) * LEVEL_M if lv.replace('.', '').isdigit() and float(lv) > 0 else DEFAULT_H[kind]   # '0' tags are common
+    for key, scale in (('height', 1.0), ('building:levels', LEVEL_M)):
+        m = re.match(r'\s*(\d+(?:\.\d+)?)', str(t.get(key, '')))   # first number of '12 m', '3;4'
+        if m and float(m[1]) > 0:                                  # '0' tags are common
+            return float(m[1]) * scale
+    return DEFAULT_H[kind]
 
 
 def surround(P):
+    """(P.surround entries, P.blockers)."""
     lat0, lon0 = P['site']['lat'], P['site']['lon']
-    cen = lambda p: (sum(q[0] for q in p) / len(p), sum(q[1] for q in p) / len(p))
     ctx = P.get('context', [])
     # outer ring only: inside the context's extent, blocks were curated (demolished ones under the BTO were dropped)
     edge = max((math.hypot(*cen(c['p'])) for c in ctx), default=0)
@@ -121,14 +263,48 @@ def surround(P):
                     **({'n': t['name']} if t.get('name') else {})})
     for s in out:
         s['p'] = simplify(s['p'])
-    return [s for s in out if len(s['p']) >= 3 and math.hypot(*cen(s['p'])) <= RADIUS]   # after simplify: same centre the app sees
+    out = [s for s in out if len(s['p']) >= 3 and math.hypot(*cen(s['p'])) <= RADIUS]   # after simplify: same centre the app sees
+    fs, blockers = features(P, existing=[s['p'] for s in out])
+    return out + fs, blockers
+
+
+def assign_hosts(P):
+    """Set amenity.host = {"s": i} (P.surround hdb/mall) or {"c": i} (P.context) for clinic/supermarket/preschool pins:
+    the smallest outline containing the point, else the nearest outline edge within 15 m; else no host. Returns count."""
+    area = lambda p: abs(sum(a[0] * b[1] - b[0] * a[1] for a, b in zip(p, p[1:] + p[:1]))) / 2
+    def edge(x, z, p):
+        d = math.inf
+        for (x1, z1), (x2, z2) in zip(p, p[1:] + p[:1]):
+            L = (x2 - x1) ** 2 + (z2 - z1) ** 2 or 1e-9
+            t = max(0, min(1, ((x - x1) * (x2 - x1) + (z - z1) * (z2 - z1)) / L))
+            d = min(d, math.hypot(x - x1 - t * (x2 - x1), z - z1 - t * (z2 - z1)))
+        return d
+    hosts = [({'s': i}, s['p']) for i, s in enumerate(P.get('surround', [])) if s['k'] in ('hdb', 'mall')]
+    hosts += [({'c': i}, c['p']) for i, c in enumerate(P.get('context', []))]
+    n = 0
+    for a in P.get('amenities', []):
+        a.pop('host', None)
+        if a.get('cat') not in ('clinic', 'supermarket', 'preschool'):
+            continue
+        x, z = a['x'], a['z']
+        within = [(area(p), h) for h, p in hosts if inside(x, z, p)]
+        near = [(edge(x, z, p), h) for h, p in hosts]
+        near = [m for m in near if m[0] <= 15]
+        best = min(within, key=lambda m: m[0], default=None) or min(near, key=lambda m: m[0], default=None)
+        if best:
+            a['host'] = best[1]
+            n += 1
+    return n
 
 
 if __name__ == '__main__':
     for d in sys.argv[1:]:
         f = Path(d) / 'project.json'
         P = json.loads(f.read_text())
-        P['surround'] = surround(P)
+        P['surround'], P['blockers'] = surround(P)
+        assign_hosts(P)                                            # indices refer to the final P.surround order
         f.write_text(json.dumps(P, separators=(',', ':')))
-        c = {k: sum(1 for s in P['surround'] if s['k'] == k) for k in ('hdb', 'mall', 'mrt')}
+        c = {k: sum(1 for s in P['surround'] if s['k'] == k)
+             for k in ('hdb', 'mall', 'mrt', 'school', 'campus', 'cc', 'library', 'hawker', 'health', 'park')}
+        c['blockers'] = len(P['blockers'])
         print(f"{Path(d).name}: {c}, +{len(json.dumps(P['surround'], separators=(',', ':'))) // 1024} KB")
