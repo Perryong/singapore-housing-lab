@@ -43,12 +43,14 @@ export function layoutThumb(P, base, no) {
   return `<button class="layout-thumb" data-a="layout" aria-label="Open floor plan"><img src="${base + l.typical}" alt="Floor plan, stack ${pad(no)}" onerror="const b=this.parentElement;b.nextElementSibling?.classList.add('big');b.remove()"><span>Floor plan · tap to enlarge</span></button>${src}`;
 }
 
+export const SHADE_BY = { hdb: 'a neighbouring HDB block', school: 'a nearby school', cc: 'a nearby community club', library: 'a nearby library',
+  hawker: 'a nearby hawker centre', health: 'a nearby health building' };
 // the selected unit: u is one floor of stack st; cur = {y, m, d, min} in Singapore time
 export function unitCardHtml(P, base, st, u, cur) {
   if (!st) return `<p class="unit-meta" style="margin:0 0 14px">Tap any unit in the model, or a row below, to see its sun exposure.</p>`;
   const c = P.categories[catOf(P, u.code)], [sqm, sqft] = sizeOf(P, u.code);
   const dateStr = new Date(cur.y, cur.m - 1, cur.d).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' }), t = fmtTime(cur.min);
-  const nowTxt = u.now === 'lit' ? `At ${t} the windows are in direct sun.` : u.now === 'shade' ? `At ${t} the windows face the sun but are shaded by ${u.by === 'hdb' ? 'a neighbouring HDB block' : 'Block ' + u.by}.` : u.now === 'night' ? `At ${t} the sun is down.` : `At ${t} the sun is behind these windows.`;
+  const nowTxt = u.now === 'lit' ? `At ${t} the windows are in direct sun.` : u.now === 'shade' ? `At ${t} the windows face the sun but are shaded by ${SHADE_BY[u.by] || 'Block ' + u.by}.` : u.now === 'night' ? `At ${t} the sun is down.` : `At ${t} the sun is behind these windows.`;
   const dirs = st.faces.map(b => `${LONG[card16(b)]} (${b}°)`);
   return `<div class="unit">
     <div class="unit-no">#${pad(u.floor)}-${pad(st.no)}</div>

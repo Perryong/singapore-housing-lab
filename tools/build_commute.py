@@ -13,7 +13,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))   # repo root, so `python3 tools/build_commute.py` finds tools.*
 from tools.fetch_context import local_xz
 from tools.fetch_transit import chain, headway, transit_dir
-from tools.fetch_surround import rdp, simplify   # import side effect: puts tools/ on sys.path, no I/O
+from tools.fetch_surround import rdp, simplify, stack_xz   # import side effect: puts tools/ on sys.path, no I/O
 
 ROOT = Path(__file__).resolve().parent.parent
 HUBS = [('Raffles Place', 'Raffles Place MRT Station'), ('one-north', 'One-North MRT Station'),
@@ -260,13 +260,9 @@ def load():
 
 def block_centres(P):
     """Mean world (x, z) of each block's stacks (plan -> world as p2w in tools/anchor_fit.py)."""
-    if not P.get('stacks'):
-        return {}
-    pl = P['plan']; PX = pl['pxPerM']; ox, oy = pl['origin']; b = math.radians(pl['upBearing'])
     pts = defaultdict(list)
-    for s in P['stacks']:
-        lx, lz = (s['px'] - ox) / PX, (s['py'] - oy) / PX
-        pts[s['block']].append((lx * math.cos(b) - lz * math.sin(b), lx * math.sin(b) + lz * math.cos(b)))
+    for s, xz in zip(P.get('stacks') or [], stack_xz(P)):
+        pts[s['block']].append(xz)
     return {k: (sum(p[0] for p in v) / len(v), sum(p[1] for p in v) / len(v)) for k, v in pts.items()}
 
 

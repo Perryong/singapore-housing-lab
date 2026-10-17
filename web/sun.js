@@ -26,8 +26,9 @@ export function solarPos(site, y, m, d, hour) {
 }
 export const sunVec = (alt, az) => [Math.cos(alt * deg) * Math.sin(az * deg), Math.sin(alt * deg), -Math.cos(alt * deg) * Math.cos(az * deg)];
 
+// -> the blocking context entry's kind, or 0
 function blockedByContext(L, px, py, pz, s) {
-  const dx = s[0], dz = s[2], len = Math.hypot(dx, dz); if (len < 1e-6) return false;
+  const dx = s[0], dz = s[2], len = Math.hypot(dx, dz); if (len < 1e-6) return 0;
   for (const b of L.context) {
     const vx = b.cx - px, vz = b.cz - pz, tc = (vx * dx + vz * dz) / (len * len); if (tc * len < -b.r) continue;
     if (Math.abs(vx * dz - vz * dx) / len > b.r) continue;
@@ -37,13 +38,13 @@ function blockedByContext(L, px, py, pz, s) {
       const a = P[i], c = P[(i + 1) % P.length], ex = c[0] - a[0], ez = c[1] - a[1];
       const den = dx * ez - dz * ex; if (Math.abs(den) < 1e-9) continue;
       const wx = a[0] - px, wz = a[1] - pz, t = (wx * ez - wz * ex) / den, u = (wx * dz - wz * dx) / den;
-      if (t > 0 && u >= 0 && u <= 1 && py + s[1] * t < b.h) return true;
+      if (t > 0 && u >= 0 && u <= 1 && py + s[1] * t < b.h) return b.k;
     }
   }
-  return false;
+  return 0;
 }
 
-// slab test of ray (p + t*s) against each oriented box; returns blocking block id, 'hdb' or 0
+// slab test of ray (p + t*s) against each oriented box; returns blocking block id, a context kind ('hdb', 'school', ...) or 0
 function blockedBy(L, px, py, pz, s, own) {
   for (const b of L.boxes) {
     if (b.own === own) continue;
@@ -59,7 +60,7 @@ function blockedBy(L, px, py, pz, s, own) {
     }
     if (!miss) return b.blk;
   }
-  return blockedByContext(L, px, py, pz, s) ? 'hdb' : 0;
+  return blockedByContext(L, px, py, pz, s);
 }
 
 // -> {st:'lit'|'shade'|'away', cos, by}
