@@ -77,7 +77,7 @@ assert not any(e[2] for es in cr['adj'].values() for e in es), cr['adj']
 import json
 from pathlib import Path
 if not Path('reference/transit/BusRoutes.json').exists():
-    print('skipped real-data commute checks: reference/transit/ missing (needs LTA_KEY, see tools/fetch_transit.py)')
+    print('skipped real-data commute checks: reference/transit/ missing (run `python3 tools/fetch_transit.py` to fetch it)')
 else:
     from tools.build_commute import commute_for, load
     G, stops_by_code, routes = load()
@@ -211,4 +211,66 @@ if Path('web/rail.json').exists():
     R = json.loads(Path('web/rail.json').read_text())
     assert R and all(OPEN.match(p + '1') for p in R), list(R)
     assert Path('web/rail.json').stat().st_size <= 80_000
+# sg-bus-data -> LTA rows (tools/fetch_transit.from_sgbusdata): fixture converts exactly
+from tools.fetch_transit import from_sgbusdata
+fx_stops = [{'code': '01012', 'name': 'Hotel Grand Pacific', 'road': 'Victoria St', 'lat': 1.296848, 'lon': 103.852536},
+            {'code': '01013', 'name': "St. Joseph's Ch", 'road': 'Victoria St', 'lat': 1.29771, 'lon': 103.853225}]
+fq = lambda a: {'am_peak': a, 'am_off': '09-16', 'pm_peak': '11-16', 'pm_off': '-'}
+fx_services = {'10': {'operator': 'GAS', 'category': 'TRUNK', 'directions': [
+                   {'dir': 1, 'from': '01012', 'to': '01013', 'loop': '', 'stops': [['01012', 0], ['01013', 0.6]], 'freq': fq('09-10')},
+                   {'dir': 2, 'from': '01013', 'to': '01012', 'loop': '', 'stops': [['01013', 0], ['01012', 0.7]], 'freq': fq('-')}]},
+               '9A': {'operator': 'SBST', 'category': 'FEEDER', 'directions': [
+                   {'dir': 1, 'from': '01012', 'to': '01012', 'loop': 'Victoria St', 'stops': [['01012', 0], ['01013', 1], ['01012', 2.5]], 'freq': fq('10')}]}}
+tl = lambda w, s, u: {'wd': w, 'sat': s, 'sun': u}
+fx_fl = {'10/1': {'01012': tl(['0500', '2300'], ['0510', '2310'], ['0520', '2320']), '01013': tl(['0502', '2302'], ['-', '-'], ['-', '-'])},
+         '10/2': {'01013': tl(['0600', '0010'], ['0600', '0010'], ['0600', '0010'])},   # 01012 missing -> '-'
+         '9A/1': {'01012': tl(['0700', '2200'], ['0700', '2200'], ['0700', '2200']), '01013': tl(['0705', '2205'], ['0705', '2205'], ['0705', '2205'])}}
+fs, fr, fv = from_sgbusdata(fx_stops, fx_services, fx_fl)
+assert fs == [{'BusStopCode': '01012', 'Description': 'Hotel Grand Pacific', 'RoadName': 'Victoria St', 'Latitude': 1.296848, 'Longitude': 103.852536},
+              {'BusStopCode': '01013', 'Description': "St. Joseph's Ch", 'RoadName': 'Victoria St', 'Latitude': 1.29771, 'Longitude': 103.853225}], fs
+def lr(no, op, d, i, c, km, t):
+    return {'ServiceNo': no, 'Operator': op, 'Direction': d, 'StopSequence': i, 'BusStopCode': c, 'Distance': km,
+            **{f'{k}_{e}Bus': v for k, (a, b) in zip(('WD', 'SAT', 'SUN'), t) for e, v in (('First', a), ('Last', b))}}
+dash = [['-', '-']] * 3
+assert fr == [lr('10', 'GAS', 1, 1, '01012', 0, [['0500', '2300'], ['0510', '2310'], ['0520', '2320']]),
+              lr('10', 'GAS', 1, 2, '01013', 0.6, [['0502', '2302'], ['-', '-'], ['-', '-']]),
+              lr('10', 'GAS', 2, 1, '01013', 0, [['0600', '0010']] * 3),
+              lr('10', 'GAS', 2, 2, '01012', 0.7, dash),
+              lr('9A', 'SBST', 1, 1, '01012', 0, [['0700', '2200']] * 3),
+              lr('9A', 'SBST', 1, 2, '01013', 1, [['0705', '2205']] * 3),
+              lr('9A', 'SBST', 1, 3, '01012', 2.5, [['0700', '2200']] * 3)], fr
+def ls(no, op, cat, d, o, de, am, loop):
+    return {'ServiceNo': no, 'Operator': op, 'Direction': d, 'Category': cat, 'OriginCode': o, 'DestinationCode': de,
+            'AM_Peak_Freq': am, 'AM_Offpeak_Freq': '09-16', 'PM_Peak_Freq': '11-16', 'PM_Offpeak_Freq': '-', 'LoopDesc': loop}
+assert fv == [ls('10', 'GAS', 'TRUNK', 1, '01012', '01013', '09-10', ''), ls('10', 'GAS', 'TRUNK', 2, '01013', '01012', '-', ''),
+              ls('9A', 'SBST', 'FEEDER', 1, '01012', '01012', '10', 'Victoria St')], fv
+
+# round trip: sg-bus-data files built from BTOlab's cached LTA rows rebuild bishan-terraces identically
+import subprocess, sys
+FROM = Path(os.environ.get('SGBUS_ROUNDTRIP_DIR', '/nonexistent'))
+if not os.environ.get('SGBUS_ROUNDTRIP_DIR'):
+    print('skip: sg-bus-data round trip (set SGBUS_ROUNDTRIP_DIR to a sg-bus-data data/ copy)')
+elif not FROM.exists() or not Path('reference/transit/osm_bus.json').exists():
+    print('skip: sg-bus-data round trip (no', FROM, 'or reference/transit)')
+else:
+    with tempfile.TemporaryDirectory() as d:
+        T = Path(d) / 'transit'
+        subprocess.run([sys.executable, 'tools/fetch_transit.py', '--from-local', str(FROM)], check=True,
+                       env={**os.environ, 'BTOLAB_TRANSIT_DIR': str(T)}, stdout=subprocess.DEVNULL)
+        for n in ('osm_bus', 'osm_rail'):
+            (T / f'{n}.json').symlink_to(Path(f'reference/transit/{n}.json').resolve())
+        # build_commute's __main__ minus its file writes (web/rail.json stays untouched)
+        from tools.build_commute import load, commute_for
+        os.environ['BTOLAB_TRANSIT_DIR'] = str(T)
+        try:
+            G, sbc, routes = load()
+            ctx = transit_ctx(G, sbc, routes, json.loads((T / 'BusServices.json').read_text()), json.loads((T / 'osm_bus.json').read_text())['elements'])
+            P = json.loads(Path('projects/bishan-terraces/project.json').read_text())
+            new, old = commute_for(P, G, sbc, routes), P['commute']
+            Tr = json.dumps(transit_for(P, ctx), separators=(',', ':'))
+        finally:
+            del os.environ['BTOLAB_TRANSIT_DIR']
+        new.pop('asOf'); old.pop('asOf')
+        assert new == old, [k for k in old if new.get(k) != old[k]]
+        assert Tr == Path('projects/bishan-terraces/transit.json').read_text(), 'transit.json differs'
 print('ok')

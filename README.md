@@ -116,9 +116,10 @@ npm test
    (legend + markers, OCR); `python3 tools/fetch_amenities.py projects/<slug>` adds nearby MRT/LRT, bus stops,
    schools, preschools, hawker centres, supermarkets, clinics, parks, libraries and CCs from
    `reference/amenities/all.json` (built by `python3 tools/build_amenities.py` from data.gov.sg + OneMap).
-7. Commute: `python3 tools/fetch_transit.py` caches LTA DataMall bus data in `reference/transit/` (needs a free
-   [DataMall key](https://datamall.lta.gov.sg/content/datamall/en/request-for-api.html) as `LTA_KEY=...` in a git-ignored `.env`)
-   and ~45 MB of OSM bus/rail route relations from Overpass (`--osm` refreshes only those; no LTA key), then
+7. Commute: `python3 tools/fetch_transit.py` caches LTA DataMall bus data in `reference/transit/` from the weekly
+   [sg-bus-data](https://github.com/Perryong/sg-bus-data) files (no LTA key needed; `--lta` fetches straight from DataMall
+   instead, with a free [DataMall key](https://datamall.lta.gov.sg/content/datamall/en/request-for-api.html) as `LTA_KEY=...`
+   in a git-ignored `.env`) and ~45 MB of OSM bus/rail route relations from Overpass (`--osm` refreshes only those; `--from-local DIR` works offline: it builds from a local copy of sg-bus-data's `data/` and skips OSM), then
    `python3 tools/build_commute.py projects/*/` writes `projects/<slug>/transit.json` and `web/rail.json` from both.
    Live arrivals for the selected stop come from the separate `sg-bus-api` API (github.com/Perryong/sg-bus-api) (LTA BusArrival), polled every
    30 s, from https://sg-bus-api.vercel.app (`PROD_API` in `web/live.js`); locally, run that API on `:8010` to see live minutes.
