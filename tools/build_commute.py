@@ -12,7 +12,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))   # repo root, so `python3 tools/build_commute.py` finds tools.*
 from tools.fetch_context import local_xz
-from tools.fetch_transit import chain, headway
+from tools.fetch_transit import chain, headway, transit_dir
 from tools.fetch_surround import rdp, simplify   # import side effect: puts tools/ on sys.path, no I/O
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -250,7 +250,7 @@ def legs(prev, st, t0):
 
 def load():
     """-> (G, stops_by_code, routes) from reference/transit/ and the mrt/lrt rows of reference/amenities/all.json."""
-    T = ROOT / 'reference/transit'
+    T = transit_dir()
     stops, routes, services = (json.loads((T / f'{d}.json').read_text()) for d in ('BusStops', 'BusRoutes', 'BusServices'))
     stations = [r for r in json.loads((ROOT / 'reference/amenities/all.json').read_text()) if r['cat'] in ('mrt', 'lrt')]
     G = build_graph(stops, routes, services, stations)
@@ -337,7 +337,7 @@ def commute_for(P, G, stops_by_code, routes):
         if a['cat'] == 'bus' and a['name'].startswith('Bus stop ') and code in stops_by_code:
             a['name'] = stops_by_code[code]['Description']
 
-    as_of = time.strftime('%Y-%m', time.localtime((ROOT / 'reference/transit/BusRoutes.json').stat().st_mtime))
+    as_of = time.strftime('%Y-%m', time.localtime((transit_dir() / 'BusRoutes.json').stat().st_mtime))
     # 'near' is explicit: JS reorders digit-string keys ("9","5" -> "5","9"), so hubs' key order is not kept
     return {'asOf': as_of, 'at': 'weekday 08:00', 'near': str(origins[0][0]), 'hubs': {str(k): v for k, v in hubs.items()}, 'hubPts': hub_pts,
             'reach': reach(site_times, G, lat0, lon0), 'stops': stops}
@@ -476,7 +476,7 @@ def rail_json(rels, stations):
 
 if __name__ == '__main__':
     G, stops_by_code, routes = load()
-    T = ROOT / 'reference/transit'
+    T = transit_dir()
     services = json.loads((T / 'BusServices.json').read_text())
     osm = {n: json.loads((T / f'{n}.json').read_text())['elements'] for n in ('osm_bus', 'osm_rail')}
     ctx = transit_ctx(G, stops_by_code, routes, services, osm['osm_bus'])
