@@ -24,3 +24,5 @@ reference/resale/
 # secrets
 .env
 reference/transit/
+# LinkedIn post drafts and media (local only)
+docs/linkedin/
