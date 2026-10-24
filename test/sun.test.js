@@ -9,6 +9,7 @@ const EXPECTED = `16 5.0 0.0|17 0.2 0.0|24 5.5 0.0|25 5.5 0.0|26 5.5 0.0|38 3.0 
   .split('|').map(r => r.split(' ').map(Number));
 
 const P = JSON.parse(readFileSync(new URL('../projects/thomson-reserve/project.json', import.meta.url)));
+P.blockers = P.blockers.filter(b => b.k !== 'bto' && b.k !== 'bldg');   // the original modelled neither
 const L = buildLayout(P);
 computeDay(L, P.site, 2026, 10, 2);
 assert.equal(L.stacks.length, EXPECTED.length);

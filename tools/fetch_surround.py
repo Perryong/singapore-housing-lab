@@ -2,7 +2,7 @@
 
 usage: python3 tools/fetch_surround.py projects/<id>...   -> project.json["surround"] = [{k, h, p, n?}], ["blockers"] = [{k, h, p}]
 
-Kinds: hdb|mall|mrt, plus OSM features school|campus|cc|library|hawker|health|park (cached at
+Kinds: hdb|mall|mrt, bto (other projects' stacks, so unbuilt BTOs show and shade), bldg (every other OSM building), plus OSM features school|campus|cc|library|hawker|health|park (cached at
 reference/amenities/osm-features.raw). Feature buildings within 900 m (the context radius) also go to `blockers` for the
 sun calculation; campus/park are flat ground areas.
 
@@ -19,7 +19,13 @@ sys.path.insert(0, str(ROOT / 'tools'))
 from fetch_context import local_xz, norm, CACHE, REF, STOREY_M, ROOF_M   # noqa: E402
 
 RADIUS, LEVEL_M, BLOCK_R = 1500, 4.0, 900
-DEFAULT_H = {'mall': 16.0, 'mrt': 12.0, 'school': 12.0, 'cc': 10.0, 'library': 12.0, 'hawker': 8.0, 'health': 20.0}
+DEFAULT_H = {'mall': 16.0, 'mrt': 12.0, 'school': 12.0, 'cc': 10.0, 'library': 12.0, 'hawker': 8.0, 'health': 20.0, 'bldg': 10.0}
+# shortcut: untagged heights are guesses by building type (about 2/3 of OSM buildings); fine for massing, refine per area if shade looks off
+BLDG_H = {'apartments': 36.0, 'residential': 20.0, 'house': 9.0, 'detached': 9.0, 'semidetached_house': 9.0, 'terrace': 9.0,
+          'bungalow': 7.0, 'industrial': 14.0, 'warehouse': 12.0, 'commercial': 14.0, 'office': 30.0, 'hotel': 40.0,
+          'retail': 10.0, 'parking': 12.0, 'shed': 4.0, 'hut': 4.0, 'garage': 4.0, 'kiosk': 4.0}
+HOMES = {'apartments', 'residential', 'house', 'detached', 'semidetached_house', 'terrace', 'bungalow', 'dormitory'}
+SKIP_BLDG = {'roof', 'construction', 'no', 'ruins', 'canopy', 'carport', 'bridge'}
 GROUND = ('campus', 'park')                                       # flat areas, 0.2 m, never blockers
 CAMPUS_BLDG = {'yes', 'school', 'education', 'kindergarten', 'sports_hall', 'dormitory', 'service'}
 OSM = ROOT / 'reference/amenities/osm-buildings.raw'
@@ -157,21 +163,56 @@ def stack_xz(P):
     return out
 
 
+def projects():
+    global _projects
+    _projects = _projects or [json.loads(f.read_text()) for f in sorted((ROOT / 'projects').glob('*/project.json'))]
+    return _projects
+
+
+def to_p(P, Q, x, z):
+    """Q-local metres -> lat/lon -> P-local (inverse of local_xz)."""
+    la, lo = Q['site']['lat'], Q['site']['lon']
+    return local_xz(P['site']['lat'], P['site']['lon'], lo + x / (111_320.0 * math.cos(math.radians(la))), la - z / 110_574.0)
+
+
 def all_stacks(P, others=None):
     """P's stacks plus every other project's (others: project dicts, default every projects/*/project.json), in P's
     site-local metres, within reach of P's features: OSM can still map what stood on any BTO site."""
-    global _projects
-    if others is None:
-        _projects = _projects or [json.loads(f.read_text()) for f in sorted((ROOT / 'projects').glob('*/project.json'))]
-        others = _projects
-    lat0, lon0 = P['site']['lat'], P['site']['lon']
     out = stack_xz(P)
-    for Q in others:
-        la, lo = Q['site']['lat'], Q['site']['lon']
-        for x, z in stack_xz(Q):                                  # Q-local metres -> lat/lon -> P-local (inverse of local_xz)
-            q = local_xz(lat0, lon0, lo + x / (111_320.0 * math.cos(math.radians(la))), la - z / 110_574.0)
+    for Q in projects() if others is None else others:
+        for x, z in stack_xz(Q):
+            q = to_p(P, Q, x, z)
             if math.hypot(*q) <= RADIUS + 500:
                 out.append(q)
+    return out
+
+
+def block_xz(P, others=None):
+    """[(block number, P-local (x, z))] for every stack of P and of every other project."""
+    out = []
+    for Q in [P] + [Q for Q in (projects() if others is None else others) if Q.get('id') != P.get('id')]:
+        for s, (x, z) in zip(Q.get('stacks', []), stack_xz(Q)):
+            out.append((str(s['block']).upper(), (x, z) if Q is P else to_p(P, Q, x, z)))
+    return out
+
+
+def bto_neighbours(P, others=None):
+    """Other projects' stacks within RADIUS as 'bto' boxes in P-local metres (as buildLayout in web/project.js): new BTO
+    blocks are missing from the HDB footprint data until they are built."""
+    out = []
+    for Q in projects() if others is None else others:
+        if Q.get('id') == P.get('id') or not Q.get('stacks') or 'plan' not in Q:
+            continue
+        for s, (x, z) in zip(Q['stacks'], stack_xz(Q)):
+            B = Q['blocks'].get(str(s['block']), {})                 # str: JS-style key lookup (Thomson Reserve uses ints)
+            axis = s.get('axis', B.get('axis'))
+            hx, hz = s.get('size') or Q['stackSize']['corner' if len(s['faces']) > 1 else 'normal']
+            a, b = math.radians(axis), math.radians(axis + 90)
+            ax, az, fx, fz = math.sin(a), -math.cos(a), math.sin(b), -math.cos(b)
+            pts = [to_p(P, Q, x + i * hx * ax + j * hz * fx, z + i * hx * az + j * hz * fz) for i, j in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
+            if math.hypot(*cen(pts)) <= RADIUS:
+                out.append({'k': 'bto', 'h': round((s.get('floors') or B['floors']) * Q['site']['floorHeight'] + 1.5, 1),
+                            'p': [[round(x, 1), round(z, 1)] for x, z in pts]})
     return out
 
 
@@ -233,12 +274,46 @@ def features(P, elements=None, existing=None, others=None):
     return out, blockers
 
 
+def osm_all(P):
+    """Every OSM building within RADIUS + 100 m of P's site, cached per project (reference/amenities/osm-all-<id>.raw)."""
+    lat, lon = P['site']['lat'], P['site']['lon']
+    return overpass(ROOT / f"reference/amenities/osm-all-{P['id']}.raw",
+                    f'[out:json][timeout:170];(way["building"](around:{RADIUS + 100},{lat},{lon});'
+                    f'relation["building"](around:{RADIUS + 100},{lat},{lon}););out geom tags;')
+
+
+def others(P, existing, elements=None):
+    """(surround entries, blockers) of kind 'bldg': every other OSM building (condos, landed, industrial, shops...) not
+    already drawn (>50% over an existing outline), nor on or within 5 m of a project's stack (stale OSM on a BTO site)."""
+    lat0, lon0 = P['site']['lat'], P['site']['lon']
+    stacks = all_stacks(P)
+    named = block_xz(P)
+    out, blockers = [], []
+    for e in osm_all(P) if elements is None else elements:
+        t = e.get('tags', {})
+        geom = [g for g in outline(e) if g]
+        if t.get('building') in SKIP_BLDG or len(geom) < 4:
+            continue
+        p = simplify([[round(x, 1), round(z, 1)] for x, z in (local_xz(lat0, lon0, g['lon'], g['lat']) for g in geom[:-1])])
+        if len(p) < 3 or math.hypot(*cen(p)) > RADIUS or overlap(p, existing) > 0.5 or any(near(st, p, 5.0) for st in stacks):
+            continue
+        # OSM often maps a project's own blocks a few metres off our traced stacks: same block number nearby -> a duplicate
+        hn = str(t.get('addr:housenumber', '')).upper()
+        if hn and any(b == hn and math.dist(q, cen(p)) < 150 for b, q in named):
+            continue
+        out.append({'k': 'bldg', 'h': round(height(t, 'bldg'), 1), 'p': p})
+        if math.hypot(*cen(p)) <= BLOCK_R:
+            blockers.append(out[-1])
+    return out, blockers
+
+
 def height(t, kind):
-    for key, scale in (('height', 1.0), ('building:levels', LEVEL_M)):
+    homes = kind == 'bldg' and t.get('building') in HOMES                 # flats/houses: ~3 m storeys, not 4 m
+    for key, scale in (('height', 1.0), ('building:levels', 3.0 if homes else LEVEL_M)):
         m = re.match(r'\s*(\d+(?:\.\d+)?)', str(t.get(key, '')))   # first number of '12 m', '3;4'
         if m and float(m[1]) > 0:                                  # '0' tags are common
             return float(m[1]) * scale
-    return DEFAULT_H[kind]
+    return BLDG_H.get(t.get('building'), DEFAULT_H['bldg']) if kind == 'bldg' else DEFAULT_H[kind]
 
 
 def surround(P):
@@ -265,7 +340,9 @@ def surround(P):
         s['p'] = simplify(s['p'])
     out = [s for s in out if len(s['p']) >= 3 and math.hypot(*cen(s['p'])) <= RADIUS]   # after simplify: same centre the app sees
     fs, blockers = features(P, existing=[s['p'] for s in out])
-    return out + fs, blockers
+    bto = bto_neighbours(P)
+    ob, obb = others(P, [s['p'] for s in out + fs + bto if s['h'] > 0.2] + [c['p'] for c in P.get('context', [])])
+    return out + fs + bto + ob, blockers + [b for b in bto if math.hypot(*cen(b['p'])) <= BLOCK_R] + obb
 
 
 def assign_hosts(P):
@@ -305,6 +382,6 @@ if __name__ == '__main__':
         assign_hosts(P)                                            # indices refer to the final P.surround order
         f.write_text(json.dumps(P, separators=(',', ':')))
         c = {k: sum(1 for s in P['surround'] if s['k'] == k)
-             for k in ('hdb', 'mall', 'mrt', 'school', 'campus', 'cc', 'library', 'hawker', 'health', 'park')}
+             for k in ('hdb', 'bto', 'bldg', 'mall', 'mrt', 'school', 'campus', 'cc', 'library', 'hawker', 'health', 'park')}
         c['blockers'] = len(P['blockers'])
         print(f"{Path(d).name}: {c}, +{len(json.dumps(P['surround'], separators=(',', ':'))) // 1024} KB")
