@@ -80,7 +80,7 @@ assert.match(h, /<polyline[^>]*stroke="#D42E12"/);
 assert.match(h, /<polyline[^>]*stroke="#748477"/);
 assert.match(h, /stroke="#2F6DB5"/);
 assert.match(h, /from T&amp;o</);
-assert.match(h, /coloured lines = MRT · blue = selected bus/);
+assert.match(h, /coloured lines = MRT<\/span><span>blue = selected bus/);
 assert.ok(h.indexOf('Nearest stations') < h.indexOf('Reach map'));                        // spec order: hubs, stops, stations, map
 assert.doesNotMatch(commuteHtml(P, stacks, 301, T, R, {}), /blue = selected bus/);         // no service picked
 assert.match(commuteHtml(P, stacks, 301, T, R, {}), /coloured lines = MRT/);
@@ -128,7 +128,7 @@ assert.match(hh, /h&lt;u&gt;&amp; \(NS\)/);
 import { createHash } from 'node:crypto';
 const sel = { svc: '88/2', stop: '2' };
 const base = commuteHtml(P, stacks, 301, T, R, sel);
-assert.equal(createHash('sha256').update(base).digest('hex'), 'cafc7c71753cc2b230f923dd9cc0b9b1ab5559e3bc0fcfd7ea7a7e5c14065f71'); // pre-live output (+ route chevrons)
+assert.equal(createHash('sha256').update(base).digest('hex'), 'db135968809f534821f7edd0a95660e31ebcf7cb4c34faa848525e95d490e982'); // pre-live output (+ route chevrons, expand button, label halos)
 assert.equal(commuteHtml(P, stacks, 301, T, R, sel, null), base);
 const nowMs = Date.parse('2026-10-16T08:00:00Z'), at = m => new Date(nowMs + m * 60000).toISOString();
 const live = { stop: '2', data: { stop: '2', at: at(0), services: [{ no: '88', arrivals: [at(3.5), at(9.5), at(15.5)] }, { no: '9<', arrivals: [at(1)] }] }, updatedMs: nowMs - 5000, failed: false, nowMs };
@@ -151,3 +151,16 @@ assert.doesNotMatch(hf, /class="svc"[^>]*>[^<]* · /);
 assert.equal(commuteHtml(P, stacks, 301, T, R, sel, { stop: '2', data: null, updatedMs: null, failed: false, nowMs }), base);
 assert.equal(commuteHtml(P, stacks, 301, T, R, sel, { ...live, stop: '999' }), base);
 console.log('ok');
+// reach map: every station dotted once (interchange bigger); only the expanded view names them, never over a hub's label
+import { railSvg } from '../web/transit.js';
+const RS = { NS: { paths: [[[1.3, 103.8], [1.31, 103.81]]], stations: [['Ang <Mo>', 1.3, 103.8], ['Bishan', 1.31, 103.81]] }, CC: { paths: [[[1.31, 103.81], [1.32, 103.81]]], stations: [['Bishan', 1.31, 103.81]] } };
+const S0 = { lat: 1.3, lon: 103.8 }, rs = railSvg(RS, S0, 1);
+assert.equal((rs.match(/<circle/g) || []).length, 2);
+assert.match(rs, /r="1.6"[^>]*><title>Bishan</);
+assert.doesNotMatch(rs, /<text/);
+const big = railSvg(RS, S0, 1, 10, new Set(['bishan']));
+assert.match(big, />Ang &lt;Mo&gt;<\/text>/);
+assert.doesNotMatch(big, />Bishan<\/text>/);
+import { reachHtml } from '../web/commute.js';
+assert.match(commuteHtml(P, stacks, 301, T, R, sel), /<button class="reach-open"[^>]*aria-label="Expand reach map"/);
+assert.equal(reachHtml(P, stacks, 301, T, R, sel), /<p class="note reach-key">[\s\S]*<\/svg>/.exec(base)[0]);   // dialog shows the same map

@@ -8,7 +8,7 @@ import { esc, pad, fmtTime } from './format.js';
 import { defaultType, psmRamp, resaleLegendHtml, resaleTypesHtml, resalePanelHtml, resaleCardHtml } from './resale.js';
 import { ACAT, shown, amenitiesHtml } from './nearby.js';
 import { valueHtml } from './value.js';
-import { commuteHtml } from './commute.js';
+import { commuteHtml, reachHtml } from './commute.js';
 import { API, fetchArrivals, liveLine } from './live.js';
 import { BADGE, pickerHtml } from './picker.js';
 import { kindColour } from './surround.js';
@@ -274,7 +274,17 @@ function keepPick() {                                            // block change
   if (pick.stop && !(b in (T?.stops?.find(s => s.code === pick.stop)?.walk || {}))) pick.svc = pick.stop = null;
   updateTransit3d(); syncLive();
 }
+const reachDlg = $('#reachDlg');
+function renderReach() {                                         // phones: draw wider than the screen and scroll, so stations keep their names
+  const b = $('#reachBody'), px = Math.max(Math.min(innerWidth - 64, 960), 720);
+  b.innerHTML = reachHtml(P, stacks, selStack, T, R, pick, px);
+  const s = b.querySelector('svg'), [vx, vz, vw, vh] = s.getAttribute('viewBox').split(' ').map(Number);
+  if (px > innerWidth - 64) { s.style.width = px + 'px'; b.scrollLeft = -vx / vw * px - b.clientWidth / 2; b.scrollTop = -vz / vh * s.clientHeight - b.clientHeight / 2; }
+}
+$('#reachClose').addEventListener('click', () => reachDlg.close());
+reachDlg.addEventListener('click', e => { if (e.target === reachDlg) reachDlg.close(); });
 $('#commutePanel').addEventListener('click', e => {
+  if (e.target.closest('.reach-open')) { reachDlg.showModal(); renderReach(); return; }   // open first: scrolling needs layout
   const c = e.target.closest('button.svc'), s = e.target.closest('button.stn');
   if (c) { const on = pick.svc === c.dataset.svc && pick.stop === c.dataset.stop; pick.svc = on ? null : c.dataset.svc; pick.stop = on ? null : c.dataset.stop; }
   else if (s) {
@@ -390,6 +400,7 @@ function renderCommute() {
     : a?.matches?.('#commutePanel button.stn') ? `button.stn[data-station="${CSS.escape(a.dataset.station)}"]` : null;   // keep keyboard focus across re-renders
   $('#commutePanel').innerHTML = commuteHtml(P, stacks, selStack, T, R, pick, bus && bus.stop === pick.stop ? { ...bus, nowMs: liveNow() } : null);
   if (sel) $('#commutePanel').querySelector(sel)?.focus({ preventScroll: true });
+  if (reachDlg.open) renderReach();
   if (!focus || T === undefined) return;                         // still loading: the post-load render scrolls
   const el = T && focus(); focus = null;
   if (el) { el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1500); }
