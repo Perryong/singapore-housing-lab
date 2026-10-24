@@ -298,6 +298,26 @@ tbody tr:hover{background:var(--surface-2)}
 #commutePanel .station-card{border-left-color:#D42E12}
 #commutePanel .svc-card p,#commutePanel .station-card p{margin:3px 0}
 #commutePanel .station .line{margin:0 1px}
+/* two-lane route ladder (busrouter.sg style): lanes at x 8-11 and 23-26 of the 34px track, dots centred on them */
+#commutePanel .lad-head,#commutePanel .lad li{display:grid;grid-template-columns:1fr 34px 1fr;gap:0 4px}
+#commutePanel .lad-head{margin:8px 0 2px;font-size:11px;font-weight:700;color:#2F6DB5}
+#commutePanel .lad-head span:first-child,#commutePanel .lad li>span:first-child{text-align:right}
+#commutePanel .lad{list-style:none;margin:0;padding:0;font-size:12px;line-height:1.25}
+#commutePanel .lad li{align-items:center;min-height:30px}
+#commutePanel .lad small{display:block;font-size:10px;color:var(--muted)}
+#commutePanel .lad .here{background:var(--accent-soft);border-radius:4px;padding:2px 4px;font-weight:600}
+#commutePanel .lad .here b{color:#7A4A00;font-size:11px}
+#commutePanel .track{position:relative;align-self:stretch;background:linear-gradient(#2F6DB5,#2F6DB5) 8px 0/3px 100% no-repeat,linear-gradient(#2F6DB5,#2F6DB5) 23px 0/3px 100% no-repeat}
+#commutePanel .lad.one li,#commutePanel .lad-head.one{grid-template-columns:1fr 34px 0}
+#commutePanel .lad.one .track{background-size:3px 100%,0 0}
+#commutePanel .lad li:first-child .track{background-position:8px 50%,23px 50%;background-size:3px 50%,3px 50%}
+#commutePanel .lad li:last-child .track{background-size:3px 50%,3px 50%}
+#commutePanel .hl .track::before,#commutePanel .hr .track::after{content:"";position:absolute;top:50%;width:9px;height:9px;margin-top:-6.5px;border:2px solid #2F6DB5;border-radius:50%;background:#fff}
+#commutePanel .hl .track::before{left:3px}#commutePanel .hr .track::after{left:18px}
+#commutePanel .hl:has(.here) .track::before{border-color:var(--accent);border-width:3px;background:var(--accent-soft)}
+#commutePanel .track b{position:absolute;top:50%;left:14px;width:6px;border-top:2px dotted #2F6DB5}
+#commutePanel .track s{position:absolute;top:-6px;width:9px;font-size:9px;line-height:12px;text-align:center;text-decoration:none;color:#fff;background:#2F6DB5;border-radius:2px}
+#commutePanel .track .dl{left:5px}#commutePanel .track .dr{left:20px}
 #commutePanel .stn{min-height:28px;padding:2px 8px;border:0;border-radius:6px;background:none;color:var(--ink);font-weight:600;cursor:pointer}
 #commutePanel .stn:hover,#commutePanel .stn[aria-pressed=true]{background:var(--rs-soft)}
 #commutePanel .flash{background:var(--accent-soft)}

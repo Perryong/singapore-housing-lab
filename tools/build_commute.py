@@ -406,7 +406,8 @@ def transit_for(P, ctx):
         name = lambda r: ctx['stops'].get(r['BusStopCode'], {}).get('Description', r['BusStopCode'])
         services[f'{no}/{d}'] = {'no': no, 'from': name(rs[0]), 'to': name(rs[-1]), 'n': len(rs), 'band': ctx['band'][no, d],
                                  'times': times, 'path': [[round(x), round(z)] for x, z in path],
-                                 'stopPts': [xz(*ll) for ll in lls], 'road': road}
+                                 'stopPts': [xz(*ll) for ll in lls], 'road': road,
+                                 'stops': [r['BusStopCode'] for r in rs if r['BusStopCode'] in ctx['stops']]}   # aligned with stopPts; names in T.names
 
     rows = ctx['G'].get('stations', [])
     order = rail_order(rows)
@@ -435,7 +436,8 @@ def transit_for(P, ctx):
         exits = sorted(({'exit': k, 'x': p[0], 'z': p[1], 'walk': walk(p)} for k, p in lab.items()), key=lambda e: e['exit'])
         stations.append({'name': nm, 'codes': codes, 'lines': lines, 'exits': exits})
     stations.sort(key=lambda s: min(min(e['walk'].values()) for e in s['exits']))
-    return {'stops': stops, 'services': services, 'stations': stations}
+    names = {c: ctx['stops'][c]['Description'] for v in services.values() for c in v['stops']}   # once per stop: routes share stops
+    return {'stops': stops, 'services': services, 'stations': stations, 'names': names}
 
 
 def rail_json(rels, stations):
