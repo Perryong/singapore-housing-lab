@@ -275,11 +275,15 @@ function keepPick() {                                            // block change
   updateTransit3d(); syncLive();
 }
 const reachDlg = $('#reachDlg');
-function renderReach() {                                         // phones: draw wider than the screen and scroll, so stations keep their names
-  const b = $('#reachBody'), px = Math.max(Math.min(innerWidth - 64, 960), 720);
-  b.innerHTML = reachHtml(P, stacks, selStack, T, R, pick, px);
-  const s = b.querySelector('svg'), [vx, vz, vw, vh] = s.getAttribute('viewBox').split(' ').map(Number);
-  if (px > innerWidth - 64) { s.style.width = px + 'px'; b.scrollLeft = -vx / vw * px - b.clientWidth / 2; b.scrollTop = -vz / vh * s.clientHeight - b.clientHeight / 2; }
+function renderReach() {                                         // phones: fill the screen's height and scroll sideways, so stations keep their names
+  const b = $('#reachBody'), draw = px => { b.innerHTML = reachHtml(P, stacks, selStack, T, R, pick, px); return b.querySelector('svg'); };
+  let s = draw(Math.min(innerWidth - 64, 960));
+  if (!matchMedia('(max-width:760px)').matches) return;          // same breakpoint as the full-screen CSS
+  const [vx, , vw, vh] = s.getAttribute('viewBox').split(' ').map(Number);
+  const tall = b.clientHeight - (s.getBoundingClientRect().top - b.getBoundingClientRect().top);
+  const px = Math.max(Math.round(tall * vw / vh), b.clientWidth);
+  s = draw(px); s.style.width = px + 'px';
+  b.scrollLeft = -vx / vw * px - b.clientWidth / 2;
 }
 $('#reachClose').addEventListener('click', () => reachDlg.close());
 reachDlg.addEventListener('click', e => { if (e.target === reachDlg) reachDlg.close(); });
