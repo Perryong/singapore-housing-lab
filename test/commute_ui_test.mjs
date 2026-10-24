@@ -101,6 +101,21 @@ assert.match(commuteHtml(P, stacks, 301, T, R, { svc: '88/1' }), /data-stop="1">
 import { svcKey } from '../web/transit.js';
 assert.equal(svcKey(T, T.stops[1], '88'), '88/1');
 assert.equal(svcKey(T, T.stops[0], '88'), '88/2');
+// two-lane ladder: picked direction top-down on the left, the other reversed on the right, opposite stops share a rung
+import { ladder } from '../web/transit.js';
+const st = (code, x) => ({ code, name: 'n' + code, x, z: 0 });
+const lr = ladder([st('a1', 0), st('a2', 500), st('a3', 1000)], [st('b3', 1030), st('bx', 700), st('b1', 20)]);
+assert.deepEqual(lr.map(([l, r]) => [l?.code ?? null, r?.code ?? null]), [['a1', 'b1'], ['a2', null], [null, 'bx'], ['a3', 'b3']]);
+assert.deepEqual(ladder([st('a1', 0)], null).map(([l, r]) => [l.code, r]), [['a1', null]]);
+const T2 = { ...T, names: { 1: 'Near "A"&B', 2: 'Far <Stop>' }, services: { ...T.services,
+  '88/1': { ...T.services['88/1'], stops: ['1', '2'] }, '88/2': { ...T.services['88/2'], stops: ['2', '1'] } } };
+const hd = commuteHtml(P, stacks, 301, T2, R, { svc: '88/1', stop: '1' });
+assert.match(hd, /<ol class="lad"/);
+assert.match(hd, /↓ to T&amp;o.*↑ to Fr&lt;om&gt;/s);
+assert.equal((hd.match(/<li class="hl hr">/g) || []).length, 2);                         // both stops paired across
+assert.match(hd, /class="here"[^>]*>.*Near &quot;A&quot;&amp;B.*board here/s);
+assert.doesNotMatch(commuteHtml(P, stacks, 301, T, R, { svc: '88/1', stop: '1' }), /class="lad/);   // old transit.json: no ladder
+assert.match(hd, /marker-mid="url\(#chev\)"/);                                          // map line shows direction
 // hostile strings in keys, codes, names
 const H = { stops: [{ code: 'c"<&', name: 'n', x: 0, z: 0, walk: { '100B': 1 }, svc: ['9'] }],
   services: { 'k"<b>/1': { no: '9', from: 'f', to: 't', n: 1, band: 'b', times: { 'c"<&': ['1', '2'] }, path: [[0, 0], [1, 1]], stopPts: [[0, 0]], road: true } },
@@ -113,7 +128,7 @@ assert.match(hh, /h&lt;u&gt;&amp; \(NS\)/);
 import { createHash } from 'node:crypto';
 const sel = { svc: '88/2', stop: '2' };
 const base = commuteHtml(P, stacks, 301, T, R, sel);
-assert.equal(createHash('sha256').update(base).digest('hex'), 'afcb1c289c94f7a2c9308f76c4a7203e74573dc571d2c0275b60dd7961e42611'); // pre-change output
+assert.equal(createHash('sha256').update(base).digest('hex'), 'cafc7c71753cc2b230f923dd9cc0b9b1ab5559e3bc0fcfd7ea7a7e5c14065f71'); // pre-live output (+ route chevrons)
 assert.equal(commuteHtml(P, stacks, 301, T, R, sel, null), base);
 const nowMs = Date.parse('2026-10-16T08:00:00Z'), at = m => new Date(nowMs + m * 60000).toISOString();
 const live = { stop: '2', data: { stop: '2', at: at(0), services: [{ no: '88', arrivals: [at(3.5), at(9.5), at(15.5)] }, { no: '9<', arrivals: [at(1)] }] }, updatedMs: nowMs - 5000, failed: false, nowMs };

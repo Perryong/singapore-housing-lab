@@ -15,12 +15,41 @@ export function svcKey(T, stop, no) {
   return ks.sort((a, b) => at(a) - at(b))[0] || null;
 }
 
-export function serviceCard(svc, stopCode, live = null) {
+// ladder rows [left, right]: a in travel order, b (other direction) reversed; LCS pairs stops <= 120 m apart onto one rung
+export function ladder(a, b) {
+  if (!b) return a.map(s => [s, null]);
+  const r = [...b].reverse(), near = (p, q) => Math.hypot(p.x - q.x, p.z - q.z) <= 120;
+  const L = Array.from({ length: a.length + 1 }, () => new Array(r.length + 1).fill(0));
+  for (let i = a.length - 1; i >= 0; i--) for (let j = r.length - 1; j >= 0; j--)
+    L[i][j] = Math.max(near(a[i], r[j]) ? L[i + 1][j + 1] + 1 : 0, L[i + 1][j], L[i][j + 1]);
+  const rows = [];
+  for (let i = 0, j = 0; i < a.length || j < r.length;) {
+    if (i < a.length && j < r.length && near(a[i], r[j]) && L[i][j] === L[i + 1][j + 1] + 1) rows.push([a[i++], r[j++]]);
+    else if (j === r.length || (i < a.length && L[i][j] === L[i + 1][j])) rows.push([a[i++], null]);
+    else rows.push([null, r[j++]]);
+  }
+  return rows;
+}
+
+// busrouter.sg-style two-lane route: picked direction runs down the left lane, the same number's other direction up the right
+export function ladderHtml(T, key, here) {
+  const pts = k => T.services[k]?.stops?.map((code, i) => ({ code, name: T.names?.[code] ?? code, x: T.services[k].stopPts[i][0], z: T.services[k].stopPts[i][1] }));
+  const svc = T.services[key], a = pts(key);
+  if (!a) return '';                                               // transit.json built before stop names
+  const ok = Object.keys(T.services).find(k => k !== key && T.services[k].no === svc.no), b = ok && pts(ok);
+  const cell = (s, side) => s ? `<span${s.code === here && side === 'l' ? ' class="here"' : ''}><small>${esc(s.code)}</small> ${esc(s.name)}${s.code === here && side === 'l' ? ' <b>· board here</b>' : ''}</span>` : '<span></span>';
+  const rows = ladder(a, b).map(([l, r], i) => `<li class="${[l && 'hl', r && 'hr'].filter(Boolean).join(' ')}">${cell(l, 'l')}` +
+    `<i class="track">${l && r ? '<b></b>' : ''}${i % 4 === 2 ? `<s class="dl">↓</s>${b ? '<s class="dr">↑</s>' : ''}` : ''}</i>${cell(r && r.code !== l?.code ? r : null, 'r')}</li>`).join('');
+  return `<p class="lad-head${b ? '' : ' one'}"><span>↓ to ${esc(svc.to)}</span><i></i><span>${b ? '↑ to ' + esc(T.services[ok].to) : ''}</span></p>` +
+    `<ol class="lad${b ? '' : ' one'}" aria-label="${esc(svc.no)} stops in order">${rows}</ol>`;
+}
+
+export function serviceCard(svc, stopCode, live = null, lad = '') {
   const t = svc.times?.[stopCode];
   return `<div class="svc-card"><p><b>${esc(svc.no)}</b> · ${esc(svc.from)} → ${esc(svc.to)} · ${svc.n} stops</p>` +
     (t ? `<p class="note">Here ${esc(t[0])}–${esc(t[1])}</p>` : '') +
     (live?.data ? `<p class="note">Next buses: ${esc(live.arr?.length ? nextBuses(live.arr, live.nowMs) : '–')}</p>` : '') +
-    `<p class="note">every ${esc(svc.band)} min at 8 am${svc.road === false ? ' · route shape approximate' : ''}</p></div>`;
+    `<p class="note">every ${esc(svc.band)} min at 8 am${svc.road === false ? ' · route shape approximate' : ''}</p>${lad}</div>`;
 }
 
 export function stopsHtml(T, blk, selSvc, selStop = null, live = null) {
@@ -35,7 +64,7 @@ export function stopsHtml(T, blk, selSvc, selStop = null, live = null) {
       const k = svcKey(T, s, no);
       if (!k) return '';
       const on = k === selSvc && s.code === at;
-      if (on) card = serviceCard(T.services[k], s.code, lv?.data && { data: 1, arr: arrOf(no), nowMs: lv.nowMs });
+      if (on) card = serviceCard(T.services[k], s.code, lv?.data && { data: 1, arr: arrOf(no), nowMs: lv.nowMs }, ladderHtml(T, k, s.code));
       return `<button class="svc" data-svc="${esc(k)}" data-stop="${esc(s.code)}" aria-pressed="${on}">${esc(lv?.data ? `${no} · ${liveChip(arrOf(no), lv.nowMs)}` : no)}</button>`;
     }).join('');
     return `<div class="stop" data-stop="${esc(s.code)}"><div class="aitem"><span>${esc(s.name)} <span class="note">${esc(s.code)}</span></span><span>≈${s.walk[blk]} min</span></div>${lv && (lv.data || lv.failed) ? `<p class="note live">${esc(liveLine(lv.updatedMs, lv.nowMs, !lv.data))}</p>` : ''}<div class="svcs">${chips}</div>${card}</div>`;
@@ -68,7 +97,9 @@ export const railSvg = (R, site, sw = 1) => Object.entries(R || {}).map(([p, v])
 
 export function routeSvg(svc, fs) {
   const p = svc.path, a = p[0], b = p[p.length - 1];
-  return `<polyline points="${p.map(q => q.join(',')).join(' ')}" fill="none" stroke="#2F6DB5" stroke-width="${fs * .3}" stroke-linejoin="round" stroke-linecap="round"/>` +
+  const m = fs * .5;                                                // chevron at each vertex: travel direction
+  return `<marker id="chev" viewBox="0 0 10 10" refX="5" refY="5" markerUnits="userSpaceOnUse" markerWidth="${m}" markerHeight="${m}" orient="auto"><path d="M2 1L8 5L2 9" fill="none" stroke="#fff" stroke-width="2.5"/></marker>` +
+    `<polyline points="${p.map(q => q.join(',')).join(' ')}" fill="none" stroke="#2F6DB5" stroke-width="${fs * .3}" stroke-linejoin="round" stroke-linecap="round" marker-mid="url(#chev)"/>` +
     svc.stopPts.map(([x, z]) => `<circle cx="${x}" cy="${z}" r="${fs * .22}" fill="#fff" stroke="#2F6DB5" stroke-width="${fs * .1}"/>`).join('') +
     `<text x="${a[0] + fs * .5}" y="${a[1] - fs * .5}" font-size="${fs}" fill="#2F6DB5">from ${esc(svc.from)}</text>` +
     `<text x="${b[0] + fs * .5}" y="${b[1] + fs * 1.2}" font-size="${fs}" fill="#2F6DB5">to ${esc(svc.to)}</text>`;

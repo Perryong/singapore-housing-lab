@@ -216,6 +216,7 @@ let T, R, pick = {}, transitLoad = null, focus = null;           // T: undefined
 const transitGroup = new THREE.Group(); transitGroup.visible = false; scene.add(transitGroup);
 let exitObjs = [], exitKey, ribbon = null, ribbonKey;
 const segGeo = new THREE.BoxGeometry(1, 0.4, 1), segMat = new THREE.MeshBasicMaterial({ color: 0x2F6DB5, transparent: true, opacity: .85 });
+const arrowGeo = new THREE.ConeGeometry(2.6, 7, 3).rotateZ(-Math.PI / 2), arrowMat = new THREE.MeshBasicMaterial({ color: 0xffffff });   // points +x
 function shownBlk() {                                            // same rule as commuteHtml: selected stack's block, else near
   const C = P.commute, st = stacks.find(s => s.no === selStack);
   return C && (st && C.hubs[st.blk] ? st.blk : C.near);
@@ -248,6 +249,7 @@ function updateTransit3d() {
     if (ribbon) transitGroup.remove(ribbon);
     ribbon = new THREE.Group(); transitGroup.add(ribbon);
     const p = T.services[pick.svc]?.path || [];
+    let run = 0, next = 75;                                      // white arrow tiles every 150 m along the shown ribbon: travel direction
     for (let i = 1; i < p.length; i++) {
       // clip the segment to the 1.5 km circle: |a + t(b - a)| <= 1500 for t in [t0, t1]
       const [px, pz] = p[i - 1], dx = p[i][0] - px, dz = p[i][1] - pz;
@@ -257,7 +259,13 @@ function updateTransit3d() {
       if (t0 >= t1) continue;
       const ax = px + t0 * dx, az = pz + t0 * dz, bx = px + t1 * dx, bz = pz + t1 * dz;
       const s = new THREE.Mesh(segGeo, segMat); s.position.set((ax + bx) / 2, 2, (az + bz) / 2);
-      s.rotation.y = Math.atan2(-(bz - az), bx - ax); s.scale.set(Math.hypot(bx - ax, bz - az) + 6, 1, 6); ribbon.add(s);
+      const len = Math.hypot(bx - ax, bz - az), rot = Math.atan2(-(bz - az), bx - ax);
+      s.rotation.y = rot; s.scale.set(len + 6, 1, 6); ribbon.add(s);
+      for (; next <= run + len; next += 150) {
+        const f = (next - run) / len, a = new THREE.Mesh(arrowGeo, arrowMat);
+        a.position.set(ax + f * (bx - ax), 2.3, az + f * (bz - az)); a.rotation.y = rot; a.scale.set(1, .25, 1); ribbon.add(a);
+      }
+      run += len;
     }
   }
 }

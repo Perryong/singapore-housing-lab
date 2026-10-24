@@ -166,6 +166,7 @@ assert list(LT['services']) == ['3/1', '4/1', '4/2'], list(LT['services'])
 l3 = LT['services']['3/1']
 assert l3['from'] == l3['to'] == 'Stop <L1>' and l3['n'] == 4 and l3['band'] == '05-08' and l3['road'] is False
 assert l3['times']['L1'] == ['05:00', '23:00'] and set(l3['times']) == {'L1', 'L2', 'L3'}
+assert l3['stops'] == ['L1', 'L2', 'L3', 'L1'] and len(l3['stops']) == len(l3['stopPts']) and LT['names']['L2'] == 'Stop <L2>'
 pt = [s1['x'], s1['z']]                                                # UI picks the direction reaching the stop first
 assert LT['services']['4/1']['stopPts'].index(pt) < LT['services']['4/2']['stopPts'].index(pt)
 assert LT['stations'] == []
@@ -206,7 +207,7 @@ else:
     R = rail_json(rj('osm_rail')['elements'], G['stations'])
     assert R and all(OPEN.match(p + '1') for p in R) and 'NS' in R and 'CC' in R, list(R)
     assert 'BP' not in R and len(R['NS']['paths']) == 1 and all(len(p) > 4 for v in R.values() for p in v['paths']), R
-for f in Path('projects').glob('*/transit.json'): assert f.stat().st_size <= 120_000, f
+for f in Path('projects').glob('*/transit.json'): assert f.stat().st_size <= 180_000, f   # ~50 KB gzipped, fetched on first Commute open; names for the stop ladder
 if Path('web/rail.json').exists():
     R = json.loads(Path('web/rail.json').read_text())
     assert R and all(OPEN.match(p + '1') for p in R), list(R)
