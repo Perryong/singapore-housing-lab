@@ -469,7 +469,14 @@ def rail_json(rels, stations):
         k = 111_320 * math.cos(math.radians(O[0]))
         pts = line([local_xz(O[0], O[1], lon, lat) for lat, lon in path], 50)
         out[pre].append([[round(O[0] - z / 110_574, 5), round(O[1] + x / k, 5)] for x, z in pts])
-    return {p: {'paths': ps} for p, ps in sorted(out.items())}
+    at = defaultdict(list)   # (prefix, name) -> exit lat/lons; a station sits at the mean of its exits
+    for r in stations:
+        for p in {code_key(c)[0] for c in r['lines'].split() if OPEN.match(c)} & out.keys():
+            at[p, station_name(r)].append((r['lat'], r['lon']))
+    sts = defaultdict(list)
+    for (p, nm), ll in sorted(at.items()):
+        sts[p].append([nm, round(sum(a for a, _ in ll) / len(ll), 5), round(sum(b for _, b in ll) / len(ll), 5)])
+    return {p: {'paths': ps, 'stations': sts[p]} for p, ps in sorted(out.items())}
 
 
 if __name__ == '__main__':

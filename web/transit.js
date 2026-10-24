@@ -92,8 +92,27 @@ export function stationsHtml(T, blk, selStation) {
   return `<h3>Nearest stations</h3>${rows || '<p class="note">None within range.</p>'}`;
 }
 
-export const railSvg = (R, site, sw = 1) => Object.entries(R || {}).map(([p, v]) => v.paths.map(path =>
-  `<polyline points="${path.map(([la, lo]) => toXZ(site, la, lo).join(',')).join(' ')}" fill="none" stroke="${LINE[p] || '#748477'}" stroke-width="${sw}" stroke-linejoin="round" opacity=".85"/>`).join('')).join('');
+// lines, then every station once (interchanges bigger); fs > 0 also labels them, skipping names in `skip` and any that would overlap
+export function railSvg(R, site, sw = 1, fs = 0, skip = new Set()) {
+  const lines = Object.entries(R || {}).map(([p, v]) => v.paths.map(path =>
+    `<polyline points="${path.map(([la, lo]) => toXZ(site, la, lo).join(',')).join(' ')}" fill="none" stroke="${LINE[p] || '#748477'}" stroke-width="${sw}" stroke-linejoin="round" opacity=".85"/>`).join('')).join('');
+  const st = new Map();                                            // name -> [x, z, number of lines]
+  for (const v of Object.values(R || {})) for (const [n, la, lo] of v.stations || []) {
+    const s = st.get(n);
+    if (s) s[2]++; else st.set(n, [...toXZ(site, la, lo), 1]);
+  }
+  const boxes = [], labels = [];
+  const dots = [...st].map(([n, [x, z, k]]) => {
+    const len = n.length * .55 * fs;
+    const hit = boxes.some(([bx, bz, bl]) => Math.abs(x - bx) < (len + bl) / 2 + fs * .3 && Math.abs(z - bz) < fs * 1.1);   // shortcut: first come keeps its label
+    if (fs && !hit && !skip.has(n.toLowerCase())) {
+      boxes.push([x, z, len]);
+      labels.push(`<text x="${x}" y="${z - sw * 2.2}" font-size="${fs}" text-anchor="middle" fill="currentColor" opacity=".75">${esc(n)}</text>`);
+    }
+    return `<circle cx="${x}" cy="${z}" r="${sw * (k > 1 ? 1.6 : 1.1)}" fill="#fff" stroke="#1D2A2E" stroke-width="${sw * (k > 1 ? .55 : .4)}"><title>${esc(n)}</title></circle>`;
+  }).join('');
+  return lines + dots + labels.join('');
+}
 
 export function routeSvg(svc, fs) {
   const p = svc.path, a = p[0], b = p[p.length - 1];
