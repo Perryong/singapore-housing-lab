@@ -43,7 +43,7 @@ export function layoutThumb(P, base, no) {
   return `<button class="layout-thumb" data-a="layout" aria-label="Open floor plan"><img src="${base + l.typical}" alt="Floor plan, stack ${pad(no)}" onerror="const b=this.parentElement;b.nextElementSibling?.classList.add('big');b.remove()"><span>Floor plan · tap to enlarge</span></button>${src}`;
 }
 
-export const SHADE_BY = { hdb: 'a neighbouring HDB block', school: 'a nearby school', cc: 'a nearby community club', library: 'a nearby library',
+export const SHADE_BY = { hdb: 'a neighbouring HDB block', bto: 'a neighbouring BTO block', bldg: 'a nearby building', school: 'a nearby school', cc: 'a nearby community club', library: 'a nearby library',
   hawker: 'a nearby hawker centre', health: 'a nearby health building' };
 // the selected unit: u is one floor of stack st; cur = {y, m, d, min} in Singapore time
 export function unitCardHtml(P, base, st, u, cur) {

@@ -82,9 +82,9 @@ export function addSitePlan(scene, P, base, renderer) {
   plan.receiveShadow = true; planGroup.add(plan);
 }
 
-// simple 3D surroundings (tools/fetch_surround.py): outer-ring HDB, malls, MRT/LRT stations, schools, CCs, libraries, hawker centres,
+// simple 3D surroundings (tools/fetch_surround.py): outer-ring HDB, other BTO projects' blocks, every other OSM building, malls, MRT/LRT stations, schools, CCs, libraries, hawker centres,
 // health buildings, parks; one mesh per kind. Ground areas (h <= 0.2) are flat at y = 0.15, translucent for campus/park.
-const SURROUND = { hdb: 0xC9CEC8, mall: 0xEFA48E, mrt: 0xE58A8A };
+const SURROUND = { hdb: 0xC9CEC8, bto: 0xC9CEC8, bldg: 0xD3D6D1, mall: 0xEFA48E, mrt: 0xE58A8A };
 const shape2d = p => new THREE.Shape(p.map(q => new THREE.Vector2(q[0], -q[1])));
 export function buildSurround(shapes = []) {
   const group = new THREE.Group();

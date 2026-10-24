@@ -89,6 +89,36 @@ assert feature_height({'building': 'yes', 'building:levels': '0'}, 'cc') == 10.0
 assert feature_height({'building': 'yes', 'height': '3;4'}, 'cc') == 3.0
 
 
+# Other projects' stacks -> 'bto' boxes (unbuilt BTOs are not in the HDB data): Q 300 m east, one 10-storey stack
+# facing north (axis 0: hx runs along z), half-size 6 x 4 m; P itself and projects past 1.5 km are skipped
+from tools.fetch_surround import bto_neighbours
+east = lambda m: {'lat': LAT0, 'lon': LON0 + m / (111_320.0 * math.cos(math.radians(LAT0))), 'floorHeight': 2.8}
+NQ = lambda i, m: {'id': i, 'site': east(m), 'plan': {'pxPerM': 1, 'origin': [0, 0], 'upBearing': 0}, 'blocks': {'A': {'floors': 10}},
+                   'stacks': [{'block': 'A', 'px': 0, 'py': 0, 'faces': [0], 'axis': 0, 'size': [6, 4]}]}
+NB = bto_neighbours({'id': 'p', 'site': east(0)}, others=[NQ('p', 0), NQ('q', 300), NQ('far', 2000)])
+assert len(NB) == 1 and NB[0]['k'] == 'bto' and NB[0]['h'] == 29.5, NB
+xs, zs = [q[0] for q in NB[0]['p']], [q[1] for q in NB[0]['p']]
+assert (round(min(xs)), round(max(xs)), round(min(zs)), round(max(zs))) == (296, 304, -6, 6), NB
+
+# Every other OSM building -> 'bldg': tagged or per-type height, roofs skipped, >50% over a drawn outline dropped,
+# 1.5 km drawing / 900 m blocker rules (others=[] via a site with no stacks; all_stacks reads projects/, none near 1.35,103.85)
+from tools.fetch_surround import others
+OB = [way(40, {'building': 'apartments', 'building:levels': '20'}, box(0, 0, 20, 20)),
+      way(41, {'building': 'detached'}, box(100, 0, 110, 10)),
+      way(42, {'building': 'roof'}, box(200, 200, 220, 220)),
+      way(43, {'building': 'yes'}, box(204, 4, 236, 36)),                       # on the existing HDB outline -> dropped
+      way(44, {'building': 'yes'}, box(1000, 0, 1010, 10)),                     # drawn, beyond 900 m: no blocker
+      way(45, {'building': 'industrial'}, box(1600, 0, 1610, 10))]              # beyond 1.5 km
+OS, OBB = others({'site': {'lat': LAT0, 'lon': LON0}}, [list(map(list, box(200, 0, 240, 40)))], elements=OB)
+assert sorted((round(cen(s['p'])[0]), s['h']) for s in OS) == [(10, 60.0), (105, 9.0), (1005, 10.0)], OS   # 20 home storeys x 3 m
+assert all(s['k'] == 'bldg' for s in OS) and sorted(round(cen(b['p'])[0]) for b in OBB) == [10, 105], OBB
+# P's own block mapped in OSM 40 m off its traced stack: same house number -> dropped; another number -> kept
+DP = {'id': 'dp', 'site': {'lat': LAT0, 'lon': LON0}, 'plan': {'pxPerM': 1, 'origin': [0, 0], 'upBearing': 0},
+      'stacks': [{'block': '481a', 'px': 500, 'py': 0}]}
+DS, _ = others(DP, [], elements=[way(50, {'building': 'residential', 'addr:housenumber': '481A'}, box(530, -10, 550, 10)),
+                                 way(51, {'building': 'residential', 'addr:housenumber': '482A'}, box(530, 20, 550, 40))])
+assert [round(cen(s['p'])[1]) for s in DS] == [30], DS
+
 # Host assignment: clinic/supermarket/preschool pins -> the HDB block or mall they sit in
 from tools.fetch_surround import assign_hosts
 bx = lambda x0, z0, x1, z1: [[x0, z0], [x1, z0], [x1, z1], [x0, z1]]
@@ -112,6 +142,7 @@ for f in sorted(Path('projects').glob('*/project.json')):
     Q = json.loads(f.read_text())
     st = all_stacks(Q)
     bad = [(b['k'], b['p'][0]) for b in Q.get('blockers', []) + [s for s in Q.get('surround', []) if s['k'] in GROUND]
+           if b['k'] != 'bto'                                                               # neighbour BTO boxes sit on stacks by design
            for x, z in st if inside(x, z, b['p'])]
     assert not bad, (f.parent.name, bad)
 print('ok: no blocker or ground feature over any project\'s stacks')
