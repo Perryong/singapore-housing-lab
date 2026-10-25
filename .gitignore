@@ -20,7 +20,8 @@ __pycache__/
 .DS_Store
 reference/hdb/*.jpg
 .!*
-reference/resale/
+reference/resale/*
+!reference/resale/geocode.json
 # secrets
 .env
 reference/transit/

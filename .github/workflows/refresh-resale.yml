@@ -1,0 +1,77 @@
+name: Refresh resale data
+
+# Monthly: re-download HDB resale sales, rebuild every project's "resale" summary, retrain the value model,
+# re-estimate every unit, and open a PR with the result (nothing lands on main without review).
+on:
+  schedule:
+    - cron: '0 3 1 * *'   # 1st of the month, 11:00 SGT: the newest month in the data is then the full previous month
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: refresh-resale
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - name: Python deps
+        run: |
+          pip install pillow opencv-python-headless numpy pandas scikit-learn playwright
+          playwright install --with-deps chromium
+
+      - name: Download HDB building footprints and property info (data.gov.sg)
+        run: |
+          get() {  # dataset id, output path; data.gov.sg rate-limits poll-download, so retry with backoff
+            for t in 0 1 2 3 4 5; do
+              sleep $((6 * t))
+              url=$(curl -s "https://api-open.data.gov.sg/v1/public/api/datasets/$1/poll-download" \
+                | python3 -c 'import json,sys; print(json.load(sys.stdin)["data"]["url"])' 2>/dev/null) && break
+            done
+            [ -n "$url" ] || { echo "no download link for $1"; exit 1; }
+            curl -sfL -o "$2" "$url"
+          }
+          get d_16b157c52ed637edd6ba1232e026258d reference/hdb/hdb-buildings.geojson
+          get d_17f5382f26140b1fdae0ba2ef6239d2f reference/hdb/hdb-property.csv
+
+      - name: Resale summaries
+        run: python3 tools/fetch_resale.py --refresh projects/*/
+      - name: Geocode new blocks
+        run: python3 tools/geocode_resale.py
+      - name: Train value model and estimate units
+        run: |
+          python3 tools/train_value.py train
+          python3 tools/train_value.py estimate projects/*/
+      - name: Evaluate model
+        run: python3 tools/eval_value.py
+      - name: Catalogue
+        run: node tools/make_index.js
+      - name: Tests
+        run: npm test
+
+      - name: Open PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet; then echo "no changes"; exit 0; fi
+          month=$(python3 -c "import json; print(json.load(open('reference/resale/value-metrics.json'))['asOf'])")
+          branch="data/resale-$month"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898+github-actions[bot]@users.noreply.github.com'
+          git checkout -B "$branch"
+          git commit -qam "data: resale and value estimates up to $month"
+          git push -f origin "$branch"
+          gh pr view "$branch" >/dev/null 2>&1 || gh pr create --head "$branch" \
+            --title "data: resale and value estimates up to $month" \
+            --body "Monthly refresh by \`.github/workflows/refresh-resale.yml\`: resale summaries, value model retrained, every unit re-estimated, \`docs/model/eval.json\` regenerated. Tests passed in the run. The hand-written numbers in \`docs/model/README.md\` are not updated."
