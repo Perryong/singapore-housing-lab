@@ -9,7 +9,7 @@ except ImportError:
 class Quiet(http.server.SimpleHTTPRequestHandler):
     def log_message(self, *a): pass
 handler = functools.partial(Quiet, directory='.')
-srv = socketserver.TCPServer(('127.0.0.1', 0), handler)
+srv = socketserver.ThreadingTCPServer(('127.0.0.1', 0), handler)      # an idle browser connection must not block the next page load
 threading.Thread(target=srv.serve_forever, daemon=True).start()
 url = f'http://127.0.0.1:{srv.server_address[1]}/web/?p=kim-keat-crest'
 
