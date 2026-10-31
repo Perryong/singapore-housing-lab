@@ -9,7 +9,7 @@ except ImportError:
 class Quiet(http.server.SimpleHTTPRequestHandler):
     def log_message(self, *a): pass
 handler = functools.partial(Quiet, directory='.')
-srv = socketserver.ThreadingTCPServer(('127.0.0.1', 0), handler)      # an idle browser connection must not block the next page load
+srv = socketserver.TCPServer(('127.0.0.1', 0), handler)
 threading.Thread(target=srv.serve_forever, daemon=True).start()
 url = f'http://127.0.0.1:{srv.server_address[1]}/web/?p=kim-keat-crest'
 
@@ -51,9 +51,14 @@ with sync_playwright() as p:
     CAM = '([g, d, far]) => { const v = Math.hypot(...__cam().map((x, i) => x - g[i])); return far ? v > d : v < d; }'
     def cam(goal, d, far=False):                                                 # software rendering runs at ~1 fps
         page.wait_for_function(CAM, arg=[goal, d, far], timeout=90000)
+    def visit(u):                                                                # a fresh page: the old one's render loop slows CI
+        global page
+        page.close(); page = b.new_page(viewport={'width': 1280, 'height': 800})
+        page.on('pageerror', lambda e: errors.append(str(e)))
+        page.goto(u, wait_until='domcontentloaded', timeout=90000)
+        page.wait_for_selector('#loading', state='detached', timeout=90000)
     for slug, off in (('kim-keat-crest', '#modes .mode[data-m=resale]'), ('tengah-oct-2026', '#resaleOff')):
-        page.goto(url.replace('kim-keat-crest', slug))
-        page.wait_for_selector('#loading', state='detached', timeout=60000)
+        visit(url.replace('kim-keat-crest', slug))
         before = page.evaluate('__cam()')
         resale_is(False, f'{slug}: starts off')
         page.click('#modes .mode[data-m=resale]')
@@ -62,7 +67,7 @@ with sync_playwright() as p:
         page.click(off)
         resale_is(False, f'{slug}: {off} turns it off')
         cam(before, 5)
-    page.goto(url); page.wait_for_selector('#loading', state='detached', timeout=60000)
+    visit(url)
     page.click('#modes .mode[data-m=resale]'); page.click('#modes .mode[data-m=pm]')
     assert on('#modes .mode[data-m=pm]') and not page.is_visible('#resalePanel')  # another mode still leaves resale
     assert page.is_visible('#tableWrap')
