@@ -26,6 +26,6 @@ export function pickerHtml(INDEX, pid, q = '') {
       <div class="m">${esc([p.town, p.classification, `${p.units.toLocaleString('en-SG')} units`].filter(Boolean).join(' · '))}</div>
       <div class="m">${esc(p.flatTypes.join(', '))}</div>
       ${cmpHtml(p.cmp)}
-      <span class="tag ${p.hasLayout ? '' : 'no'}">${p.hasLayout ? '3D sun study' : 'Layout not released'}</span>
+      ${p.availability === 'closed' ? `<span class="tag no" title="Closed since ${esc(p.since)}">Closed</span> ` : ''}<span class="tag ${p.hasLayout ? '' : 'no'}">${p.hasLayout ? '3D sun study' : 'Layout not released'}</span>
     </a>`).join('')}</div></section>`).join('') || '<p class="note">No projects match.</p>';
 }
