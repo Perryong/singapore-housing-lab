@@ -5,7 +5,7 @@ Pick a unit in an HDB BTO project and see how much direct sun reaches its window
 it, plus nearby resale prices and a machine-learning estimate of what the unit would resell for.
 
 **Live:** https://singapore-housing-lab.vercel.app · 29 projects (every BTO launched from Oct 2025 to Jun 2026 except
-Redhill Peaks II, plus the 7 upcoming Oct 2026 sites)
+Redhill Peaks II, plus the 7 upcoming Nov 2026 sites)
 
 ![Sun moving across Kim Keat Crest from 7 am to 7 pm](docs/demo.gif)
 
