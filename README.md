@@ -9,6 +9,24 @@ Redhill Peaks II, plus the 7 upcoming Nov 2026 sites)
 
 ![Sun moving across Kim Keat Crest from 7 am to 7 pm](docs/demo.gif)
 
+## Recent changes
+
+**Resale nearby turns off again.** Click "Resale nearby" a second time, or "Back to BTO", to return to the BTO view. The
+camera goes back to where it was. Upcoming projects, where this is the only mode button, now have a way back too.
+
+| Resale nearby on | Back to the BTO view |
+|---|---|
+| ![Resale nearby on, with the Back to BTO button and nearby blocks coloured by price](docs/screenshots/resale-on.jpg) | ![Back on the BTO view, with the camera returned to the project](docs/screenshots/resale-off.jpg) |
+
+**Closed projects.** A project HDB has closed gets a "Closed" tag and stays browsable
+(see [Mark a project closed](#mark-a-project-closed)). The picture is a test: no project is marked closed yet.
+
+![A project card in the picker with a grey Closed tag, from a test](docs/screenshots/closed-tag.jpg)
+
+**Weekly data.** `.github/workflows/refresh-resale.yml` refreshes resale data every Friday at 8 am Singapore time and
+commits to `main` once the tests pass. The first Friday of each month also retrains the value model, so the estimates
+change monthly.
+
 ## Results
 
 - **Resale value model:** 3.0% median error on 11,878 unseen recent sales. That is 3× more accurate than the town
