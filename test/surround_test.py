@@ -147,8 +147,10 @@ for f in sorted(Path('projects').glob('*/project.json')):
     assert not bad, (f.parent.name, bad)
 print('ok: no blocker or ground feature over any project\'s stacks')
 
-if not Path('reference/hdb/hdb-buildings.geojson').exists():
-    sys.exit(print('skipped: HDB footprints not present'))
+from tools.fetch_surround import OSM, FEATURES
+# the raw OSM caches are git-ignored; without them surround() would query public Overpass servers for up to an hour
+if not all(f.exists() for f in (Path('reference/hdb/hdb-buildings.geojson'), OSM, FEATURES)):
+    sys.exit(print('skipped: HDB footprints or OSM caches not present'))
 P = json.load(open('projects/kim-keat-crest/project.json'))
 S = surround(P)[0]
 cen = lambda p: (sum(q[0] for q in p) / len(p), sum(q[1] for q in p) / len(p))
