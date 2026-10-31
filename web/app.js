@@ -28,7 +28,7 @@ const hasLayout = stacks.length > 0;
 
 /* ---------- Which project is this: header + picker ---------- */
 document.title = `${P.name} · ${BADGE[P.status](P)} · Sun study`;
-$('#badge').textContent = BADGE[P.status](P); $('#badge').className = 'badge ' + P.status;
+$('#badge').textContent = BADGE[P.status](P) + (INDEX.find(p => p.id === pid)?.availability === 'closed' ? ' · Closed' : ''); $('#badge').className = 'badge ' + P.status;
 $('#projName').textContent = P.name;
 $('#projMeta').textContent = [P.town, P.classification && `${P.classification}`, P.units && `${P.units.toLocaleString('en-SG')} units`].filter(Boolean).join(' · ');
 $('#name').textContent = P.name; $('#tagline').textContent = P.tagline || ''; $('#notes').textContent = P.notes || '';

@@ -126,6 +126,17 @@ npm test
    30 s, from https://sg-bus-api.vercel.app (`PROD_API` in `web/live.js`); locally, run that API on `:8010` to see live minutes.
 8. `node tools/build.js projects/<slug>`, `node tools/make_index.js`.
 
+## Mark a project closed
+
+HDB's portal refuses automated requests, so this is a manual step. In `reference/hdb/listing-status.json`, add the
+project and update `reviewed` to today. `node tools/make_index.js` applies it, and the Friday refresh does too.
+The project stays browsable with a "Closed" tag. `make_index` warns once `reviewed` is over 60 days old.
+
+```json
+{ "reviewed": "2026-11-06",
+  "projects": { "<slug>": { "availability": "closed", "since": "2026-11-06", "source": "<where HDB said so>" } } }
+```
+
 Projects live outside `~/Documents`: macOS revokes access when Blender is launched on files there.
 
 ## Limits

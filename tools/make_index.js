@@ -3,6 +3,7 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { RESALE_TYPE, compareType } from '../web/resale.js';
+import { applyListingStatus, staleWarning } from './listing_status.js';
 
 const DIR = join(resolve(dirname(fileURLToPath(import.meta.url)), '..'), 'projects');
 const ORDER = { upcoming: 0, launched: 1, reference: 2 };
@@ -24,5 +25,9 @@ const list = readdirSync(DIR).filter(d => existsSync(join(DIR, d, 'project.json'
     classification: P.classification || null, units: P.units || P.stacks.length, flatTypes: types,
     hasLayout: P.stacks.length > 0 && existsSync(join(DIR, d, 'model.glb')), cmp: cmpOf(P) };
 }).sort((a, b) => ORDER[a.status] - ORDER[b.status] || month(b.launch) - month(a.launch) || a.name.localeCompare(b.name));
+const status = JSON.parse(readFileSync(join(DIR, '../reference/hdb/listing-status.json')));
+applyListingStatus(list, status);
+const stale = staleWarning(status);
+if (stale) console.log(`::warning::${stale}`);
 writeFileSync(join(DIR, 'index.json'), JSON.stringify(list, null, 1));
 console.log(`${list.length} projects: ` + Object.entries(Object.groupBy(list, p => p.status)).map(([k, v]) => `${k} ${v.length}`).join(', '));
