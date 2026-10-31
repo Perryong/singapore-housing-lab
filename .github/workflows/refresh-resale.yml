@@ -1,15 +1,20 @@
 name: Refresh resale data
 
-# Monthly: re-download HDB resale sales, rebuild every project's "resale" summary, retrain the value model,
-# re-estimate every unit, and open a PR with the result (nothing lands on main without review).
+# Weekly: re-download HDB resale sales, rebuild every project's "resale" summary and, if the tests pass, commit
+# straight to main so Vercel redeploys the site. First Friday of the month: also retrain the value model and
+# re-estimate every unit (monthly because a retrain alone can move a unit's estimate by several percent).
 on:
   schedule:
-    - cron: '0 3 1 * *'   # 1st of the month, 11:00 SGT: the newest month in the data is then the full previous month
+    - cron: '0 0 * * 5'   # Friday 08:00 SGT; the newest month in the data is usually still incomplete
   workflow_dispatch:
+    inputs:
+      retrain:
+        description: Also retrain the value model and re-estimate units
+        type: boolean
+        default: false
 
 permissions:
   contents: write
-  pull-requests: write
 
 concurrency:
   group: refresh-resale
@@ -49,29 +54,23 @@ jobs:
         run: python3 tools/fetch_resale.py --refresh projects/*/
       - name: Geocode new blocks
         run: python3 tools/geocode_resale.py
-      - name: Train value model and estimate units
+      - name: Train value model, estimate units, evaluate
         run: |
+          if [ "${{ inputs.retrain }}" != true ] && [ "$(date -u +%-d)" -gt 7 ]; then echo "not the first Friday: keeping current estimates"; exit 0; fi
           python3 tools/train_value.py train
           python3 tools/train_value.py estimate projects/*/
-      - name: Evaluate model
-        run: python3 tools/eval_value.py
+          python3 tools/eval_value.py
       - name: Catalogue
         run: node tools/make_index.js
       - name: Tests
         run: npm test
 
-      - name: Open PR
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Commit to the branch this run is on
         run: |
           if git diff --quiet; then echo "no changes"; exit 0; fi
-          month=$(python3 -c "import json; print(json.load(open('reference/resale/value-metrics.json'))['asOf'])")
-          branch="data/resale-$month"
+          month=$(python3 -c "import json; print(json.load(open('projects/tampines-nova/project.json'))['resale']['asOf'])")
           git config user.name 'github-actions[bot]'
           git config user.email '41898+github-actions[bot]@users.noreply.github.com'
-          git checkout -B "$branch"
-          git commit -qam "data: resale and value estimates up to $month"
-          git push -f origin "$branch"
-          gh pr view "$branch" >/dev/null 2>&1 || gh pr create --head "$branch" \
-            --title "data: resale and value estimates up to $month" \
-            --body "Monthly refresh by \`.github/workflows/refresh-resale.yml\`: resale summaries, value model retrained, every unit re-estimated, \`docs/model/eval.json\` regenerated. Tests passed in the run. The hand-written numbers in \`docs/model/README.md\` are not updated."
+          git commit -qam "data: resale refresh up to $month ($(date +%F))"
+          git pull -q --rebase
+          git push

@@ -3,7 +3,7 @@
   "id": "bedok-bayshore-i-oct-2026",
   "name": "Bedok (Bayshore I)",
   "town": "Bedok",
-  "launch": "Oct 2026",
+  "launch": "Nov 2026",
   "status": "upcoming",
   "kind": "bto",
   "classification": null,
@@ -17,7 +17,7 @@
   "cmp": {
    "type": "4 ROOM",
    "bto": null,
-   "resale": 911500,
+   "resale": 913000,
    "radiusM": 900
   }
  },
@@ -25,7 +25,7 @@
   "id": "bedok-bayshore-ii-oct-2026",
   "name": "Bedok (Bayshore II)",
   "town": "Bedok",
-  "launch": "Oct 2026",
+  "launch": "Nov 2026",
   "status": "upcoming",
   "kind": "bto",
   "classification": null,
@@ -38,7 +38,7 @@
   "cmp": {
    "type": "4 ROOM",
    "bto": null,
-   "resale": 951944,
+   "resale": 955000,
    "radiusM": 900
   }
  },
@@ -46,7 +46,7 @@
   "id": "geylang-oct-2026",
   "name": "Geylang",
   "town": "Geylang",
-  "launch": "Oct 2026",
+  "launch": "Nov 2026",
   "status": "upcoming",
   "kind": "bto",
   "classification": null,
@@ -59,7 +59,7 @@
   "cmp": {
    "type": "4 ROOM",
    "bto": null,
-   "resale": 744444,
+   "resale": 758888,
    "radiusM": 900
   }
  },
@@ -67,7 +67,7 @@
   "id": "sembawang-oct-2026",
   "name": "Sembawang",
   "town": "Sembawang",
-  "launch": "Oct 2026",
+  "launch": "Nov 2026",
   "status": "upcoming",
   "kind": "bto",
   "classification": null,
@@ -90,7 +90,7 @@
   "id": "tengah-oct-2026",
   "name": "Tengah",
   "town": "Tengah",
-  "launch": "Oct 2026",
+  "launch": "Nov 2026",
   "status": "upcoming",
   "kind": "bto",
   "classification": null,
@@ -106,7 +106,7 @@
   "cmp": {
    "type": "4 ROOM",
    "bto": null,
-   "resale": 650000,
+   "resale": 645000,
    "radiusM": 900
   }
  },
@@ -114,7 +114,7 @@
   "id": "toa-payoh-caldecott-oct-2026",
   "name": "Toa Payoh (Caldecott)",
   "town": "Toa Payoh",
-  "launch": "Oct 2026",
+  "launch": "Nov 2026",
   "status": "upcoming",
   "kind": "bto",
   "classification": null,
@@ -136,7 +136,7 @@
   "id": "yishun-chencharu-oct-2026",
   "name": "Yishun (Chencharu)",
   "town": "Yishun",
-  "launch": "Oct 2026",
+  "launch": "Nov 2026",
   "status": "upcoming",
   "kind": "bto",
   "classification": null,
@@ -275,7 +275,7 @@
     302000,
     428000
    ],
-   "resale": 530500,
+   "resale": 531000,
    "radiusM": 900
   }
  },
@@ -476,7 +476,7 @@
     578000,
     788000
    ],
-   "resale": 944888,
+   "resale": 943888,
    "radiusM": 900
   }
  },
@@ -501,7 +501,7 @@
     543000,
     735000
    ],
-   "resale": 665000,
+   "resale": 667500,
    "radiusM": 900
   }
  },
@@ -527,7 +527,7 @@
     358000,
     439000
    ],
-   "resale": 539000,
+   "resale": 538944,
    "radiusM": 900
   }
  },
@@ -578,7 +578,7 @@
     558000,
     787000
    ],
-   "resale": 1016500,
+   "resale": 1018000,
    "radiusM": 900
   }
  },
@@ -603,7 +603,7 @@
     514000,
     650000
    ],
-   "resale": 823888,
+   "resale": 837500,
    "radiusM": 900
   }
  },

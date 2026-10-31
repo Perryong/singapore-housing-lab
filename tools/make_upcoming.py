@@ -13,9 +13,9 @@ from fetch_context import fetch   # noqa: E402
 for u in json.loads((ROOT / 'reference/hdb/upcoming.json').read_text()):
     d = ROOT / 'projects' / u['slug']
     d.mkdir(parents=True, exist_ok=True)
-    P = {'id': u['slug'], 'name': u['name'], 'kind': 'bto', 'status': 'upcoming', 'launch': 'Oct 2026',
+    P = {'id': u['slug'], 'name': u['name'], 'kind': 'bto', 'status': 'upcoming', 'launch': 'Nov 2026',
          'town': u['town'], 'units': u['units'], 'flatTypes': u['flatTypes'], 'contract': u['code'],
-         'tagline': f"Upcoming BTO · Oct 2026 launch · {u['town']} · {u['units']:,} units",
+         'tagline': f"Upcoming BTO · Nov 2026 launch · {u['town']} · {u['units']:,} units",
          'site': {'lat': u['lat'], 'lon': u['lon'], 'tz': 8, 'floorHeight': 2.8},
          'blocks': {}, 'stacks': [], 'categories': {},
          'notes': ("HDB has not released this project's site plan yet, so its blocks are not shown. The pin marks "
