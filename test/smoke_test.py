@@ -42,6 +42,35 @@ with sync_playwright() as p:
     page.mouse.click(cx, spot)
     again = page.text_content('#unitCard .unit-no') if page.query_selector('#unitCard .unit-no') else None
     assert again == no, f'clicking {no} after clearing selected {again}'
+
+    # Resale nearby turns off again, on projects with and without other modes, and the camera goes back
+    def on(sel): return page.get_attribute(sel, 'aria-pressed') == 'true'
+    def resale_is(state, why):
+        assert on('#modes .mode[data-m=resale]') == state and page.is_visible('#resalePanel') == state \
+            and page.is_visible('#resaleBack') == state, why
+    CAM = '([g, d, far]) => { const v = Math.hypot(...__cam().map((x, i) => x - g[i])); return far ? v > d : v < d; }'
+    def cam(goal, d, far=False):                                                 # software rendering runs at ~1 fps
+        page.wait_for_function(CAM, arg=[goal, d, far], timeout=90000)
+    def visit(u):                                                                # a fresh page: the old one's render loop slows CI
+        global page
+        page.close(); page = b.new_page(viewport={'width': 1280, 'height': 800})
+        page.on('pageerror', lambda e: errors.append(str(e)))
+        page.goto(u, wait_until='domcontentloaded', timeout=90000)
+        page.wait_for_selector('#loading', state='detached', timeout=90000)
+    for slug, off in (('kim-keat-crest', '#modes .mode[data-m=resale]'), ('tengah-oct-2026', '#resaleOff')):
+        visit(url.replace('kim-keat-crest', slug))
+        before = page.evaluate('__cam()')
+        resale_is(False, f'{slug}: starts off')
+        page.click('#modes .mode[data-m=resale]')
+        resale_is(True, f'{slug}: on')
+        cam(before, 20, far=True)
+        page.click(off)
+        resale_is(False, f'{slug}: {off} turns it off')
+        cam(before, 5)
+    visit(url)
+    page.click('#modes .mode[data-m=resale]'); page.click('#modes .mode[data-m=pm]')
+    assert on('#modes .mode[data-m=pm]') and not page.is_visible('#resalePanel')  # another mode still leaves resale
+    assert page.is_visible('#tableWrap')
     assert not errors, errors
     b.close()
 srv.shutdown()

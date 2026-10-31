@@ -434,8 +434,13 @@ function syncLive() {
 document.addEventListener('visibilitychange', syncLive);
 function renderValue() { $('#valuePanel').innerHTML = valueHtml(P, stacks, selStack, selFloor); }
 $('#valuePanel').addEventListener('click', e => { const r = e.target.closest('tr[data-s]'); if (r) select(+r.dataset.s); });
+let camBack = null;                                            // the view to return to when resale mode ends
+window.__cam = () => camera.position.toArray();                // test hook
 function setResaleMode(on) {
+  if (on && !camBack) camBack = { target: controls.target.clone(), pos: camera.position.clone() };
+  if (!on && camBack) { camGoal = camBack; camBack = null; }
   resaleGroup.visible = on;
+  $('#resaleBack').hidden = !on;
   $('#resaleTypes').hidden = !on || !RS;
   $('#resalePanel').hidden = !on;
   if (!on) $('#resaleCard').hidden = true;
@@ -596,10 +601,15 @@ $('#presets').addEventListener('click', e => {
 const timeIn = $('#time');
 timeIn.addEventListener('input', () => { setLive(false); cur.min = +timeIn.value; refreshNow(); });
 $('#now').addEventListener('click', () => setLive(true));
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll('.mode').forEach(x => x.setAttribute('aria-pressed', x.dataset.m === m)); setResaleMode(m === 'resale'); paint();
+}
 $('#modes').addEventListener('click', e => {
-  const b = e.target.closest('.mode'); if (!b) return; mode = b.dataset.m;
-  document.querySelectorAll('.mode').forEach(x => x.setAttribute('aria-pressed', x === b)); setResaleMode(mode === 'resale'); paint();
+  const m = e.target.closest('.mode')?.dataset.m; if (!m) return;
+  setMode(m === 'resale' && mode === 'resale' ? 'now' : m);      // clicking resale again turns it off
 });
+$('#resaleOff').addEventListener('click', () => setMode('now'));
 let playing = false, lastT = 0;
 $('#play').addEventListener('click', () => { playing = !playing; if (playing) setLive(false); $('#play').textContent = playing ? '❚❚' : '▶'; $('#play').setAttribute('aria-label', playing ? 'Pause' : 'Play the day'); lastT = performance.now(); });
 
