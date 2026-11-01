@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 const INDEX = JSON.parse(readFileSync('projects/index.json'));
 const sitemap = readFileSync('sitemap.xml', 'utf8');
+// .vercelignore is an allow-list: anything not named here 404s in production.
+const deployed = readFileSync('.vercelignore', 'utf8');
+for (const path of ['/bto', '/robots.txt', '/sitemap.xml']) assert.ok(deployed.includes(`!${path}\n`), `${path} not deployed`);
 assert.match(readFileSync('robots.txt', 'utf8'), /Sitemap: https:\/\/singapore-housing-lab\.vercel\.app\/sitemap\.xml/);
 assert.equal(sitemap.match(/<loc>/g).length, INDEX.length + 2);
 const titles = new Set(), descs = new Set();
