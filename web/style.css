@@ -154,6 +154,8 @@ td.price{white-space:nowrap}
 .cmp-key .sw.bto{background:var(--accent)}.cmp-key .sw.rs{background:var(--rs);margin-left:8px}
 .mode.rs-mode{border-left:3px solid var(--rs)}
 .mode.rs-mode[aria-pressed="true"]{background:var(--rs-soft);border-color:var(--rs)}
+.winbar{position:absolute;z-index:3;top:72px;left:324px;right:408px;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;padding:6px 8px;border-radius:10px;background:rgba(255,255,255,.94);font-size:13px;color:var(--ink);box-shadow:var(--sh-2)}
+@media(max-width:820px){.winbar{top:auto;bottom:66px;left:8px;right:8px}}   /* the sticky header covers the top of the stage */
 .rs-back{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;font-size:13px;color:var(--ink-2)}
 .layout-src{display:block;font-size:12px;color:var(--muted);text-align:right;margin:-4px 2px 6px}
 .layout-src.big{margin:8px 0;padding:10px;border:1px solid var(--line);border-radius:8px;background:#fff;text-align:center;font-size:13px;font-weight:600;color:var(--ink);text-decoration:none}

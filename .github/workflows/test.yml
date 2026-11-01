@@ -26,4 +26,5 @@ jobs:
       - name: Catalogue is up to date
         run: |
           node tools/make_index.js
-          git diff --exit-code projects/index.json
+          node tools/build_seo.js
+          git diff --exit-code projects/index.json bto sitemap.xml robots.txt

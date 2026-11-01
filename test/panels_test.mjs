@@ -1,7 +1,7 @@
 // Side-panel HTML renderers on a real project (pure modules; no browser, no three.js).
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { buildLayout } from '../web/project.js';
+import { buildLayout, windowView } from '../web/project.js';
 import { unitCardHtml, stackTable, legendHtml, card16 } from '../web/unit.js';
 import { pickerHtml, cmpHtml } from '../web/picker.js';
 import { amenitiesHtml } from '../web/nearby.js';
@@ -15,6 +15,11 @@ const { stacks } = buildLayout(P);
 for (const u of stacks.flatMap(s => s.units)) Object.assign(u, { am: 1, pm: 2, p3: 0.5, now: 'lit' });
 for (const s of stacks) Object.assign(s, { am: 1, pm: 2 });
 
+{ // window view: 1 m outside the facade, looking straight out, at the unit's height; corner units cycle their facades
+  const c = stacks.find(s => s.fp.length > 1), u = c.units[0], [a, b] = [0, 1].map(i => windowView(c, u, i)), f = c.fp[0];
+  assert.deepEqual(a.eye, [f.px + f.nx, u.y, f.pz + f.nz]); assert.equal(a.eye[1], a.target[1]);
+  assert.equal(a.bearing, c.faces[0]); assert.equal(b.bearing, c.faces[1]); assert.equal(windowView(c, u, c.fp.length).bearing, c.faces[0]);
+}
 assert.equal(esc('<a href="x">&'), '&lt;a href=&quot;x&quot;&gt;&amp;');
 assert.equal(fmtTime(0), '12:00 am'); assert.equal(fmtTime(13 * 60 + 5), '1:05 pm'); assert.equal(fmtTime(719.7), '12:00 pm');
 assert.equal(card16(0), 'N'); assert.equal(card16(250), 'WSW'); assert.equal(card16(-10), 'N');

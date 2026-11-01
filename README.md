@@ -144,6 +144,11 @@ npm test
    30 s, from https://sg-bus-api.vercel.app (`PROD_API` in `web/live.js`); locally, run that API on `:8010` to see live minutes.
 8. `node tools/build.js projects/<slug>`, `node tools/make_index.js`.
 
+## Search pages
+
+`node tools/build_seo.js` writes `bto/<slug>/index.html`, `bto/index.html`, `sitemap.xml` and `robots.txt` from the
+catalogue. Run it after `make_index.js`. CI fails if the committed pages are out of date, and the Friday refresh rebuilds them.
+
 ## Mark a project closed
 
 HDB's portal refuses automated requests, so this is a manual step. In `reference/hdb/listing-status.json`, add the

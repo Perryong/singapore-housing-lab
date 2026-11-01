@@ -69,6 +69,7 @@ export function unitCardHtml(P, base, st, u, cur) {
     <div class="btns">
       <button class="btn" data-a="up" ${u.floor >= st.floors ? 'disabled' : ''}>Floor up</button>
       <button class="btn" data-a="down" ${u.floor <= st.first ? 'disabled' : ''}>Floor down</button>
+      <button class="btn" data-a="view">View from window</button>
       <button class="btn" data-a="clear">Clear selection</button>
     </div></div>`;
 }

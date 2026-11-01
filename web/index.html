@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Sun study</title>
+<title>BTOlab: sun, price, value and commute for Singapore BTO flats</title>
+<link rel="canonical" href="https://singapore-housing-lab.vercel.app/web/">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2712%27 fill=%27%23E8931C%27/%3E%3C/svg%3E">
 <meta name="description" content="See how much direct sun reaches every unit in Singapore HDB BTO projects, hour by hour, in 3D, with nearby resale prices and an ML resale estimate.">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
@@ -55,9 +56,10 @@
   <input id="pickSearch" type="search" placeholder="Search project, town or flat type" aria-label="Search projects">
   <p class="cmp-key"><span class="sw bto"></span>BTO: new flat from HDB, official launch price <span class="sw rs"></span>Resale: flats sold nearby, last 24 months</p>
   <div id="pickList"></div>
+  <p class="cmp-key"><a href="../bto/">All project pages</a></p>
 </dialog>
 
-<div id="stage"><div id="tip" role="tooltip"></div><div class="attrib">Map: OneMap © Singapore Land Authority · Buildings, MRT lines, bus routes © OpenStreetMap contributors · Transit: LTA DataMall (Singapore Open Data Licence)</div><div id="loading">Loading model…</div></div>
+<div id="stage"><div id="tip" role="tooltip"></div><div id="winBar" class="winbar" hidden><span id="winText" aria-live="polite"></span><button class="btn" id="winUp">Floor up</button><button class="btn" id="winDown">Floor down</button><button class="btn" id="winTurn">Other window</button><button class="btn" id="winExit">Exit view</button></div><div class="attrib">Map: OneMap © Singapore Land Authority · Buildings, MRT lines, bus routes © OpenStreetMap contributors · Transit: LTA DataMall (Singapore Open Data Licence)</div><div id="loading">Loading model…</div></div>
 
 <aside class="panel left">
   <h1 id="name" class="vh">Sun study</h1>
