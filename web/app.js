@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { buildLayout, bdir, catOf, sizeOf, deg } from './project.js';
+import { buildLayout, bdir, catOf, sizeOf, deg, windowView } from './project.js';
 import { solarPos, sunVec, computeDay, computeNow, sunTimes } from './sun.js';
 import { moonAltAz, moonTimes, moonPhase, sgtNow, phaseSvg } from './moon.js';
 import { esc, pad, fmtTime } from './format.js';
@@ -28,6 +28,7 @@ const hasLayout = stacks.length > 0;
 
 /* ---------- Which project is this: header + picker ---------- */
 document.title = `${P.name} · ${BADGE[P.status](P)} · Sun study`;
+if (asked === pid) document.querySelector('link[rel=canonical]').href = `/bto/${encodeURIComponent(pid)}/`;   // the crawlable page for this project
 $('#badge').textContent = BADGE[P.status](P) + (INDEX.find(p => p.id === pid)?.availability === 'closed' ? ' · Closed' : ''); $('#badge').className = 'badge ' + P.status;
 $('#projName').textContent = P.name;
 $('#projMeta').textContent = [P.town, P.classification && `${P.classification}`, P.units && `${P.units.toLocaleString('en-SG')} units`].filter(Boolean).join(' · ');
@@ -162,8 +163,38 @@ const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 1, 8), new THRE
 let selLabel = null;
 const selGroup = new THREE.Group(); selGroup.add(stackOutline, unitBox, unitEdge, beam); selGroup.visible = false; scene.add(selGroup);
 let camGoal = null;
+let win = null;                                                 // window view: the facade shown and the view to return to
+function showWindow() {
+  const st = stacks.find(s => s.no === selStack), u = st.units.find(u => u.floor === selFloor) || st.units[0];
+  const v = windowView(st, u, win.face);
+  camera.position.set(...v.eye); controls.target.set(...v.target); camGoal = null; selGroup.visible = false; if (selLabel) selLabel.visible = false;
+  $('#winText').textContent = `#${pad(u.floor)}-${pad(st.no)} · facing ${card16(v.bearing)} · simulated, buildings only`;
+  $('#winUp').disabled = u.floor >= st.floors; $('#winDown').disabled = u.floor <= st.first; $('#winTurn').hidden = st.fp.length < 2;
+}
+function enterWindow() {
+  if (!win) {
+    win = { face: 0, pos: camera.position.clone(), target: controls.target.clone(), fov: camera.fov, near: camera.near };
+    // pins and labels are sized for the overview and would fill the screen from here
+    win.hidden = [blockLabels, stackLabels, compass, facGroup, amenGroup, transitGroup].map(g => [g, g.visible]);
+    for (const [g] of win.hidden) g.visible = false;
+    // orbiting a point 0.5 m away turns the camera on the spot, so dragging looks around
+    Object.assign(controls, { minDistance: 0.1, enableZoom: false, enablePan: false, maxPolarAngle: Math.PI * 0.65 });
+    camera.fov = 65; camera.near = 0.3; camera.updateProjectionMatrix();
+    $('#winBar').hidden = false;
+  }
+  showWindow();
+  if (matchMedia('(max-width:820px)').matches) stage.scrollIntoView({ block: 'start', behavior: 'smooth' });
+}
+function exitWindow() {
+  if (!win) return;
+  camera.position.copy(win.pos); controls.target.copy(win.target); camera.fov = win.fov; camera.near = win.near; camera.updateProjectionMatrix();
+  Object.assign(controls, { minDistance: 60, enableZoom: true, enablePan: true, maxPolarAngle: 1.5 });
+  for (const [g, v] of win.hidden) g.visible = v;
+  win = null; camGoal = null; $('#winBar').hidden = true; selGroup.visible = selStack != null; if (selLabel) selLabel.visible = true;
+}
 function updateOutlines() {
   const st = stacks.find(s => s.no === selStack);
+  if (!st) exitWindow();
   if (selLabel) { scene.remove(selLabel); selLabel.material.map.dispose(); selLabel = null; }
   if (!st) { selGroup.visible = false; return; }
   selGroup.visible = true;
@@ -178,6 +209,7 @@ function updateOutlines() {
   // ease the camera to look at the flat from its window side
   const [nx, nz] = bdir(st.faces[0]), d = Math.max(140, camera.position.distanceTo(controls.target) * 0.6);
   camGoal = { target: new THREE.Vector3(st.x, u.y, st.z), pos: new THREE.Vector3(st.x + nx * d, u.y + d * 0.55, st.z + nz * d) };
+  if (win) showWindow();
 }
 
 /* ---------- Amenities: estate facilities (site plan) + nearby (government open data) ---------- */
@@ -198,6 +230,7 @@ const amenSprites = [];
 function renderAmenities() { $('#amenList').innerHTML = amenitiesHtml(P); }
 let amenFocus = null;
 function frame(x, z) {                                           // ease the camera to show the site and the point (x, z)
+  exitWindow();
   const d = Math.max(220, Math.hypot(x, z) * 1.4);
   camGoal = { target: new THREE.Vector3(x / 2, 0, z / 2), pos: new THREE.Vector3(x / 2 - d * 0.5, d * 0.9, z / 2 + d * 0.7) };
 }
@@ -576,8 +609,14 @@ $('#unitCard').addEventListener('click', e => {
   if (a === 'up' && selFloor < st.floors) select(selStack, selFloor + 1);
   else if (a === 'down' && selFloor > st.first) select(selStack, selFloor - 1);
   else if (a === 'layout') openLayout(st.no);
+  else if (a === 'view') enterWindow();
   else if (a === 'clear') { selStack = selFloor = null; camGoal = null; updateOutlines(); paint(); renderUnitCard(); renderTable(); keepPick(); if (rtab === 'value') renderValue(); else if (rtab === 'commute') renderCommute(); }
 });
+$('#winUp').addEventListener('click', () => select(selStack, selFloor + 1));
+$('#winDown').addEventListener('click', () => select(selStack, selFloor - 1));
+$('#winTurn').addEventListener('click', () => { win.face++; showWindow(); });
+$('#winExit').addEventListener('click', exitWindow);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && win && !document.querySelector('dialog[open]')) exitWindow(); });
 $('#tbody').addEventListener('click', e => { const r = e.target.closest('tr'); if (r) select(+r.dataset.s); });
 $('#tbody').addEventListener('keydown', e => { if (e.key === 'Enter') { const r = e.target.closest('tr'); if (r) select(+r.dataset.s); } });
 $('#sort').addEventListener('change', renderTable);
@@ -602,6 +641,7 @@ const timeIn = $('#time');
 timeIn.addEventListener('input', () => { setLive(false); cur.min = +timeIn.value; refreshNow(); });
 $('#now').addEventListener('click', () => setLive(true));
 function setMode(m) {
+  if (m === 'resale') exitWindow();
   mode = m;
   document.querySelectorAll('.mode').forEach(x => x.setAttribute('aria-pressed', x.dataset.m === m)); setResaleMode(m === 'resale'); paint();
 }

@@ -61,7 +61,9 @@ jobs:
           python3 tools/train_value.py estimate projects/*/
           python3 tools/eval_value.py
       - name: Catalogue
-        run: node tools/make_index.js
+        run: |
+          node tools/make_index.js
+          node tools/build_seo.js
       - name: Tests
         run: npm test
 

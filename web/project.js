@@ -16,6 +16,12 @@ export const sizeOf = (P, code) => {
   return o ? o[1] : P.categories[catOf(P, code)].size;
 };
 
+// camera for looking out of a unit's window: 1 m outside the facade, at mid-floor. i picks the facade on corner units
+export function windowView(st, u, i = 0) {
+  const f = st.fp[i % st.fp.length];
+  return { eye: [f.px + f.nx, u.y, f.pz + f.nz], target: [f.px + f.nx * 1.5, u.y, f.pz + f.nz * 1.5], bearing: f.b };
+}
+
 export function buildLayout(P) {
   const FH = P.site.floorHeight, stacks = [], units = [], boxes = [], cores = [];
   for (const s of P.stacks) {

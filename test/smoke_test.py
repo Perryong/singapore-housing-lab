@@ -43,6 +43,17 @@ with sync_playwright() as p:
     again = page.text_content('#unitCard .unit-no') if page.query_selector('#unitCard .unit-no') else None
     assert again == no, f'clicking {no} after clearing selected {again}'
 
+    # Window view: from a selected unit, floor buttons move the eye one storey, exit restores the view, Esc also leaves
+    page.click('#tbody tr'); home = None
+    page.click('#unitCard button[data-a="view"]')
+    assert page.is_visible('#winBar') and 'simulated' in page.text_content('#winText')
+    eye = page.evaluate('__cam()')
+    if page.is_enabled('#winDown'): page.click('#winDown'); low = page.evaluate('__cam()'); assert abs(eye[1] - low[1] - 2.8) < 0.5, (eye, low); page.click('#winUp')
+    page.click('#winExit'); assert not page.is_visible('#winBar')
+    assert page.evaluate('__cam()') != eye
+    page.click('#unitCard button[data-a="view"]'); page.keyboard.press('Escape'); assert not page.is_visible('#winBar')
+    page.click('#unitCard button[data-a="clear"]')
+
     # Resale nearby turns off again, on projects with and without other modes, and the camera goes back
     def on(sel): return page.get_attribute(sel, 'aria-pressed') == 'true'
     def resale_is(state, why):
@@ -67,6 +78,16 @@ with sync_playwright() as p:
         page.click(off)
         resale_is(False, f'{slug}: {off} turns it off')
         cam(before, 5)
+    visit(url)
+    # Phone: nothing, such as the sticky header, may cover the window view controls
+    page.close(); page = b.new_page(viewport={'width': 375, 'height': 812})
+    page.on('pageerror', lambda e: errors.append(str(e)))
+    page.goto(url, wait_until='domcontentloaded', timeout=90000)
+    page.wait_for_selector('#loading', state='detached', timeout=90000)
+    page.click('#tbody tr'); page.click('#unitCard button[data-a="view"]')
+    page.wait_for_function('''() => ['winUp', 'winDown', 'winExit'].every(i => {
+        const e = document.getElementById(i), r = e.getBoundingClientRect();
+        return document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2) === e; })''', timeout=60000)   # after the smooth scroll
     visit(url)
     page.click('#modes .mode[data-m=resale]'); page.click('#modes .mode[data-m=pm]')
     assert on('#modes .mode[data-m=pm]') and not page.is_visible('#resalePanel')  # another mode still leaves resale
