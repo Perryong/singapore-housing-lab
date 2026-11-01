@@ -335,3 +335,10 @@ dialog#reachDlg[open]{display:flex}#reachBody{flex:1;padding:0 12px}#reachBody .
 #commutePanel .flash{background:var(--accent-soft)}
 a.btn{color:inherit;text-decoration:none}
 @media(max-width:420px){.topbar{gap:5px;padding-inline:10px}.topbar .btn,.topbar .change{font-size:13px;padding:6px 7px}}
+.wx{margin:12px 0 4px}
+.wx-sliders{display:grid;grid-template-columns:auto 1fr auto;gap:6px 8px;align-items:center;font-size:13px;margin-top:10px}
+.wx-sliders b{min-width:52px;text-align:right}
+.wx-live{margin-top:10px;font-size:13px;line-height:1.5;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:9px 11px}
+.wx-now{margin-top:6px}
+.wx-metric th:nth-child(5),.wx-metric th:nth-child(6),.wx-metric td:nth-child(5),.wx-metric td:nth-child(6){display:none}   /* room for the Rain or Wind column */
+.wx-metric + #tableNote{display:none}

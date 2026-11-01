@@ -13,7 +13,8 @@ import { API, fetchArrivals, liveLine } from './live.js';
 import { BADGE, pickerHtml } from './picker.js';
 import { kindColour } from './surround.js';
 import { card16, face8, RAMP_PM, RAMP_AM, FACE, unitCardHtml, stackTable, legendHtml } from './unit.js';
-import { col, mkRamp, skyColor, makeLabel, pinSprite, addMapTiles, addSitePlan, buildSurround, buildHostRings, makeMoon } from './scene.js';
+import { col, mkRamp, skyColor, makeLabel, pinSprite, addMapTiles, addSitePlan, buildSurround, buildHostRings, makeMoon, makeWeatherFx } from './scene.js';
+import { makeQueue, fetchFeed, computeWeather, heightGrid, liveValues, skyDim, minutesOld } from './weather.js';
 import { openPlan3d } from './plan3d.js';
 
 const $ = s => document.querySelector(s);
@@ -494,9 +495,11 @@ function setResaleMode(on) {
 const today = sgtNow();                                         // Singapore date/time, whatever the viewer's timezone
 const cur = { y: today.y, m: today.m, d: today.d, min: today.min };
 let live = true;                                                // follow the actual time in Singapore
+// source: 'sim' uses from/U/mmh below, 'live' uses lv from NEA. saved: what Sun simulation goes back to.
+const wx = { source: 'sim', wind: false, rain: false, scen: 'surge', from: 20, U: 10, mmh: 25, lv: null, feeds: {}, failed: false, saved: null };
 function setLive(on) {
   live = on; $('#now').setAttribute('aria-pressed', on);
-  if (!on) return;
+  if (!on) { if (wx.source === 'live') endLiveWeather(false); return; }
   const n = sgtNow(), newDay = n.y !== cur.y || n.m !== cur.m || n.d !== cur.d;
   Object.assign(cur, n); Object.assign(today, n); timeIn.value = Math.round(n.min / 5) * 5; setDateInput();
   newDay ? refreshDay() : refreshNow();
@@ -505,7 +508,11 @@ setInterval(() => live && setLive(true), 30000);
 let mode = 'now', selStack = null, selFloor = null, noonH = 13, sunNow = { alt: 0, az: 0, s: [0, 1, 0] };
 
 /* ---------- Painting & UI ---------- */
+const C_WX_SHELTER = col('#B7C9B5'), C_WX_LEE = col('#E9ECE8'), rainRamp = mkRamp(['#CFE4F3', '#7FB8E0', '#2B72B8', '#123F8C']), windRamp = mkRamp(['#D5EEE8', '#7FCFC0', '#2B9C8E', '#0F5F56']);
+const wxColor = (st, v) => st === 'lit' ? v : st === 'shade' ? C_WX_SHELTER.clone() : C_WX_LEE.clone();
 function unitColor(u) {
+  if (mode === 'rain') return wxColor(u.rainSt, rainRamp(u.rainFlux / 40));
+  if (mode === 'wind') return wxColor(u.windSt, windRamp(u.windMs / 10));
   if (mode === 'now') return u.now === 'lit' ? C_LITLO.clone().lerp(C_LITHI, Math.min(1, u.cos * 1.2)) : u.now === 'shade' ? C_SHADE : u.now === 'night' ? C_NIGHT : C_AWAY;
   if (mode === 'pm') return ramp(u.pm / 5);
   if (mode === 'am') return amramp(u.am / 5);
@@ -535,6 +542,8 @@ function updateSunUI() {
   moonLight.position.set(mv[0] * 1400, Math.max(mv[1], 0.02) * 1400, mv[2] * 1400);
   moonLight.intensity = p.alt < 0 && mo.alt > 0 ? 0.35 * ph.illum : 0;
   $('#clock').classList.toggle('night', p.alt < -6);
+  const dim = wxDim();                                          // rain or cloud takes the edge off the sun
+  if (dim < 1) { sunLight.intensity *= dim; scene.background = scene.background.clone().lerp(col('#8E9AA3'), 1 - dim); }
   window.__sky = { sunAlt: p.alt, moonAlt: mo.alt, moonAz: mo.az, moonVisible: moonBall.visible, illum: ph.illum };   // test hook
 }
 function renderSky() {                                           // sun & moon outlook for the chosen date
@@ -549,8 +558,10 @@ function refreshNow() { sunNow = computeNow(L, site, cur.y, cur.m, cur.d, cur.mi
 function refreshDay() { noonH = computeDay(L, site, cur.y, cur.m, cur.d); drawPath(); renderSky(); sunNow = computeNow(L, site, cur.y, cur.m, cur.d, cur.min); updateSunUI(); paint(); renderUnitCard(); renderTable(); }
 
 function renderTable() {
-  const { title, rows } = stackTable(P, stacks, $('#sort').value, selStack);
+  const metric = mode === 'rain' || mode === 'wind' ? mode : null;
+  const { title, rows } = stackTable(P, stacks, $('#sort').value, selStack, metric);
   $('#tableTitle').textContent = title; $('#tbody').innerHTML = rows;
+  $('#tableWrap').classList.toggle('wx-metric', !!metric); $('#thWx').hidden = !metric; $('#thWx').textContent = metric === 'rain' ? 'Rain' : 'Wind'; $('#sort').hidden = !!metric;
 }
 const layoutDlg = $('#layoutDlg');
 let viewer = null, openSeq = 0;                                  // the live 3D viewer; openSeq drops stale loads
@@ -594,7 +605,7 @@ $('#layoutClose').addEventListener('click', () => layoutDlg.close());
 layoutDlg.addEventListener('click', e => { if (e.target === layoutDlg) layoutDlg.close(); });
 function renderUnitCard() {
   const st = stacks.find(s => s.no === selStack), u = st && (st.units.find(u => u.floor === selFloor) || st.units[0]);
-  $('#unitCard').innerHTML = unitCardHtml(P, base, st, u, cur);
+  $('#unitCard').innerHTML = unitCardHtml(P, base, st, u, cur, wxOn() ? { wind: wx.wind, rain: wx.rain } : null);
 }
 function select(no, floor) {
   selStack = no; const st = stacks.find(s => s.no === no);
@@ -643,7 +654,9 @@ $('#now').addEventListener('click', () => setLive(true));
 function setMode(m) {
   if (m === 'resale') exitWindow();
   mode = m;
-  document.querySelectorAll('.mode').forEach(x => x.setAttribute('aria-pressed', x.dataset.m === m)); setResaleMode(m === 'resale'); paint();
+  if ((m === 'rain' || m === 'wind') && !wx[m]) wx[m] = true;   // the colours need values, so the scenario comes on with them
+  document.querySelectorAll('#modes .mode').forEach(x => x.setAttribute('aria-pressed', x.dataset.m === m)); setResaleMode(m === 'resale');
+  applyWeather(); paint(); renderTable();
 }
 $('#modes').addEventListener('click', e => {
   const m = e.target.closest('.mode')?.dataset.m; if (!m) return;
@@ -652,6 +665,101 @@ $('#modes').addEventListener('click', e => {
 $('#resaleOff').addEventListener('click', () => setMode('now'));
 let playing = false, lastT = 0;
 $('#play').addEventListener('click', () => { playing = !playing; if (playing) setLive(false); $('#play').textContent = playing ? '❚❚' : '▶'; $('#play').setAttribute('aria-label', playing ? 'Pause' : 'Play the day'); lastT = performance.now(); });
+
+/* ---------- Weather: scenario or live, on top of the sun, which never turns off ---------- */
+const SCENARIOS = { surge: { from: 20, U: 10, mmh: 25 }, squall: { from: 270, U: 15, mmh: 60 }, storm: { from: 180, U: 5, mmh: 40 }, breeze: { from: 20, U: 3, mmh: 0 } };   // MSS patterns; rain rates are illustrative
+const LIVE_FEEDS = [{ key: 'speed', path: 'wind-speed', every: 60000 }, { key: 'dir', path: 'wind-direction', every: 60000 }, { key: 'rain', path: 'rainfall', every: 300000 }, { key: 'fc', path: 'two-hr-forecast', every: 1800000 }];
+const LIVE_STALE_MIN = 15, RETRY_MS = 60000;
+const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+let wxFx = null, wxLast = 0, wxQueue = null, wxTimer = 0, wxAbort = null, wxDue = {}, wxBusy = new Set();
+const wxStale = () => wx.source === 'live' && (!wx.lv || minutesOld(wx.lv.at, Date.now()) > LIVE_STALE_MIN);
+const wxOn = () => wx.source === 'live' ? !wxStale() : wx.wind || wx.rain;
+const wxNow = () => wx.source === 'live' ? (wxStale() ? { wind: false, rain: false, from: 0, U: 0, mmh: 0 } : { wind: true, rain: true, from: wx.lv.from, U: wx.lv.U, mmh: wx.lv.mmh }) : { wind: wx.wind, rain: wx.rain, from: wx.from, U: wx.U, mmh: wx.mmh };
+function wxDim() {
+  if (wx.source === 'live') return wxStale() ? 1 : skyDim(wx.lv.forecast?.text);
+  return wx.rain && wx.mmh > 0 ? 0.45 : 1;
+}
+function applyWeather() {
+  const w = wxNow(), used = w.wind || w.rain || mode === 'rain' || mode === 'wind';
+  if (used && hasLayout) computeWeather(L, w);
+  if (used && !wxFx) wxFx = makeWeatherFx(scene, heightGrid(L, P.surround), { phone: innerWidth < 700, still: reduced.matches });   // baked on first use, so the sun view pays nothing
+  wxFx?.set(w);
+  if (mode === 'rain' || mode === 'wind') { paint(); renderTable(); }
+  renderUnitCard(); updateSunUI(); renderWeatherUI();
+}
+function renderWeatherUI() {
+  const liveOn = wx.source === 'live';
+  document.querySelectorAll('#wxSource .mode').forEach(b => b.setAttribute('aria-pressed', b.dataset.wx === wx.source));
+  document.querySelectorAll('#wxLayers .chip').forEach(b => { b.setAttribute('aria-pressed', !!wx[b.dataset.wl]); b.disabled = liveOn; });
+  document.querySelectorAll('#wxPresets .chip').forEach(b => b.setAttribute('aria-pressed', b.dataset.sc === wx.scen));
+  $('#wxScenario').hidden = liveOn || !(wx.wind || wx.rain);
+  $('#wxFrom').value = wx.from; $('#wxU').value = wx.U; $('#wxMm').value = wx.mmh;
+  $('#wxFromV').textContent = card16(wx.from); $('#wxUV').textContent = `${wx.U} m/s`; $('#wxMmV').textContent = `${wx.mmh} mm/h`;
+  const el = $('#wxLive'); el.hidden = !liveOn;
+  if (!liveOn) return;
+  const map = '<a href="weather.html">See the Singapore map</a>', v = wx.lv;
+  if (!v) { el.innerHTML = `${wx.failed ? 'Live weather unavailable, retrying.' : 'Loading live weather…'} ${map}`; return; }
+  const when = new Date(v.at).toLocaleTimeString('en-SG', { timeZone: 'Asia/Singapore', hour: 'numeric', minute: '2-digit' }), age = minutesOld(v.at, Date.now());
+  const head = `<b>${v.U.toFixed(1)} m/s from the ${card16(v.from)}</b> · <b>${v.mmh > 0 ? `${v.mmh.toFixed(0)} mm/h` : 'no rain'}</b>${v.forecast ? ` · ${esc(v.forecast.area)}: ${esc(v.forecast.text)}` : ''}`;
+  el.innerHTML = `${head}<br><span class="unit-meta">${age > LIVE_STALE_MIN ? `Readings ${age} min old, so wind and rain are hidden.` : wx.failed ? 'Live weather unavailable, retrying. Showing the last readings.' : `NEA · ${when}${v.gauge ? ` · nearest gauge ${esc(v.gauge)}` : ''}`}</span><br>${map}`;
+}
+function loadLive(f, signal) {
+  wxBusy.add(f.key);
+  // checked when its turn comes in the queue, so a hidden tab never calls NEA
+  fetchFeed(f.path, { queue: wxQueue, signal, fetchFn: (...a) => document.hidden ? Promise.reject(new DOMException('hidden', 'AbortError')) : fetch(...a) }).then(d => {
+    if (signal.aborted) return;
+    wx.feeds[f.key] = d; wx.failed = false; wxDue[f.key] = Date.now() + f.every;
+    wx.lv = liveValues(wx.feeds, site.lat, site.lon);
+  }).catch(e => {
+    if (signal.aborted) return;
+    if (e.name === 'AbortError') wxDue[f.key] = 0; else { wx.failed = true; wxDue[f.key] = Date.now() + RETRY_MS; }
+  }).finally(() => { wxBusy.delete(f.key); if (!signal.aborted) applyWeather(); });
+}
+function wxTick() {
+  if (wx.source !== 'live') return;
+  if (wxStale()) applyWeather();                                // readings can go stale between calls
+  if (document.hidden) return;
+  for (const f of LIVE_FEEDS) if (!wxBusy.has(f.key) && Date.now() >= (wxDue[f.key] ?? 0)) loadLive(f, wxAbort.signal);
+}
+function startLiveWeather() {
+  if (wx.source === 'live') return;
+  wx.saved = { cur: { ...cur }, live, wind: wx.wind, rain: wx.rain, mode };
+  wx.source = 'live'; wx.wind = wx.rain = true; wx.failed = false; wx.lv = null; wx.feeds = {}; wxDue = {}; wxBusy = new Set();
+  wxQueue ??= makeQueue(); wxAbort = new AbortController();
+  setLive(true);
+  if (mode === 'resale') setMode('now');
+  applyWeather();
+  wxTick(); wxTimer = setInterval(wxTick, 5000);
+}
+// restore: Sun simulation pressed, so back to the saved date and time. Otherwise someone moved the clock, so keep the time they chose.
+function endLiveWeather(restore) {
+  wx.source = 'sim'; wxAbort.abort(); clearInterval(wxTimer);
+  const s = wx.saved; wx.wind = s.wind; wx.rain = s.rain;
+  if (restore) {
+    Object.assign(cur, s.cur); timeIn.value = Math.round(cur.min / 5) * 5; setDateInput();
+    if (s.live) setLive(true); else { live = false; $('#now').setAttribute('aria-pressed', false); refreshDay(); }
+  }
+  if (mode !== s.mode) setMode(s.mode); else applyWeather();
+}
+$('#wxSource').addEventListener('click', e => {
+  const s = e.target.closest('[data-wx]')?.dataset.wx;
+  if (s === 'live') startLiveWeather(); else if (s === 'sim' && wx.source === 'live') endLiveWeather(true);
+});
+$('#wxLayers').addEventListener('click', e => {
+  const k = e.target.closest('[data-wl]')?.dataset.wl; if (!k || wx.source === 'live') return;
+  wx[k] = !wx[k];
+  if (hasLayout && mode !== 'resale') {                         // the colours follow what was just turned on, and let go when it goes off
+    if (wx[k]) { setMode(k); return; }
+    if (mode === k) { setMode(wx.wind ? 'wind' : wx.rain ? 'rain' : 'now'); return; }
+  }
+  applyWeather();
+});
+$('#wxPresets').addEventListener('click', e => {
+  const k = e.target.closest('[data-sc]')?.dataset.sc; if (!k) return;
+  Object.assign(wx, SCENARIOS[k], { scen: k }); applyWeather();
+});
+for (const [id, key] of [['#wxFrom', 'from'], ['#wxU', 'U'], ['#wxMm', 'mmh']]) $(id).addEventListener('input', e => { wx[key] = +e.target.value; wx.scen = null; applyWeather(); });
+document.addEventListener('visibilitychange', wxTick);
 
 /* ---------- Picking ---------- */
 const ray = new THREE.Raycaster(), mouse = new THREE.Vector2(), tip = $('#tip'); let downAt = null;
@@ -701,8 +809,10 @@ function loop(now) {
     if (camera.position.distanceTo(camGoal.pos) < 1) camGoal = null;
   }
   if (selGroup.visible) unitBox.material.opacity = 0.25 + 0.2 * Math.sin(now / 250);
+  if (wxFx) { wxFx.step(Math.min((now - wxLast) / 1000, .05)); wxLast = now; }
   controls.update(); renderer.render(scene, camera); requestAnimationFrame(loop);
 }
-timeIn.value = Math.round(cur.min / 5) * 5; setDateInput(); refreshDay(); addLabels();
+window.__wxView = { state: () => ({ ...wx }), fx: () => wxFx?.visible() ?? null, mode: () => mode, unit: (no, floor) => { const u = stacks.find(s => s.no === no).units.find(u => u.floor === floor); return { rainSt: u.rainSt, windSt: u.windSt, flux: u.rainFlux }; }, cur: () => ({ ...cur }), isLive: () => live, tick: wxTick, expire: () => { wxDue = {}; } };   // test hook
+timeIn.value = Math.round(cur.min / 5) * 5; setDateInput(); refreshDay(); addLabels(); renderWeatherUI();
 document.fonts?.ready.then(addLabels);
 requestAnimationFrame(t => { lastT = t; loop(t); });

@@ -169,6 +169,7 @@ Projects live outside `~/Documents`: macOS revokes access when Blender is launch
 - Neighbouring blocks are fitted to the plan where the sheet draws them; greenfield sheets (e.g. Sembawang, Mount
   Pleasant) show none, so those sites keep their address/pin placement (typically within ~20 m).
 - Base map: OneMap Grey tiles © Singapore Land Authority, loaded live around each site.
+- Weather: NEA real-time readings and rain radar via data.gov.sg (Open Data Licence). Between stations the map's values are estimates, and wind and rain on a block are estimates from straight-line rays, not airflow or a wind-tunnel test.
 - Transit: LTA DataMall bus stops, routes and frequencies (Singapore Open Data Licence). Commute times are a
   weekday-08:00 estimate from timetables and frequencies, not live data.
 - Bus route shapes and MRT lines © OpenStreetMap contributors (ODbL), via Overpass; a service whose OSM route strays

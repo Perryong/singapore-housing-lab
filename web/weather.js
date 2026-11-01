@@ -1,8 +1,10 @@
 // NEA real-time weather: fetching, pacing and blending between stations. Pure: runs in the browser and in Node.
 import { card16 } from './unit.js';
+import { sunVec, unitSun } from './sun.js';
 
 export const WX_API = 'https://api-open.data.gov.sg/v2/real-time/api';
 export const GAP_MS = 1700;                                     // NEA allows 6 calls per 10 s without a key
+export const SLOTS = 12, SLOT_MIN = 15;                         // the timeline: 3 hours of past moments, then now
 const KNOT = 0.5144, KM_PER_DEG = 111.3, RETRY_MS = 10000;
 
 export const STOPS = {
@@ -100,6 +102,15 @@ export function rampColour(stops, v) {
 
 export const minutesOld = (iso, nowMs) => iso ? Math.floor((nowMs - Date.parse(iso)) / 60000) : null;
 
+// the timeline's past moments, oldest first: whole quarter hours, ending at the latest one
+export function slotTimes(nowMs, count = SLOTS, stepMin = SLOT_MIN) {
+  const step = stepMin * 60000, last = Math.floor(nowMs / step) * step;
+  return Array.from({ length: count }, (_, i) => last - (count - 1 - i) * step);
+}
+export const sgtStamp = ms => new Date(ms + 8 * 3600000).toISOString().slice(0, 19);
+export const atMoment = (path, ms) => `${path}?date=${sgtStamp(ms)}`;
+export const withinMin = (iso, ms, min = SLOT_MIN) => !!iso && Math.abs(Date.parse(iso) - ms) <= min * 60000;
+
 // plain text for one place (callers escape); a missing feed shows a dash
 export function readout({ lat, lon }, { wind = [], rain = [], temp = [], hum = [], fc = null }) {
   const [u, v] = windAt(wind, lat, lon), g = nearest(rain, lat, lon), t = nearest(temp, lat, lon), h = nearest(hum, lat, lon), f = forecastAt(fc, lat, lon);
@@ -112,3 +123,62 @@ export function readout({ lat, lon }, { wind = [], rain = [], temp = [], hum = [
     forecast: f ? `${f.area}: ${f.text}` : null,
   };
 }
+
+/* ---------- Wind and rain on a project's blocks: estimates from the sun's ray-caster, not airflow ---------- */
+const DROP_MS = 6.5, WIND_EXP = 0.25;                           // fall speed of a roughly 2 mm drop; wind profile over a built-up area (an assumption)
+export const atHeight = (U10, y) => U10 * (Math.max(y, 10) / 10) ** WIND_EXP;
+const altOf = U => Math.atan2(DROP_MS, Math.max(U, 0.01)) * 180 / Math.PI;
+export const rainRay = (U, from) => sunVec(altOf(U), from);     // rain falls along a slanted straight line, so it traces like a sun ray
+export const windRay = from => sunVec(0, from);
+
+// mutates units: rainSt/windSt 'lit' (reached) | 'shade' (a block shelters it) | 'away' | 'dry' | 'calm', by, rainFlux (rate on the facade, mm/h), windMs. Stacks get rainPct/windPct.
+export function computeWeather(L, { from, U, mmh }) {
+  for (const u of L.units) {
+    const Uz = atHeight(U, u.y);
+    if (mmh > 0) {
+      const s = rainRay(Uz, from), r = unitSun(L, u, s), h = Math.hypot(s[0], s[2]);
+      // a yes/no would call a near-vertical shower "reached", so colour by rate x slant x how squarely it faces (r.cos includes h)
+      Object.assign(u, { rainSt: r.st, rainBy: r.by, rainFlux: r.st === 'lit' ? mmh * (Uz / DROP_MS) * (r.cos / h) : 0 });
+    } else Object.assign(u, { rainSt: 'dry', rainBy: 0, rainFlux: 0 });
+    if (U > 0) {
+      const w = unitSun(L, u, windRay(from));
+      Object.assign(u, { windSt: w.st, windBy: w.by, windMs: w.st === 'lit' ? Uz * w.cos : 0 });
+    } else Object.assign(u, { windSt: 'calm', windBy: 0, windMs: 0 });
+  }
+  const share = (st, k) => Math.round(100 * st.units.filter(u => u[k] === 'lit').length / st.units.length);
+  for (const st of L.stacks) { st.rainPct = share(st, 'rainSt'); st.windPct = share(st, 'windSt'); }
+}
+
+// roof height at any point, baked once: too many buildings to test for every raindrop every frame
+export function heightGrid(L, extra = [], R = 650, cell = 5) {
+  const n = Math.ceil(2 * R / cell), g = new Float32Array(n * n), idx = v => Math.floor((v + R) / cell);
+  const fill = (x0, x1, z0, z1, h, inside) => {
+    for (let j = Math.max(0, idx(z0)); j <= Math.min(n - 1, idx(z1)); j++) for (let i = Math.max(0, idx(x0)); i <= Math.min(n - 1, idx(x1)); i++) {
+      if (g[j * n + i] < h && inside((i + .5) * cell - R, (j + .5) * cell - R)) g[j * n + i] = h;
+    }
+  };
+  for (const b of L.boxes) {
+    const r = Math.hypot(b.hx, b.hz);
+    fill(b.cx - r, b.cx + r, b.cz - r, b.cz + r, b.H, (x, z) => { const dx = x - b.cx, dz = z - b.cz; return Math.abs(dx * b.ax + dz * b.az) <= b.hx && Math.abs(dx * b.fx + dz * b.fz) <= b.hz; });
+  }
+  for (const b of [...L.context, ...extra]) {
+    if (!(b.h > 1)) continue;                                   // parks and other ground areas
+    const xs = b.p.map(q => q[0]), zs = b.p.map(q => q[1]), P = b.p;
+    fill(Math.min(...xs), Math.max(...xs), Math.min(...zs), Math.max(...zs), b.h, (x, z) => {
+      let c = false;
+      for (let i = 0, k = P.length - 1; i < P.length; k = i++) if ((P[i][1] > z) !== (P[k][1] > z) && x < (P[k][0] - P[i][0]) * (z - P[i][1]) / (P[k][1] - P[i][1]) + P[i][0]) c = !c;
+      return c;
+    });
+  }
+  return (x, z) => { const i = idx(x), j = idx(z); return i < 0 || j < 0 || i >= n || j >= n ? 0 : g[j * n + i]; };
+}
+
+// one set of values for a project: the 3 nearest wind stations, the nearest gauge, the nearest forecast area
+export function liveValues({ speed, dir, rain, fc }, lat, lon) {
+  const wind = windPoints(speed, dir).sort((a, b) => km2(a, lat, lon) - km2(b, lat, lon)).slice(0, 3);
+  if (!wind.length) return null;
+  const [u, v] = windAt(wind, lat, lon), g = nearest(stations(rain).points, lat, lon);
+  return { U: Math.hypot(u, v), from: fromBearing(u, v), mmh: g ? g.v * 12 : 0, gauge: g ? `${g.name}, ${g.km.toFixed(1)} km` : null, at: stations(speed).at, forecast: forecastAt(fc, lat, lon) };
+}
+// how much the forecast dims direct sun in the scene; an impression, since NEA publishes no cloud or solar reading here
+export const skyDim = text => /thunder|heavy|rain|shower/i.test(text || '') ? 0.4 : /cloud|overcast|haz|mist/i.test(text || '') ? 0.7 : 1;

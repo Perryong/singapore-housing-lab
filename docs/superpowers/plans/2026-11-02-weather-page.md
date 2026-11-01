@@ -72,3 +72,15 @@
 
 - [x] Run `npm test`. Expected: all pass.
 - [x] Open the page against live NEA data, on desktop and at phone width. Check the console for errors and the network log for call pacing.
+
+---
+
+## Later phases, built from the spec's Plan section
+
+These followed the same test-first pattern. Coverage: `test/weather_test.mjs`, `test/weather_ui_test.py`, `test/weather3d_ui_test.py`.
+
+- [x] **Phase 2, timeline:** `slotTimes`, `atMoment` and `withinMin` in `web/weather.js`, and the time bar in `web/weather-page.js`.
+- [x] **Phase 3, scenario weather in 3D:** `computeWeather` and `heightGrid` in `web/weather.js`, `makeWeatherFx` in `web/scene.js`, the Weather block in `web/index.html`, and wiring in `web/app.js`.
+- [x] **Phase 4, live weather in 3D:** `liveValues` and `skyDim` in `web/weather.js`, and start, stop and restore in `web/app.js`.
+
+**Still open:** the mm/h scale for the rain legend needs the table in NEA's API spec, a downloadable file on the dataset page.

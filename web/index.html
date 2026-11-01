@@ -68,6 +68,32 @@
   <div class="clock-row"><div class="clock" id="clock">4:00 pm</div><span class="tz">SGT</span><button class="chip live" id="now" aria-pressed="true" title="Follow the actual time in Singapore">Now</button></div>
   <p class="sub" id="sunline"></p>
   <div class="skycard" id="skycard"></div>
+  <section class="wx" id="wxSec" aria-label="Weather">
+    <div class="lbl">Weather</div>
+    <div class="modes" id="wxSource">
+      <button class="mode" data-wx="sim" aria-pressed="true">Sun simulation</button>
+      <button class="mode" data-wx="live" aria-pressed="false">Live weather</button>
+    </div>
+    <div class="chips" id="wxLayers">
+      <button class="chip" data-wl="wind" aria-pressed="false">Wind</button>
+      <button class="chip" data-wl="rain" aria-pressed="false">Rain</button>
+    </div>
+    <div id="wxScenario" hidden>
+      <div class="chips" id="wxPresets">
+        <button class="chip" data-sc="surge" aria-pressed="true">NE monsoon surge</button>
+        <button class="chip" data-sc="squall" aria-pressed="false">Sumatra squall</button>
+        <button class="chip" data-sc="storm" aria-pressed="false">Afternoon storm</button>
+        <button class="chip" data-sc="breeze" aria-pressed="false">Dry breeze</button>
+      </div>
+      <div class="wx-sliders">
+        <label for="wxFrom">From</label><input id="wxFrom" type="range" min="0" max="355" step="5" value="20"><b id="wxFromV"></b>
+        <label for="wxU">Wind</label><input id="wxU" type="range" min="0" max="20" step="1" value="10"><b id="wxUV"></b>
+        <label for="wxMm">Rain</label><input id="wxMm" type="range" min="0" max="80" step="5" value="25"><b id="wxMmV"></b>
+      </div>
+      <p class="note">Scenario, not a forecast. Rain rates are illustrative.</p>
+    </div>
+    <div id="wxLive" class="wx-live" role="status" hidden></div>
+  </section>
 
   <label class="lbl" for="time">Time of day</label>
   <div class="row">
@@ -90,6 +116,8 @@
     <button class="mode" data-m="pm" aria-pressed="false">Afternoon sun</button>
     <button class="mode" data-m="am" aria-pressed="false">Morning sun</button>
     <button class="mode" data-m="face" aria-pressed="false">Facing</button>
+    <button class="mode" data-m="rain" aria-pressed="false">Rain reach</button>
+    <button class="mode" data-m="wind" aria-pressed="false">Wind exposure</button>
     <button class="mode wide" data-m="type" aria-pressed="false">Unit type and size</button>
     <button class="mode wide rs-mode" data-m="resale" aria-pressed="false">Resale nearby</button>
   </div>
@@ -125,7 +153,7 @@
   </div>
   <div class="tablewrap" id="tableWrap">
     <table>
-      <thead><tr><th>Stack</th><th>Blk</th><th>Type</th><th>Windows face</th><th>AM</th><th>PM</th><th>Price</th></tr></thead>
+      <thead><tr><th>Stack</th><th>Blk</th><th>Type</th><th>Windows face</th><th>AM</th><th>PM</th><th id="thWx" hidden></th><th>Price</th></tr></thead>
       <tbody id="tbody"></tbody>
     </table>
   </div>

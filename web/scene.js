@@ -4,6 +4,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { deg } from './project.js';
 import { ACAT } from './nearby.js';
 import { kindColour, isGround, offsetOutline, hostRingShapes } from './surround.js';
+import { STOPS, rampColour } from './weather.js';
 
 export const col = h => new THREE.Color(h);
 export function mkRamp(hexes) { const cs = hexes.map(col); return v => { v = Math.max(0, Math.min(1, v)); const x = v * (cs.length - 1), i = Math.min(cs.length - 2, Math.floor(x)); return cs[i].clone().lerp(cs[i + 1], x - i); }; }
@@ -132,4 +133,71 @@ export function makeMoon() {
     tex.needsUpdate = true;
   };
   return { sprite, draw };
+}
+
+// rain and wind in the scene. One InstancedMesh each: WebGL lines are stuck at 1 pixel and all but vanish.
+// Motion is sped up about 22x to read at this scale. roof(x, z) stops drops and trails at buildings. still: a static arrow instead.
+export function makeWeatherFx(scene, roof, { phone = false, still = false } = {}) {
+  const R = 650, TOP = 240, SPEEDUP = 22, FALL = 6.5, RAIN_N = phone ? 1000 : 3200, TRAILS = phone ? 120 : 340, SEG = 14, FULL_RAIN = 40;
+  const box = new THREE.BoxGeometry(1, 1, 1), up = new THREE.Vector3(0, 1, 0);
+  const rainMesh = new THREE.InstancedMesh(box, new THREE.MeshBasicMaterial({ color: 0xF2F8FC, transparent: true, opacity: .72, depthWrite: false }), RAIN_N);
+  const windMesh = new THREE.InstancedMesh(box, new THREE.MeshBasicMaterial({ transparent: true, opacity: .92, depthWrite: false }), TRAILS * SEG);
+  rainMesh.frustumCulled = windMesh.frustumCulled = false; rainMesh.visible = windMesh.visible = false; windMesh.renderOrder = 3;
+  const arrow = new THREE.ArrowHelper(up, new THREE.Vector3(0, 170, 0), 120, 0xE8F1F6, 34, 22); arrow.visible = false;
+  scene.add(rainMesh, windMesh, arrow);
+  const rand = n => (Math.random() - .5) * 2 * n, drops = new Float32Array(RAIN_N * 3), trail = new Float32Array(TRAILS * (SEG + 1) * 3), age = new Float32Array(TRAILS);
+  const q = new THREE.Quaternion(), dv = new THREE.Vector3(), pos = new THREE.Vector3(), sc = new THREE.Vector3(), m = new THREE.Matrix4(), tc = new THREE.Color(), base = new THREE.Color(), FADE = new THREE.Color('#E6ECE9');
+  const place = (mesh, i, x0, y0, z0, x1, y1, z1, t) => {
+    dv.set(x1 - x0, y1 - y0, z1 - z0); const l = dv.length() || .001; dv.divideScalar(l);
+    q.setFromUnitVectors(up, dv); pos.set((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2); sc.set(t, l, t); mesh.setMatrixAt(i, m.compose(pos, q, sc));
+  };
+  const spawnDrop = (i, top) => { drops[i * 3] = rand(R); drops[i * 3 + 1] = top ? TOP - Math.random() * 40 : Math.random() * TOP; drops[i * 3 + 2] = rand(R); };
+  const spawnTrail = i => {
+    let x, y, z, n = 0;
+    do { x = rand(R); y = 12 + Math.random() * 130; z = rand(R); } while (roof(x, z) >= y && n++ < 9);
+    age[i] = Math.random() * 90;
+    for (let k = 0; k <= SEG; k++) trail.set([x, y, z], (i * (SEG + 1) + k) * 3);
+  };
+  for (let i = 0; i < RAIN_N; i++) spawnDrop(i, false);
+  for (let i = 0; i < TRAILS; i++) spawnTrail(i);
+  let w = { wind: false, rain: false, from: 0, U: 0, mmh: 0 }, dx = 0, dz = 0;
+  return {
+    set(next) {
+      w = next; const f = w.from * deg; dx = -Math.sin(f); dz = Math.cos(f);    // from the north (+z is south) blows towards +z
+      base.setRGB(...rampColour(STOPS.wind.stops, w.U).map(v => v / 255), THREE.SRGBColorSpace);
+      rainMesh.visible = !still && w.rain && w.mmh > 0;
+      rainMesh.count = Math.max(1, Math.round(RAIN_N * Math.min(1, w.mmh / FULL_RAIN)));
+      windMesh.visible = !still && w.wind && w.U > 0;
+      arrow.visible = still && w.wind && w.U > 0;
+      if (arrow.visible) { arrow.setDirection(dv.set(dx, 0, dz)); arrow.setLength(60 + w.U * 12, 34, 22); }
+    },
+    step(dt) {
+      if (rainMesh.visible) {
+        const vy = -FALL * SPEEDUP, sx = dx * w.U * SPEEDUP, sz = dz * w.U * SPEEDUP, ln = 11 / Math.hypot(sx, vy, sz);
+        for (let i = 0; i < rainMesh.count; i++) {
+          const x = drops[i * 3] + sx * dt, y = drops[i * 3 + 1] + vy * dt, z = drops[i * 3 + 2] + sz * dt;
+          if (y <= roof(x, z) || Math.abs(x) > R || Math.abs(z) > R) { spawnDrop(i, true); continue; }
+          drops[i * 3] = x; drops[i * 3 + 1] = y; drops[i * 3 + 2] = z;
+          place(rainMesh, i, x, y, z, x - sx * ln, y - vy * ln, z - sz * ln, .42);
+        }
+        rainMesh.instanceMatrix.needsUpdate = true;
+      }
+      if (windMesh.visible) {
+        const sp = Math.max(w.U, 1.5) * 9;
+        for (let i = 0; i < TRAILS; i++) {
+          const b = i * (SEG + 1), x = trail[b * 3] + dx * sp * dt, y = trail[b * 3 + 1], z = trail[b * 3 + 2] + dz * sp * dt;
+          age[i] += dt * 10;
+          if (Math.abs(x) > R || Math.abs(z) > R || roof(x, z) >= y || age[i] > 95) { spawnTrail(i); continue; }
+          trail.copyWithin(b * 3 + 3, b * 3, (b + SEG) * 3); trail.set([x, y, z], b * 3);
+          for (let k = 0; k < SEG; k++) {
+            const a0 = (b + k) * 3, a1 = a0 + 3, n = i * SEG + k;
+            place(windMesh, n, trail[a0], trail[a0 + 1], trail[a0 + 2], trail[a1], trail[a1 + 1], trail[a1 + 2], 1.5 * (1 - k / SEG) + .2);
+            windMesh.setColorAt(n, tc.copy(base).lerp(FADE, k / SEG * .85));
+          }
+        }
+        windMesh.instanceMatrix.needsUpdate = true; if (windMesh.instanceColor) windMesh.instanceColor.needsUpdate = true;
+      }
+    },
+    visible: () => ({ rain: rainMesh.visible, wind: windMesh.visible, arrow: arrow.visible, drops: rainMesh.count }),
+  };
 }

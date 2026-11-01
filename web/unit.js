@@ -46,7 +46,7 @@ export function layoutThumb(P, base, no) {
 export const SHADE_BY = { hdb: 'a neighbouring HDB block', bto: 'a neighbouring BTO block', bldg: 'a nearby building', school: 'a nearby school', cc: 'a nearby community club', library: 'a nearby library',
   hawker: 'a nearby hawker centre', health: 'a nearby health building' };
 // the selected unit: u is one floor of stack st; cur = {y, m, d, min} in Singapore time
-export function unitCardHtml(P, base, st, u, cur) {
+export function unitCardHtml(P, base, st, u, cur, wx = null) {
   if (!st) return `<p class="unit-meta" style="margin:0 0 14px">Tap any unit in the model, or a row below, to see its sun exposure.</p>`;
   const c = P.categories[catOf(P, u.code)], [sqm, sqft] = sizeOf(P, u.code);
   const dateStr = new Date(cur.y, cur.m - 1, cur.d).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' }), t = fmtTime(cur.min);
@@ -66,6 +66,7 @@ export function unitCardHtml(P, base, st, u, cur) {
     ${st.type === 'RENT' ? '' : layoutThumb(P, base, st.no)}
     <div class="verdict">${verdict(u.pm)} <span class="unit-meta">(${dateStr})</span></div>
     <div class="now">${nowTxt}</div>
+    ${wx ? weatherLines(u, wx) : ''}
     <div class="btns">
       <button class="btn" data-a="up" ${u.floor >= st.floors ? 'disabled' : ''}>Floor up</button>
       <button class="btn" data-a="down" ${u.floor <= st.first ? 'disabled' : ''}>Floor down</button>
@@ -74,19 +75,29 @@ export function unitCardHtml(P, base, st, u, cur) {
     </div></div>`;
 }
 
+const strength = f => f < 5 ? 'light' : f < 20 ? 'moderate' : 'heavy';
+const by = (u, k) => SHADE_BY[u[k]] || 'Block ' + u[k];
+function weatherLines(u, wx) {
+  const rain = !wx.rain ? '' : u.rainSt === 'lit' ? `Rain reaches this facade (${strength(u.rainFlux)}).` : u.rainSt === 'shade' ? `Facing the rain, but sheltered by ${by(u, 'rainBy')}.` : u.rainSt === 'dry' ? 'No rain.' : 'On the lee side, away from the rain.';
+  const wind = !wx.wind ? '' : u.windSt === 'lit' ? `Wind reaches these windows, about ${u.windMs.toFixed(1)} m/s at this floor.` : u.windSt === 'shade' ? `Facing the wind, but sheltered by ${by(u, 'windBy')}.` : u.windSt === 'calm' ? 'No wind.' : 'On the lee side, away from the wind.';
+  return `<div class="now wx-now">${[rain, wind].filter(Boolean).join(' ')} <span class="unit-meta">Estimate. Doesn't mean it enters the window.</span></div>`;
+}
+
 // stack table, sorted 'pm' (least afternoon sun first), 'am' (most morning sun first) or by stack number
-export function stackTable(P, stacks, by, selStack) {
+export function stackTable(P, stacks, by, selStack, metric = null) {
   const list = [...stacks];
-  if (by === 'pm') list.sort((a, b) => a.pm - b.pm || a.no - b.no); else if (by === 'am') list.sort((a, b) => b.am - a.am || a.no - b.no); else list.sort((a, b) => a.no - b.no);
-  const title = by === 'pm' ? 'Stacks by afternoon sun' : by === 'am' ? 'Stacks by morning sun' : 'All stacks';
+  if (metric === 'rain') list.sort((a, b) => a.rainPct - b.rainPct || a.no - b.no); else if (metric === 'wind') list.sort((a, b) => b.windPct - a.windPct || a.no - b.no);
+  else if (by === 'pm') list.sort((a, b) => a.pm - b.pm || a.no - b.no); else if (by === 'am') list.sort((a, b) => b.am - a.am || a.no - b.no); else list.sort((a, b) => a.no - b.no);
+  const title = metric === 'rain' ? 'Stacks by rain reach, driest first' : metric === 'wind' ? 'Stacks by wind exposure, windiest first' : by === 'pm' ? 'Stacks by afternoon sun' : by === 'am' ? 'Stacks by morning sun' : 'All stacks';
   const rows = list.map(st => { const c = P.categories[catOf(P, st.type)], pr = (P.prices || {})[st.type]; return `<tr data-s="${st.no}" class="${st.no === selStack ? 'on' : ''}" tabindex="0">
     <td><b>${pad(st.no)}</b></td><td>${st.blk}</td><td title="${c.name}, ${sizeOf(P, st.type)[1]} sq ft"><i class="tsw" style="background:${c.col}"></i>${st.type}</td><td>${st.faces.map(card16).join(' + ')}</td>
     <td>${st.am.toFixed(1)}<span class="bar am" style="width:${Math.min(20, st.am * 4)}px"></span></td>
     <td>${st.pm.toFixed(1)}<span class="bar" style="width:${Math.min(20, st.pm * 4)}px"></span></td>
-    <td class="price">${pr ? range(pr.min, pr.max) : '—'}</td></tr>`; }).join('');
+    ${metric ? `<td>${st[metric + 'Pct']}%</td>` : ''}<td class="price">${pr ? range(pr.min, pr.max) : '—'}</td></tr>`; }).join('');
   return { title, rows };
 }
 
+const WX_NOTE = 'An estimate from wind direction and building shapes, not a wind-tunnel test.';
 const swatch = (c, t, extra = '') => `<span class="sw"><i style="background:${c};${extra}"></i>${t}</span>`;
 export function legendHtml(P, mode, hasLayout) {
   if (!hasLayout) return `<div class="swatches">${swatch('#F6C47A', 'HDB site location')}${swatch('#9EA8A3', 'Existing HDB block')}</div>`;
@@ -99,5 +110,7 @@ export function legendHtml(P, mode, hasLayout) {
         const codes = P.stacks.map(s => s.type).filter(c => catOf(P, c) === k); if (!codes.length) return '';
         const sz = [...new Set(codes.map(c => sizeOf(P, c)[1]))].sort((a, b) => a - b).join(' / ');
         return `<span class="sw"><i style="background:${v.col};border:1px solid rgba(0,0,0,.12)"></i>${v.name}<b>${sz} sq ft</b></span>`; }).join('')}</div>`
+    : mode === 'rain' ? `<div class="swatches">${swatch('#123F8C', 'Rain reaches facade')}${swatch('#B7C9B5', 'Sheltered by a building')}${swatch('#E9ECE8', 'Lee side', 'border:1px solid #bbb')}</div>${note(WX_NOTE + ' Deeper blue means harder rain on the wall.')}`
+    : mode === 'wind' ? `<div class="swatches">${swatch('#0F5F56', 'Wind reaches windows')}${swatch('#B7C9B5', 'Sheltered by a building')}${swatch('#E9ECE8', 'Lee side', 'border:1px solid #bbb')}</div>${note(WX_NOTE)}`
     : `<div class="swatches">${Object.entries(FACE).map(([k, v]) => swatch(v, k)).join('')}</div>${note("Direction of each unit's main windows.")}`;
 }

@@ -36,7 +36,7 @@ header>*{pointer-events:auto}
 #rail{position:fixed;z-index:700;left:14px;top:72px;display:flex;flex-direction:column;align-items:flex-start;gap:7px}
 #rail button{border:0;border-radius:99px;background:var(--glass);padding:8px 14px;font-weight:500;white-space:nowrap}
 #rail button[aria-pressed=true]{background:var(--ink);color:var(--bg);font-weight:650}
-#legend{position:fixed;z-index:700;right:14px;top:72px;display:flex;gap:6px;font-size:11px;text-align:center}
+#legend{position:fixed;z-index:700;right:14px;top:72px;display:flex;align-items:flex-start;gap:6px;font-size:11px;text-align:center}
 #legend div{background:var(--glass);border-radius:10px;padding:6px;width:48px}
 #legend b{display:block;margin-bottom:4px}
 #legend i{display:block;font-style:normal;padding:2px 0;color:#fff;text-shadow:0 0 3px #000}
@@ -48,7 +48,14 @@ header>*{pointer-events:auto}
 #card small{display:block;color:var(--muted);font-size:11.5px;line-height:1.4;margin-top:5px}
 #card a{display:inline-block;margin-top:8px;background:var(--accent);color:var(--accent-ink);font-weight:650;padding:6px 12px;border-radius:8px;text-decoration:none}
 #card button{position:absolute;top:6px;right:6px;width:30px;height:30px;border:0;background:none;font-size:18px;line-height:1}
-#note{position:fixed;z-index:700;left:14px;bottom:14px;margin:0;background:var(--glass);border-radius:8px;padding:5px 10px;font-size:11.5px;color:var(--muted)}
+#time{position:fixed;z-index:700;left:14px;right:14px;bottom:14px;display:flex;align-items:center;gap:12px;background:var(--glass);border-radius:14px;padding:8px 14px}
+#play{flex:none;width:36px;height:36px;border:0;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-size:13px}
+#stamp{flex:none;font-weight:650;min-width:112px;white-space:nowrap}
+#scrub{flex:1;min-width:0;accent-color:var(--accent);height:28px}
+#ends{flex:none;font-size:11px;color:var(--muted);white-space:nowrap}
+#toNow{flex:none;border:1px solid #46555B;border-radius:8px;background:none;padding:5px 10px;font-weight:600}
+.leaflet-bottom{bottom:68px}
+#note{position:fixed;z-index:700;left:14px;bottom:72px;margin:0;background:var(--glass);border-radius:8px;padding:5px 10px;font-size:11.5px;color:var(--muted)}
 .pin{display:grid;place-items:center;background:none;border:0}
 .pin i{display:block;width:12px;height:12px;border-radius:50%;background:var(--accent);border:2px solid #fff;box-shadow:0 0 3px #000}
 .pin.upcoming i{background:#fff;border-color:var(--accent)}
@@ -59,10 +66,14 @@ header>*{pointer-events:auto}
   #rail{top:60px;left:0;right:0;padding:0 14px;flex-direction:row;overflow-x:auto;scrollbar-width:none}
   #legend{top:108px;font-size:10px}
   #legend div{width:40px;padding:4px}
-  #card{left:14px;right:14px;top:auto;bottom:62px;width:auto;padding:10px 12px;font-size:13px}
+  #time{left:8px;right:8px;bottom:8px;gap:8px;padding:6px 10px}
+  #stamp{min-width:0;font-size:12px}
+  #ends{display:none}
+  .leaflet-bottom{bottom:84px}
+  #card{left:14px;right:14px;top:auto;bottom:112px;width:auto;padding:10px 12px;font-size:13px}
   #card a{margin-top:6px;padding:5px 10px}
-  #note{left:14px;bottom:8px;right:auto;font-size:10px;padding:3px 8px;max-width:calc(100vw - 28px)}
-  .leaflet-control-attribution{margin-bottom:30px!important;font-size:9px}
+  #note{left:14px;bottom:60px;right:auto;font-size:10px;padding:3px 8px;max-width:calc(100vw - 28px)}
+  .leaflet-control-attribution{margin-bottom:0!important;font-size:9px}
   .leaflet-control-zoom{display:none}
 }
 </style>
@@ -77,6 +88,13 @@ header>*{pointer-events:auto}
 <nav id="rail" aria-label="Weather layers"></nav>
 <div id="legend"></div>
 <aside id="card" aria-label="Weather at this project" hidden></aside>
+<div id="time" role="group" aria-label="Timeline">
+  <button id="play" aria-label="Play">▶</button>
+  <div id="stamp"></div>
+  <input id="scrub" type="range" min="0" max="12" step="1" value="12" aria-label="Moment to show">
+  <span id="ends">3 h ago to now</span>
+  <button id="toNow" hidden>Back to now</button>
+</div>
 <p id="note">Measured at NEA stations and estimated between them.</p>
 <script type="module" src="weather-page.js"></script>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "758f01fe2dda484692c8cae7b5f3ad74"}'></script><!-- End Cloudflare Web Analytics -->
