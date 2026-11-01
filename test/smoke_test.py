@@ -84,10 +84,10 @@ with sync_playwright() as p:
     page.on('pageerror', lambda e: errors.append(str(e)))
     page.goto(url, wait_until='domcontentloaded', timeout=90000)
     page.wait_for_selector('#loading', state='detached', timeout=90000)
-    page.click('#tbody tr'); page.click('#unitCard button[data-a="view"]'); page.wait_for_timeout(1500)
-    assert page.evaluate('''() => ['winUp', 'winDown', 'winExit'].every(i => {
+    page.click('#tbody tr'); page.click('#unitCard button[data-a="view"]')
+    page.wait_for_function('''() => ['winUp', 'winDown', 'winExit'].every(i => {
         const e = document.getElementById(i), r = e.getBoundingClientRect();
-        return document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2) === e; })'''), 'phone: window controls covered'
+        return document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2) === e; })''', timeout=60000)   # after the smooth scroll
     visit(url)
     page.click('#modes .mode[data-m=resale]'); page.click('#modes .mode[data-m=pm]')
     assert on('#modes .mode[data-m=pm]') and not page.is_visible('#resalePanel')  # another mode still leaves resale
