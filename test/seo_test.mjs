@@ -7,7 +7,9 @@ const sitemap = readFileSync('sitemap.xml', 'utf8');
 const deployed = readFileSync('.vercelignore', 'utf8');
 for (const path of ['/bto', '/robots.txt', '/sitemap.xml']) assert.ok(deployed.includes(`!${path}\n`), `${path} not deployed`);
 assert.match(readFileSync('robots.txt', 'utf8'), /Sitemap: https:\/\/singapore-housing-lab\.vercel\.app\/sitemap\.xml/);
-assert.equal(sitemap.match(/<loc>/g).length, INDEX.length + 2);
+assert.equal(sitemap.match(/<loc>/g).length, INDEX.length + 3);
+assert.ok(sitemap.includes('/web/weather.html</loc>'));
+for (const p of INDEX) assert.ok(Number.isFinite(p.lat) && Number.isFinite(p.lon), `${p.id}: no coordinates for the weather map`);
 const titles = new Set(), descs = new Set();
 for (const p of INDEX) {
   const h = readFileSync(`bto/${p.id}/index.html`, 'utf8');

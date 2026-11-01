@@ -7,6 +7,8 @@
   "status": "upcoming",
   "kind": "bto",
   "classification": null,
+  "lat": 1.3136983,
+  "lon": 103.9417577,
   "units": 1640,
   "flatTypes": [
    "2-room Flexi",
@@ -29,6 +31,8 @@
   "status": "upcoming",
   "kind": "bto",
   "classification": null,
+  "lat": 1.3123773,
+  "lon": 103.9427501,
   "units": 860,
   "flatTypes": [
    "2-room Flexi",
@@ -50,6 +54,8 @@
   "status": "upcoming",
   "kind": "bto",
   "classification": null,
+  "lat": 1.3281013,
+  "lon": 103.8810539,
   "units": 440,
   "flatTypes": [
    "2-room Flexi",
@@ -71,6 +77,8 @@
   "status": "upcoming",
   "kind": "bto",
   "classification": null,
+  "lat": 1.4580026,
+  "lon": 103.8155222,
   "units": 1310,
   "flatTypes": [
    "2-room Flexi",
@@ -94,6 +102,8 @@
   "status": "upcoming",
   "kind": "bto",
   "classification": null,
+  "lat": 1.3521431,
+  "lon": 103.7330282,
   "units": 710,
   "flatTypes": [
    "2-room Flexi",
@@ -118,6 +128,8 @@
   "status": "upcoming",
   "kind": "bto",
   "classification": null,
+  "lat": 1.3372302,
+  "lon": 103.841089,
   "units": 1430,
   "flatTypes": [
    "Community Care Apartment",
@@ -140,6 +152,8 @@
   "status": "upcoming",
   "kind": "bto",
   "classification": null,
+  "lat": 1.4132207,
+  "lon": 103.8287616,
   "units": 1580,
   "flatTypes": [
    "2-room Flexi",
@@ -163,6 +177,8 @@
   "status": "launched",
   "kind": "bto",
   "classification": "Prime",
+  "lat": 1.2695016,
+  "lon": 103.8088605,
   "units": 1976,
   "flatTypes": [
    "2-room Flexi",
@@ -188,6 +204,8 @@
   "status": "launched",
   "kind": "bto",
   "classification": "Plus",
+  "lat": 1.368162,
+  "lon": 103.8322596,
   "units": 579,
   "flatTypes": [
    "2-room Flexi",
@@ -212,6 +230,8 @@
   "status": "launched",
   "kind": "bto",
   "classification": "Plus",
+  "lat": 1.376402,
+  "lon": 103.8356841,
   "units": 485,
   "flatTypes": [
    "3-room",
@@ -236,6 +256,8 @@
   "status": "launched",
   "kind": "bto",
   "classification": "Prime",
+  "lat": 1.3490187,
+  "lon": 103.83601,
   "units": 1221,
   "flatTypes": [
    "2-room Flexi",
@@ -260,6 +282,8 @@
   "status": "launched",
   "kind": "bto",
   "classification": "Standard",
+  "lat": 1.4600156,
+  "lon": 103.8132297,
   "units": 1160,
   "flatTypes": [
    "2-room Flexi",
@@ -287,6 +311,8 @@
   "status": "launched",
   "kind": "bto",
   "classification": "Standard",
+  "lat": 1.4587705,
+  "lon": 103.8137891,
   "units": 875,
   "flatTypes": [
    "2-room Flexi",
@@ -313,6 +339,8 @@
   "status": "launched",
   "kind": "bto",
   "classification": "Standard",
+  "lat": 1.4276008,
+  "lon": 103.7825303,
   "units": 656,
   "flatTypes": [
    "2-room Flexi",
@@ -339,6 +367,8 @@
   "status": "launched",
   "kind": "bto",
   "classification": "Plus",
+  "lat": 1.3332739,
+  "lon": 103.8605797,
   "units": 1151,
   "flatTypes": [
    "2-room Flexi",
@@ -364,6 +394,8 @@
   "status": "launched",
   "kind": "bto",
   "classification": "Standard",
+  "lat": 1.4585989,
+  "lon": 103.8186218,
   "units": 777,
   "flatTypes": [
    "2-room Flexi",
@@ -390,6 +422,8 @@
   "status": "launched",
   "kind": "bto",
   "classification": "Standard",
+  "lat": 1.4597625,
+  "lon": 103.8163524,
   "units": 1173,
   "flatTypes": [
    "2-room Flexi",
@@ -415,6 +449,8 @@
   "status": "launched",
   "kind": "bto",
   "classification": "Standard",
+  "lat": 1.3491425,
+  "lon": 103.9517115,
   "units": 284,
   "flatTypes": [
    "3-room",
@@ -439,6 +475,8 @@
   "status": "launched",
   "kind": "bto",
   "classification": "Plus",
+  "lat": 1.3564133,
+  "lon": 103.9409208,
   "units": 255,
   "flatTypes": [
    "2-room Flexi",
@@ -463,6 +501,8 @@
   "status": "launched",
   "kind": "bto",
   "classification": "Prime",
+  "lat": 1.2696182,
+  "lon": 103.8072407,
   "units": 880,
   "flatTypes": [
    "2-room Flexi",
@@ -488,6 +528,8 @@
   "status": "launched",
   "kind": "bto",
   "classification": "Prime",
+  "lat": 1.3459663,
+  "lon": 103.849291,
   "units": 538,
   "flatTypes": [
    "2-room Flexi",
@@ -513,6 +555,8 @@
   "status": "launched",
   "kind": "bto",
   "classification": "Standard",
+  "lat": 1.4180067,
+  "lon": 103.8293838,
   "units": 826,
   "flatTypes": [
    "2-room Flexi",
@@ -539,6 +583,8 @@
   "status": "launched",
   "kind": "bto",
   "classification": "Standard",
+  "lat": 1.3994791,
+  "lon": 103.88017,
   "units": 1037,
   "flatTypes": [
    "2-room Flexi",
@@ -565,6 +611,8 @@
   "status": "launched",
   "kind": "bto",
   "classification": "Prime",
+  "lat": 1.3321232,
+  "lon": 103.8400482,
   "units": 1348,
   "flatTypes": [
    "2-room Flexi",
@@ -590,6 +638,8 @@
   "status": "launched",
   "kind": "bto",
   "classification": "Plus",
+  "lat": 1.3775072,
+  "lon": 103.8523227,
   "units": 1425,
   "flatTypes": [
    "2-room Flexi",
@@ -615,6 +665,8 @@
   "status": "launched",
   "kind": "bto",
   "classification": "Standard",
+  "lat": 1.3271991,
+  "lon": 103.9207601,
   "units": 862,
   "flatTypes": [
    "2-room Flexi",
@@ -642,6 +694,8 @@
   "status": "launched",
   "kind": "bto",
   "classification": "Prime",
+  "lat": 1.285193,
+  "lon": 103.8172574,
   "units": 1021,
   "flatTypes": [
    "2-room Flexi",
@@ -666,6 +720,8 @@
   "status": "launched",
   "kind": "bto",
   "classification": "Standard",
+  "lat": 1.3198028,
+  "lon": 103.7435527,
   "units": 638,
   "flatTypes": [
    "2-room Flexi",
@@ -693,6 +749,8 @@
   "status": "launched",
   "kind": "bto",
   "classification": "Standard",
+  "lat": 1.4307535,
+  "lon": 103.8457273,
   "units": 569,
   "flatTypes": [
    "2-room Flexi",

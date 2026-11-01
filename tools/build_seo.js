@@ -72,7 +72,7 @@ writeFileSync(join(ROOT, 'bto/index.html'), page('Singapore HDB BTO projects: su
     `<li><a href="/bto/${encodeURIComponent(p.id)}/">${esc(p.name)}</a> · ${esc(p.town)} · ${p.units.toLocaleString('en-SG')} units</li>`).join('')}</ul>`).join('')}`));
 writeFileSync(join(ROOT, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${['/web/', '/bto/', ...INDEX.map(p => `/bto/${p.id}/`)].map(u => `  <url><loc>${SITE}${u}</loc></url>`).join('\n')}
+${['/web/', '/web/weather.html', '/bto/', ...INDEX.map(p => `/bto/${p.id}/`)].map(u => `  <url><loc>${SITE}${u}</loc></url>`).join('\n')}
 </urlset>
 `);
 writeFileSync(join(ROOT, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${SITE}/sitemap.xml\n`);

@@ -333,3 +333,5 @@ dialog#reachDlg[open]{display:flex}#reachBody{flex:1;padding:0 12px}#reachBody .
 #commutePanel .stn{min-height:28px;padding:2px 8px;border:0;border-radius:6px;background:none;color:var(--ink);font-weight:600;cursor:pointer}
 #commutePanel .stn:hover,#commutePanel .stn[aria-pressed=true]{background:var(--rs-soft)}
 #commutePanel .flash{background:var(--accent-soft)}
+a.btn{color:inherit;text-decoration:none}
+@media(max-width:420px){.topbar{gap:5px;padding-inline:10px}.topbar .btn,.topbar .change{font-size:13px;padding:6px 7px}}

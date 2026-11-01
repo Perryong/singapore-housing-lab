@@ -22,7 +22,7 @@ const list = readdirSync(DIR).filter(d => existsSync(join(DIR, d, 'project.json'
   .map(([d, P]) => {
   const types = P.flatTypes || Object.values(P.categories || {}).filter(c => !/Rental/.test(c.name)).map(c => c.name);
   return { id: d, name: P.name, town: P.town || '', launch: P.launch, status: P.status, kind: P.kind,
-    classification: P.classification || null, units: P.units || P.stacks.length, flatTypes: types,
+    classification: P.classification || null, lat: P.site.lat, lon: P.site.lon, units: P.units || P.stacks.length, flatTypes: types,
     hasLayout: P.stacks.length > 0 && existsSync(join(DIR, d, 'model.glb')), cmp: cmpOf(P) };
 }).sort((a, b) => ORDER[a.status] - ORDER[b.status] || month(b.launch) - month(a.launch) || a.name.localeCompare(b.name));
 const status = JSON.parse(readFileSync(join(DIR, '../reference/hdb/listing-status.json')));
