@@ -60,7 +60,8 @@ with sync_playwright() as p:
     now = dt.datetime.now(SGT); to_mark = 900 - (now.minute % 15 * 60 + now.second)
     if to_mark < 300: time.sleep(to_mark + 1)
     now = dt.datetime.now(SGT); last_slot = now.replace(minute=now.minute - now.minute % 15, second=0, microsecond=0).strftime('%Y-%m-%dT%H:%M:%S')
-    ok, old, no_radar, down, still, stale_link = open_page(b), open_page(b, age_min=30), open_page(b, broken=['weather-radar-images/70km']), open_page(b, broken=list(payloads(0))), open_page(b, reduced=True), open_page(b, expired=last_slot + '.png')
+    # only ok animates: six pages of wind trails on a software canvas starve CI's CPU
+    ok, old, no_radar, down, still, stale_link = open_page(b), open_page(b, age_min=30, reduced=True), open_page(b, broken=['weather-radar-images/70km'], reduced=True), open_page(b, broken=list(payloads(0))), open_page(b, reduced=True), open_page(b, expired=last_slot + '.png', reduced=True)
     for page in (ok, old, no_radar, down, still, stale_link): wait_loaded(page)
 
     # pacing: radar first, all 7 feeds, never over NEA's limit
@@ -162,7 +163,8 @@ with sync_playwright() as p:
     assert len(ok.calls) > n, 'did not refresh on return'
 
     # old readings say so
-    assert old.inner_text('#status') == 'Readings 30 min old', old.inner_text('#status')
+    status = old.inner_text('#status')                                      # 30 min at open, and ages while the run goes on
+    assert status.startswith('Readings 3') and status.endswith(' min old'), status
 
     # an expired radar link gets a fresh one from NEA, and the frame still arrives
     stale_link.wait_for_function('__wx.framesReady() === 12', timeout=60000)
