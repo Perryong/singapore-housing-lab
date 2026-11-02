@@ -56,6 +56,9 @@ def wait_loaded(page):
 
 with sync_playwright() as p:
     b = p.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader'])
+    # the timeline correctly gains a frame at each 15-minute mark, so don't start a run that would cross one
+    now = dt.datetime.now(SGT); to_mark = 900 - (now.minute % 15 * 60 + now.second)
+    if to_mark < 300: time.sleep(to_mark + 1)
     now = dt.datetime.now(SGT); last_slot = now.replace(minute=now.minute - now.minute % 15, second=0, microsecond=0).strftime('%Y-%m-%dT%H:%M:%S')
     ok, old, no_radar, down, still, stale_link = open_page(b), open_page(b, age_min=30), open_page(b, broken=['weather-radar-images/70km']), open_page(b, broken=list(payloads(0))), open_page(b, reduced=True), open_page(b, expired=last_slot + '.png')
     for page in (ok, old, no_radar, down, still, stale_link): wait_loaded(page)
