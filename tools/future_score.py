@@ -86,6 +86,23 @@ class Grid:
                    key=lambda t: t[0], default=(math.inf, None))
 
 
+class PolyIndex:
+    """(key, rings) items filed under every cell their bounding box touches; .at() returns the keys holding a point."""
+
+    def __init__(self, items, cell_deg=0.005):
+        self.cell, self.cells = cell_deg, {}
+        for key, rings in items:
+            lons, lats = [p[0] for r in rings for p in r], [p[1] for r in rings for p in r]
+            box = (min(lats), min(lons), max(lats), max(lons))
+            for i in range(int(box[0] // cell_deg), int(box[2] // cell_deg) + 1):
+                for j in range(int(box[1] // cell_deg), int(box[3] // cell_deg) + 1):
+                    self.cells.setdefault((i, j), []).append((key, rings, box))
+
+    def at(self, lat, lon):
+        return [k for k, rings, (a, b, c, d) in self.cells.get((int(lat // self.cell), int(lon // self.cell)), ())
+                if a <= lat <= c and b <= lon <= d and contains(rings, lat, lon)]
+
+
 def coverage(rings, area_m2, buildings):
     """Share of the parcel covered by buildings whose centroid lies inside it (payload = footprint m²)."""
     lat, lon = centroid(rings[0])
@@ -95,6 +112,10 @@ def coverage(rings, area_m2, buildings):
 
 def is_candidate(lu, area_m2, cover, holds_project):
     return lu in CANDIDATE_LU and area_m2 >= MIN_AREA_M2 and cover < MAX_COVER and not holds_project
+
+
+def rezoned(lu_now, residential_then):
+    return 'RESIDENTIAL' in lu_now and not residential_then
 
 
 def band(score):
@@ -113,7 +134,7 @@ def score(p, ctx):
         reasons.append(['Rezoned to residential since MP2019', POINTS['rezoned']])
     mrt_m, st = ctx['stations'].nearest(lat, lon, lambda s: s['opens'] is None or s['opens'] <= ctx['asOf'] + 10)
     if mrt_m <= MRT_M + r:
-        opens = f" (opens {st['opens']})" if st['opens'] and st['opens'] > ctx['asOf'] else ''
+        opens = ' (planned)' if st.get('planned') else f" (opens {st['opens']})" if st['opens'] and st['opens'] > ctx['asOf'] else ''
         reasons.append([f"{st['name']} MRT{opens} {round(mrt_m)} m", POINTS['mrt']])
     if ctx['hdb'].near(lat, lon, HDB_M + r):
         reasons.append(['HDB block within 500 m', POINTS['hdb']])

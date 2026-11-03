@@ -12,3 +12,10 @@ for d in Path('projects').iterdir():
             assert size <= kb, f'{f}: {size} KB gzipped > {kb} KB budget'
             worst[name] = max(worst.get(name, 0), size)
 print('ok', {k: f'{v} KB (budget {BUDGET_KB[k]})' for k, v in worst.items()})
+
+# the future BTO map downloads one file for the whole island
+f = Path('web/future.json')
+if f.exists():
+    size = len(gzip.compress(f.read_bytes(), 6)) // 1024
+    assert size <= 500, f'{f}: {size} KB gzipped > 500 KB budget'
+    print('ok', f'future.json {size} KB (budget 500)')

@@ -1,7 +1,7 @@
 # Future BTO scoring rules on hand-made parcels near Bishan (no downloads needed).
 import math, sys
 sys.path.insert(0, 'tools')
-from future_score import (outer_rings, ring_area_m2, contains, gpr_num, Grid, coverage, is_candidate, score, band,  # noqa: E402
+from future_score import (outer_rings, ring_area_m2, contains, gpr_num, Grid, PolyIndex, coverage, is_candidate, rezoned, score, band,  # noqa: E402
                           backtest)
 
 LAT, LON = 1.35, 103.82
@@ -34,9 +34,18 @@ assert not is_candidate('RESIDENTIAL', 12_000, 0.2, False)
 assert not is_candidate('RESIDENTIAL', 12_000, 0.05, True)
 assert not is_candidate('ROAD', 12_000, 0.05, False)
 
+# rezoned means now residential and not residential in MP2019 (a White or Reserve Site is neither)
+assert rezoned('RESIDENTIAL', False) and not rezoned('RESIDENTIAL', True)
+assert not rezoned('RESERVE SITE', False) and not rezoned('WHITE', False)
+assert rezoned('RESIDENTIAL WITH COMMERCIAL AT 1ST STOREY', False)
+
 # coverage: building footprint area whose centroid is inside, over parcel area
 blds = Grid([(*at(0, 0), 600.0), (*at(20, 20), 400.0), (*at(400, 0), 9_999.0)])
 assert abs(coverage([square(0, 0, 50)], 10_000, blds) - 0.1) < 1e-9
+
+# polygon index: which parcels hold a point, without testing every parcel
+pi = PolyIndex([('a', [square(0, 0, 50)]), ('b', [square(0, 0, 900)]), ('c', [square(3000, 0, 50)])])
+assert sorted(pi.at(*at(10, 10))) == ['a', 'b'] and pi.at(*at(600, 0)) == ['b'] and pi.at(*at(5000, 0)) == []
 
 # grid
 g = Grid([(*at(0, 300), 'b'), (*at(0, 100), 'a'), (*at(0, 2000), 'far')])
@@ -78,6 +87,8 @@ for fl, want in ((2029, 'near'), (2033, 'far'), (None, 'far')):
 assert not any('MRT' in t for t, _ in score(P, ctx(stations=[(300, 0, 'Later', 2040)]))['reasons'])
 assert any(t.startswith('Soon MRT (opens 2030) ') for t, _ in score(P, ctx(stations=[(300, 0, 'Soon', 2030)]))['reasons'])
 assert score(P, ctx())['mrtM'] == math.inf
+planned = {**ctx(), 'stations': Grid([(*at(300, 0), {'name': 'Brickland', 'opens': None, 'planned': True})])}
+assert any(t.startswith('Brickland MRT (planned) ') for t, _ in score(P, planned)['reasons'])
 
 assert (band(70), band(69), band(40), band(39)) == ('likely', 'possible', 'possible', 'longshot')
 
