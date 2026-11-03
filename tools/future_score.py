@@ -18,6 +18,14 @@ MIN_AREA_M2, MAX_COVER = 10_000, 0.10
 STALE_DAYS = 90
 
 
+def load_ref(path):
+    """Items of a hand-kept {"reviewed": "YYYY-MM-DD", "items": [...]} file; warns once the review goes stale."""
+    doc = json.loads(Path(path).read_text())
+    if (dt.date.today() - dt.date.fromisoformat(doc['reviewed'])).days > STALE_DAYS:
+        print(f"warning: {path} reviewed {doc['reviewed']}, over {STALE_DAYS} days ago", file=sys.stderr)
+    return doc['items']
+
+
 def dist_m(lat1, lon1, lat2, lon2):
     return math.hypot(*local_xz(lat1, lon1, lon2, lat2))
 

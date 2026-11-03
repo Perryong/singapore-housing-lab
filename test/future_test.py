@@ -86,4 +86,30 @@ ranked = [{'rings': [square(0, i * 1000, 50)], 'score': 100 - i, 'mrtM': (20 - i
 sites = [at(0, 0), at(0, 1000), at(5000, 5000)]
 assert backtest(ranked, sites) == {'n': 3, 'topDecile': 0.667, 'mrtOnly': 0.0, 'random': 0.067, 'inCandidates': 0.667}
 
+# hand-kept growth areas: schema of the committed file
+import contextlib, datetime as dt, io, json, re, tempfile  # noqa: E402
+from future_score import load_ref  # noqa: E402
+
+doc = json.load(open('reference/ura/growth-areas.json'))
+dt.date.fromisoformat(doc['reviewed'])
+assert len(doc['items']) >= 8
+for a in doc['items']:
+    assert isinstance(a['name'], str) and a['name'], a
+    assert 1.15 < a['lat'] < 1.48 and 103.6 < a['lon'] < 104.1, a
+    assert a['radiusM'] > 0 and (a['homes'] is None or isinstance(a['homes'], int)), a
+    assert isinstance(a['announced'], int) and (a['firstLaunch'] is None or isinstance(a['firstLaunch'], int)), a
+    assert re.match(r'^https://', a['source']), a
+
+# load_ref warns once the review is over 90 days old
+with tempfile.NamedTemporaryFile('w', suffix='.json', delete=False) as f:
+    json.dump({'reviewed': str(dt.date.today() - dt.timedelta(days=100)), 'items': [{'x': 1}]}, f)
+err = io.StringIO()
+with contextlib.redirect_stderr(err):
+    assert load_ref(f.name) == [{'x': 1}]
+assert 'over 90 days ago' in err.getvalue(), err.getvalue()
+err = io.StringIO()
+with contextlib.redirect_stderr(err):
+    load_ref('reference/ura/growth-areas.json')
+assert err.getvalue() == ''
+
 print('ok: future scoring rules')
