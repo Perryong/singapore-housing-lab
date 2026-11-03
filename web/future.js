@@ -23,7 +23,9 @@ export function cardHtml(p) {
 
 export function noteText(bt, reviewed) {
   const day = new Date(`${reviewed.growthAreas}T00:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-  return `Backtest on the 2019 plan: ${pct(bt.topDecile)} of ${bt.n} new HDB sites (blocks finished 2022–26 and BTOs launched since Oct 2025) ` +
-    `fell in the top 10% of parcels (MRT distance alone: ${pct(bt.mrtOnly)}, random: ${pct(bt.random)}).` +
+  return `Backtest on the 2019 plan: ${pct(bt.topDecile)} of ${bt.n} later HDB sites (blocks finished 2025–26 and BTO projects since Oct 2025) ` +
+    `fell in the top 10% of parcels (MRT distance alone: ${pct(bt.mrtOnly)}, random: ${pct(bt.random)}). ` +
+    'It sees only vacant land, not redeveloped schools or estates; parcels URA redrew after 2019 are left out; ' +
+    'private buildings put up since 2019 count as already built.' +
     `${bt.dropped?.includes('rezoned') ? ' Rezoning not tested.' : ''} Announcements reviewed ${day}.`;
 }

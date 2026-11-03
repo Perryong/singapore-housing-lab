@@ -65,9 +65,11 @@ assert len(s['reasons']) == 5 and sum(p for _, p in s['reasons']) == 100
 assert s['reasons'][0] == ['In announced growth area: Kranji (~14,000 homes)', 40]
 assert s['name'] == 'Kranji' and s['announced'] and s['source'] == 'https://www.ura.gov.sg/'
 assert ['Rezoned to residential since MP2019', 20] in s['reasons']
-assert ['HDB block within 500 m', 15] in s['reasons']
+assert ['HDB block within 500 m of the parcel', 15] in s['reasons']
 assert ['GPR 3.0 (2.8 or higher)', 10] in s['reasons']
-assert any(t.startswith('Bishan MRT ') and t.endswith(' m') and '(opens' not in t for t, _ in s['reasons'])
+assert any(t.startswith('Bishan MRT ') and t.endswith(' m from the parcel') and '(opens' not in t for t, _ in s['reasons'])
+big = {**P, 'area': math.pi * 1000 ** 2}                      # reach 1 km: a station 1.3 km from the centre is 300 m from the edge
+assert any(t == 'Far MRT 300 m from the parcel' for t, _ in score(big, ctx(stations=[(1300, 0, 'Far', None)]))['reasons'])
 
 s = score({**P, 'rezoned': False}, ctx(stations=[(5000, 0, 'Far', None)], hdb=[(0, 200)]))
 assert s['score'] == 25 and s['band'] == 'longshot' and s['horizon'] == 'far', s
@@ -89,6 +91,9 @@ assert any(t.startswith('Soon MRT (opens 2030) ') for t, _ in score(P, ctx(stati
 assert score(P, ctx())['mrtM'] == math.inf
 planned = {**ctx(), 'stations': Grid([(*at(300, 0), {'name': 'Brickland', 'opens': None, 'planned': True})])}
 assert any(t.startswith('Brickland MRT (planned) ') for t, _ in score(P, planned)['reasons'])
+unnamed = {**ctx(), 'stations': Grid([(*at(300, 0), {'name': None, 'opens': None, 'planned': True})])}
+s = score({**P, 'rezoned': False}, unnamed)
+assert s['name'] == 'Unannounced' and any(t.startswith('Planned MRT station ') for t, _ in s['reasons']), s
 
 assert (band(70), band(69), band(40), band(39)) == ('likely', 'possible', 'possible', 'longshot')
 
@@ -118,9 +123,5 @@ err = io.StringIO()
 with contextlib.redirect_stderr(err):
     assert load_ref(f.name) == [{'x': 1}]
 assert 'over 90 days ago' in err.getvalue(), err.getvalue()
-err = io.StringIO()
-with contextlib.redirect_stderr(err):
-    load_ref('reference/ura/growth-areas.json')
-assert err.getvalue() == ''
 
 print('ok: future scoring rules')

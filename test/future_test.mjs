@@ -29,6 +29,8 @@ const k = cardHtml(Q);
 assert.ok(k.includes('Long shot') && k.includes('5–10 years') && k.includes('GPR —') && !k.includes('<a '));
 
 assert.equal(noteText({ topDecile: 0.62, mrtOnly: 0.31, random: 0.06, n: 80, inCandidates: 0.6, dropped: ['rezoned'] }, { growthAreas: '2026-11-03' }),
-  'Backtest on the 2019 plan: 62% of 80 new HDB sites (blocks finished 2022–26 and BTOs launched since Oct 2025) fell in the top 10% of parcels (MRT distance alone: 31%, random: 6%). Rezoning not tested. Announcements reviewed 3 Nov 2026.');
+  'Backtest on the 2019 plan: 62% of 80 later HDB sites (blocks finished 2025–26 and BTO projects since Oct 2025) fell in the top 10% of parcels ' +
+  '(MRT distance alone: 31%, random: 6%). It sees only vacant land, not redeveloped schools or estates; parcels URA redrew after 2019 are left out; ' +
+  'private buildings put up since 2019 count as already built. Rezoning not tested. Announcements reviewed 3 Nov 2026.');
 
 console.log('ok: future panel');

@@ -135,15 +135,17 @@ def score(p, ctx):
     mrt_m, st = ctx['stations'].nearest(lat, lon, lambda s: s['opens'] is None or s['opens'] <= ctx['asOf'] + 10)
     if mrt_m <= MRT_M + r:
         opens = ' (planned)' if st.get('planned') else f" (opens {st['opens']})" if st['opens'] and st['opens'] > ctx['asOf'] else ''
-        reasons.append([f"{st['name']} MRT{opens} {round(mrt_m)} m", POINTS['mrt']])
+        label = f"{st['name']} MRT{opens}" if st['name'] else 'Planned MRT station'
+        # the rule measures from the parcel's edge (centre less its equivalent radius), so the card does too
+        reasons.append([f"{label} {round(max(0, mrt_m - r))} m from the parcel", POINTS['mrt']])
     if ctx['hdb'].near(lat, lon, HDB_M + r):
-        reasons.append(['HDB block within 500 m', POINTS['hdb']])
+        reasons.append(['HDB block within 500 m of the parcel', POINTS['hdb']])
     g = gpr_num(p['gpr'])
     if g is not None and g >= 2.8:
         reasons.append([f"GPR {p['gpr']} (2.8 or higher)", POINTS['gpr']])
     total = sum(pts for _, pts in reasons)
     near = bool(area and area.get('firstLaunch') and area['firstLaunch'] <= ctx['asOf'] + 5)
-    name = area['name'] if area else f"Unannounced · near {st['name']}" if st else 'Unannounced'
+    name = area['name'] if area else f"Unannounced · near {st['name']}" if st and st['name'] else 'Unannounced'
     return {'score': total, 'band': band(total), 'horizon': 'near' if near else 'far', 'name': name, 'reasons': reasons,
             'announced': bool(area), 'source': area['source'] if area else None, 'mrtM': mrt_m}
 

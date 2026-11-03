@@ -14,7 +14,8 @@ Redhill Peaks II, plus the 7 upcoming Nov 2026 sites)
 **Future BTO map.** [`/web/future.html`](https://singapore-housing-lab.vercel.app/web/future.html) marks land that could
 become BTO in the next 5 to 10 years. It scores vacant residential, White and Reserve parcels in URA's Master Plan 2025
 on five visible reasons: an announced growth area, rezoning since 2019, a nearby MRT station (open or planned), nearby
-HDB blocks, and plot ratio. The same rules, run on the 2019 plan, are checked against the HDB sites that came after.
+HDB blocks, and plot ratio. The same rules, run on the 2019 plan, are checked against the HDB sites that came after;
+they edge out MRT distance alone on a small sample (see [Limits](#limits)).
 See [Refresh the future BTO map](#refresh-the-future-bto-map).
 
 ![Future BTO map: candidate parcels shaded by likelihood, with a card listing a parcel's reasons](docs/mockups/future-bto-real-desktop.jpg)
@@ -183,8 +184,10 @@ Projects live outside `~/Documents`: macOS revokes access when Blender is launch
 ## Limits
 
 - Future BTO map: zoning doesn't say public or private, so a high score means "housing land with BTO-like signs", not
-  an HDB plan. Building cover uses OSM bounding boxes. The backtest counts HDB blocks finished 2022–26 and our
-  launched BTOs; some of those sites were launched before the 2019 plan, so it flatters the rules a little.
+  an HDB plan. It only looks at vacant land: BTOs on redeveloped school or estate land (most of the 2025–26 projects)
+  are not predicted. Building cover uses OSM bounding boxes. The backtest is small: on the 2019 plan, 6 of 76 later
+  HDB sites (blocks finished 2025–26 and our BTO projects) fell in the top 10% of parcels, against 5 for MRT distance
+  alone and about 2 at random. Parcels URA amended after 2019 are left out of that run.
 - Shading is tested against simple boxes (as in the original), not the balcony detail in the GLB.
 - Stepped blocks are modelled at their tallest height; HDB's plans don't say which stacks step down.
 - Neighbouring blocks are fitted to the plan where the sheet draws them; greenfield sheets (e.g. Sembawang, Mount

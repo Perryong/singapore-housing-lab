@@ -14,12 +14,14 @@ sys.path.insert(0, str(ROOT / 'tools'))
 from fetch_context import local_xz            # noqa: E402
 from fetch_surround import simplify           # noqa: E402
 from geocode_resale import geo_key            # noqa: E402
-from future_score import (CANDIDATE_LU, MIN_AREA_M2, Grid, PolyIndex, backtest, centroid, coverage, is_candidate,  # noqa: E402
+from future_score import (CANDIDATE_LU, MIN_AREA_M2, Grid, PolyIndex, backtest, centroid, contains, coverage, is_candidate,  # noqa: E402
                           load_ref, outer_rings, rezoned, score)
 
 URA, OUT = ROOT / 'reference/ura', ROOT / 'web/future.json'
 PLAN = {2026: ('mp2025.geojson', 'rail2025.geojson'), 2019: ('mp2019.geojson', 'rail2019.geojson')}
-NEW_SINCE, SITES_SINCE, SITE_M, NEW_BUILDING_M, PLANNED_M = 2020, 2022, 200, 90, 300
+NEW_SINCE, SITES_SINCE, SITE_M, NEW_BUILDING_M, PLANNED_M = 2020, 2025, 200, 90, 300
+# SITES_SINCE: blocks finished 2025-26 were launched from about 2020, after the 2019 plan; earlier completions were
+# mostly Tengah flats sold in 2018-19 and would credit the rules with what was already known
 # NEW_BUILDING_M: a new block's address point can sit 30-60 m from its slab's centre, and its car park and pavilions
 # are nearby but not in the list; 90 m clears them (87 of 93 later sites read vacant in 2019, vs 17 at 30 m)
 K_LAT = 110_574
@@ -45,7 +47,7 @@ def stations(name):
         lat, lon = centroid(outer_rings(f['geometry'])[0])
         raw = (p.get('NAME') or '').strip()
         named = raw and raw != 'PENDING' and not re.fullmatch(r'[A-Z]{2}\d+', raw)      # URA placeholders: DE1, NS6
-        nm = raw.title().replace(' Interchange', '') if named else 'Unnamed'
+        nm = raw.title().replace(' Interchange', '') if named else None
         out.append((lat, lon, {'name': nm, 'opens': None, 'planned': not exits.near(lat, lon, PLANNED_M)}))
     return Grid(out, cell_m=2000)
 
@@ -92,10 +94,13 @@ def run(as_of):
         p = f['properties']
         if p['LU_DESC'] not in CANDIDATE_LU or (p['SHAPE.AREA'] or 0) < MIN_AREA_M2:
             continue
+        if as_of < NEW_SINCE and str(p['FMEL_UPD_D'])[:4] >= str(NEW_SINCE):
+            continue                          # URA amended this parcel after 2019: the 2019 plan didn't have it
         rings = outer_rings(f['geometry'])
         area, (lat, lon) = p['SHAPE.AREA'], centroid(rings[0])
         reach = math.sqrt(area / math.pi) * 3
-        holds = any(PolyIndex([(0, rings)]).at(la, lo) for la, lo, _ in projects.within(lat, lon, reach))
+        # our projects launched from Oct 2025; in 2019 their parcels were open land the rules could pick
+        holds = as_of >= NEW_SINCE and any(contains(rings, la, lo) for la, lo, _ in projects.within(lat, lon, reach))
         cover = coverage(rings, area, blds)
         if not is_candidate(p['LU_DESC'], area, cover, holds):
             continue
@@ -106,12 +111,17 @@ def run(as_of):
     out.sort(key=lambda q: (-q['score'], q['mrtM']))
     if as_of >= NEW_SINCE:
         return out, {}
-    sites = []                                # blocks finished 2022-26, grouped into sites, plus our launched BTOs
-    for k, (lat, lon) in new.items():
+    return out, {**backtest(out, backtest_sites()), 'dropped': ['rezoned']}
+
+
+def backtest_sites():
+    """Where HDB built after the 2019 plan: blocks finished since SITES_SINCE grouped into sites, plus our BTO projects."""
+    years = block_years()
+    sites = []
+    for k, (lat, lon) in ((k, v) for k, v in json.loads((URA / 'new-blocks.json').read_text()).items() if v):
         if years.get(k, 0) >= SITES_SINCE and not any(math.hypot(*local_xz(lat, lon, b, a)) < SITE_M for a, b in sites):
             sites.append((lat, lon))
-    sites += [(la, lo) for la, lo, _ in projects.pts]
-    return out, {**backtest(out, sites), 'dropped': ['rezoned']}
+    return sites + [(p['lat'], p['lon']) for p in json.loads((ROOT / 'projects/index.json').read_text())]
 
 
 if __name__ == '__main__':
