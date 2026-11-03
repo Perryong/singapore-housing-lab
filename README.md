@@ -11,6 +11,15 @@ Redhill Peaks II, plus the 7 upcoming Nov 2026 sites)
 
 ## Recent changes
 
+**Future BTO map.** [`/web/future.html`](https://singapore-housing-lab.vercel.app/web/future.html) marks land that could
+become BTO in the next 5 to 10 years. It scores vacant residential, White and Reserve parcels in URA's Master Plan 2025
+on five visible reasons: an announced growth area, rezoning since 2019, a nearby MRT station (open or planned), nearby
+HDB blocks, and plot ratio. The same rules, run on the 2019 plan, are checked against the HDB sites that came after;
+they edge out MRT distance alone on a small sample (see [Limits](#limits)).
+See [Refresh the future BTO map](#refresh-the-future-bto-map).
+
+![Future BTO map: candidate parcels shaded by likelihood, with a card listing a parcel's reasons](docs/mockups/future-bto-real-desktop.jpg)
+
 **Resale nearby turns off again.** Click "Resale nearby" a second time, or "Back to BTO", to return to the BTO view. The
 camera goes back to where it was. Upcoming projects, where this is the only mode button, now have a way back too.
 
@@ -144,6 +153,16 @@ npm test
    30 s, from https://sg-bus-api.vercel.app (`PROD_API` in `web/live.js`); locally, run that API on `:8010` to see live minutes.
 8. `node tools/build.js projects/<slug>`, `node tools/make_index.js`.
 
+## Refresh the future BTO map
+
+1. `python3 tools/fetch_landuse.py` downloads URA's land-use and rail-station layers (2025 and 2019), OSM building
+   outlines and the locations of HDB blocks completed since 2020 into `reference/ura/` (git-ignored; the OneMap lookups
+   take about half an hour the first time and resume if stopped).
+2. Edit `reference/ura/growth-areas.json` when URA or HDB announces a housing area: centre, radius, homes, the year it
+   was announced, the first BTO launch year (or `null`) and a source link. Update `reviewed`; the pipeline warns after 90 days.
+3. `python3 tools/predict_future.py` writes `web/future.json` and prints the backtest. `test/future_backtest_test.py`
+   checks the backtest still beats the baselines (skipped without the caches).
+
 ## Search pages
 
 `node tools/build_seo.js` writes `bto/<slug>/index.html`, `bto/index.html`, `sitemap.xml` and `robots.txt` from the
@@ -164,6 +183,11 @@ Projects live outside `~/Documents`: macOS revokes access when Blender is launch
 
 ## Limits
 
+- Future BTO map: zoning doesn't say public or private, so a high score means "housing land with BTO-like signs", not
+  an HDB plan. It only looks at vacant land: BTOs on redeveloped school or estate land (most of the 2025–26 projects)
+  are not predicted. Building cover uses OSM bounding boxes. The backtest is small: on the 2019 plan, 6 of 76 later
+  HDB sites (blocks finished 2025–26 and our BTO projects) fell in the top 10% of parcels, against 5 for MRT distance
+  alone and about 2 at random. Parcels URA amended after 2019 are left out of that run.
 - Shading is tested against simple boxes (as in the original), not the balcony detail in the GLB.
 - Stepped blocks are modelled at their tallest height; HDB's plans don't say which stacks step down.
 - Neighbouring blocks are fitted to the plan where the sheet draws them; greenfield sheets (e.g. Sembawang, Mount

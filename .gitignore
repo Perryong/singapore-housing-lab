@@ -27,3 +27,7 @@ reference/resale/*
 reference/transit/
 # LinkedIn post drafts and media (local only)
 docs/linkedin/
+# future BTO map inputs (re-fetch: python3 tools/fetch_landuse.py)
+reference/ura/*.geojson
+reference/ura/*.raw
+reference/ura/new-blocks.json
