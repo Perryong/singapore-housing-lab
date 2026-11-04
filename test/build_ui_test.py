@@ -16,7 +16,11 @@ base = f'http://127.0.0.1:{srv.server_address[1]}/web/build.html'
 NO_LAYOUT = "This project's blocks aren't released yet"
 
 
+pages = []
+
+
 def open_page(b, p='kim-keat-crest', size=(1600, 900), no_model=False, init=None):
+    while pages: pages.pop().close()                                       # one render loop at a time, or software GL starves
     page = b.new_context(viewport={'width': size[0], 'height': size[1]}).new_page()
     page.errors = []
     page.on('pageerror', lambda e: page.errors.append(str(e)))
@@ -27,6 +31,7 @@ def open_page(b, p='kim-keat-crest', size=(1600, 900), no_model=False, init=None
     if init:
         page.add_init_script(init)
     page.goto(f'{base}?p={p}')
+    pages.append(page)
     return page
 
 
@@ -63,6 +68,26 @@ with sync_playwright() as p:
     page.wait_for_function(f'document.body.innerText.includes("{NO_LAYOUT}")', timeout=30000)
     page = open_page(b, p='bedok-bayshore-i-oct-2026')
     page.wait_for_function(f'document.body.innerText.includes("{NO_LAYOUT}")', timeout=30000)
+
+    # capture refused: say so, keep playing
+    page = open_page(b, init='navigator.mediaDevices.getDisplayMedia = () => Promise.reject(new Error("denied"))')
+    page.wait_for_function('window.__build && __build.ready', timeout=60000)
+    page.click('#rebuild'); page.click('#record')
+    page.wait_for_function('document.querySelector("#msg").innerText.includes("Recording needs permission to capture this tab.")', timeout=10000)
+    t0 = page.evaluate('__build.t')
+    page.wait_for_function(f'__build.t > {t0}', timeout=15000)                 # playback carries on
+
+    # capture granted (stubbed with the page's own canvas, since a real tab share needs a person): the sequence records and downloads
+    page = open_page(b, init='navigator.mediaDevices.getDisplayMedia = async () => document.querySelector("#view canvas").captureStream(30)')
+    page.wait_for_function('window.__build && __build.ready', timeout=60000)
+    page.click('#speed')                                                     # ×2: the 25 s sequence records in 12.5 s
+    with page.expect_download(timeout=60000) as dl:
+        page.click('#record')
+        page.wait_for_function('!document.querySelector("#recDot").hidden', timeout=10000)
+    name = dl.value.suggested_filename
+    assert name in ('kim-keat-crest-build.mp4', 'kim-keat-crest-build.webm'), name
+    assert __import__('os').path.getsize(dl.value.path()) > 10_000
+    assert page.evaluate('document.querySelector("#recDot").hidden')
 
     page = open_page(b, size=(800, 900))
     assert 'BTO Build is made for desktop recording.' in page.inner_text('body')

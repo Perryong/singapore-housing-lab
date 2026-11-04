@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { buildLayout, catOf } from './project.js';
 import { esc } from './format.js';
-import { TOTAL, STAGES, stages, buildOrder, stateAt, timelineHtml, activeCardHtml, structureHtml, logLines, titleBlockHtml } from './build.js';
+import { TOTAL, STAGES, stages, buildOrder, stateAt, timelineHtml, activeCardHtml, structureHtml, logLines, titleBlockHtml, pickMime } from './build.js';
 
 const $ = s => document.querySelector(s);
 const pid = new URLSearchParams(location.search).get('p') || '';
@@ -194,7 +194,7 @@ function frame(tt) {
 
 function tick(now) {
   const dt = (now - last) / 1000; last = now;
-  if (playing) { t = Math.min(TOTAL, t + dt * speed); if (t >= TOTAL) setPlaying(false); }
+  if (playing) { t = Math.min(TOTAL, t + dt * speed); if (t >= TOTAL) { setPlaying(false); recording?.stop(); } }
   frame(t);
   requestAnimationFrame(tick);
 }
@@ -202,7 +202,35 @@ export function seek(v) { t = Math.min(TOTAL, Math.max(0, v)); frame(t); }
 function setPlaying(v) { playing = v; $('#play').textContent = v ? '❚❚' : '▶'; $('#play').setAttribute('aria-label', v ? 'Pause' : 'Play'); }
 export function play(from = 0) { seek(from); setPlaying(true); }
 
+/* ---------- record: capture this tab while the sequence plays once ---------- */
+let recording = null, msgTimer = 0;
+function say(text) {
+  $('#msg').hidden = false; $('#msg').textContent = text; window.__build.msg = text;
+  clearTimeout(msgTimer); msgTimer = setTimeout(() => { $('#msg').hidden = true; }, 5000);
+}
+async function record() {
+  if (recording) return;
+  const fmt = window.MediaRecorder ? pickMime(m => MediaRecorder.isTypeSupported(m)) : null;
+  let stream;
+  try {
+    if (!fmt || !navigator.mediaDevices?.getDisplayMedia) throw new Error('unsupported');
+    stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 60 }, audio: false, preferCurrentTab: true, selfBrowserSurface: 'include' });
+  } catch { say('Recording needs permission to capture this tab.'); return; }
+  const parts = [];
+  recording = new MediaRecorder(stream, { mimeType: fmt.mime, videoBitsPerSecond: 12e6 });
+  recording.ondataavailable = e => { if (e.data.size) parts.push(e.data); };
+  recording.onstop = () => {
+    stream.getTracks().forEach(tr => tr.stop());
+    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob(parts, { type: fmt.mime })), download: `${pid}-build.${fmt.ext}` });
+    a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    recording = null; $('#recDot').hidden = true;
+  };
+  $('#recDot').hidden = false; $('#msg').hidden = true;
+  play(0); recording.start(250);
+}
+
 /* ---------- controls ---------- */
+$('#record').onclick = record;
 $('#marks').innerHTML = S.map(g => `<span style="left:${g.t0 / TOTAL * 100}%">${g.label.toUpperCase()}</span>`).join('');
 $('#scrub').addEventListener('input', e => { setPlaying(false); seek(+e.target.value); });
 $('#rebuild').onclick = () => play(0);
