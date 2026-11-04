@@ -20,6 +20,7 @@ with sync_playwright() as p:
     page.on('pageerror', lambda e: errors.append(str(e)))
     page.goto(url)
     page.wait_for_selector('#loading', state='detached', timeout=60000)      # model.glb loaded and painted
+    assert page.is_visible('#buildLink') and page.get_attribute('#buildLink', 'href').endswith('build.html?p=kim-keat-crest')
 
     page.click('#tbody tr')                                                  # pick a stack from the table
     while page.is_enabled('#unitCard button[data-a="up"]'):                  # top floor: nothing stands in front of it
@@ -70,6 +71,7 @@ with sync_playwright() as p:
         page.wait_for_selector('#loading', state='detached', timeout=90000)
     for slug, off in (('kim-keat-crest', '#modes .mode[data-m=resale]'), ('tengah-oct-2026', '#resaleOff')):
         visit(url.replace('kim-keat-crest', slug))
+        assert page.is_visible('#buildLink') == (slug == 'kim-keat-crest'), slug              # upcoming: no layout to build
         before = page.evaluate('__cam()')
         resale_is(False, f'{slug}: starts off')
         page.click('#modes .mode[data-m=resale]')

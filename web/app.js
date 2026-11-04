@@ -26,6 +26,7 @@ const base = `../projects/${encodeURIComponent(pid)}/`;
 const P = await fetch(base + 'project.json', { cache: 'no-cache' }).then(r => { if (!r.ok) throw new Error(`No project "${pid}"`); return r.json(); });
 const L = buildLayout(P), { stacks, units, FH } = L, site = P.site;
 const hasLayout = stacks.length > 0;
+Object.assign(document.getElementById('buildLink'), { href: `build.html?p=${pid}`, hidden: !hasLayout });
 
 /* ---------- Which project is this: header + picker ---------- */
 document.title = `${P.name} · ${BADGE[P.status](P)} · Sun study`;
