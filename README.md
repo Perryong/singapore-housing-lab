@@ -11,6 +11,13 @@ Redhill Peaks II, plus the 7 upcoming Nov 2026 sites)
 
 ## Recent changes
 
+**BTO Build.** The **Build** button opens `/web/build.html?p=<id>`, an assembly drawing that builds the project unit
+by unit in 25 seconds: site, void deck, floors rising in parallel, roof, paint by flat type, and a section cut. Every
+number on it is real (blocks, levels, stacks, flat types, floor areas); the order is illustrative. **Record** captures
+the tab and downloads an MP4 or WebM of one run, for posting.
+
+![BTO Build: Kim Keat Crest half built, with the build sequence, active unit and floors per block](docs/mockups/bto-build-real-10.jpg)
+
 **Future BTO map.** [`/web/future.html`](https://singapore-housing-lab.vercel.app/web/future.html) marks land that could
 become BTO in the next 5 to 10 years. It scores vacant residential, White and Reserve parcels in URA's Master Plan 2025
 on five visible reasons: an announced growth area, rezoning since 2019, a nearby MRT station (open or planned), nearby
@@ -183,6 +190,8 @@ Projects live outside `~/Documents`: macOS revokes access when Blender is launch
 
 ## Limits
 
+- BTO Build: the build order (all blocks rising floor by floor together) is illustrative, not HDB's construction
+  programme. Record needs the browser to let the page capture its own tab (Chrome asks once per recording).
 - Future BTO map: zoning doesn't say public or private, so a high score means "housing land with BTO-like signs", not
   an HDB plan. It only looks at vacant land: BTOs on redeveloped school or estate land (most of the 2025–26 projects)
   are not predicted. Building cover uses OSM bounding boxes. The backtest is small: on the 2019 plan, 6 of 76 later
