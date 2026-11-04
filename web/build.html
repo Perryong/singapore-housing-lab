@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BTO Build: watch a BTO project go up, unit by unit | BTOlab</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2712%27 fill=%27%23B8282E%27/%3E%3C/svg%3E">
+<meta name="description" content="An assembly drawing of an HDB BTO project, built unit by unit from HDB's site plan: floors, roof, paint and a section cut.">
+<link rel="preload" href="fonts/schibsted-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+<style>
+@font-face{font-family:"Schibsted Grotesk";font-weight:400 700;font-display:swap;src:url(fonts/schibsted-grotesk-latin.woff2) format("woff2")}
+:root{--paper:#F4EEE4;--panel:#FBF7F0;--ink:#2B2522;--red:#B8282E;--ghost:#D9666A;--line:#DCCFBF;--muted:#8C7F74}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--paper);color:var(--ink);font:13px/1.4 "Schibsted Grotesk",system-ui,sans-serif}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:.02em}
+.serif{font-family:Georgia,"Times New Roman",serif}
+#stage{position:absolute;left:50%;top:50%;width:1600px;height:900px;transform:translate(-50%,-50%) scale(var(--k,1));
+  display:grid;grid-template-columns:1fr 400px;grid-template-rows:84px 1fr 150px;gap:12px;padding:14px}
+header{grid-column:1/3;display:flex;align-items:center;gap:22px;border-bottom:1px solid var(--line);padding-bottom:10px}
+.logo{width:52px;height:52px;border:2px solid var(--red);border-radius:6px;display:grid;place-items:center;color:var(--red);text-decoration:none}
+h1{margin:0;font-size:38px;letter-spacing:.06em;font-weight:900;line-height:1}
+h1 b{color:var(--red)}
+.sub{font-size:11px;letter-spacing:.32em;color:var(--muted);margin-top:6px}
+.tb{margin-left:auto;display:flex;gap:10px;align-items:center}
+.box{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:8px 12px}
+.box small{display:block;font-size:10px;color:var(--muted)}
+#clock{font-size:26px;font-weight:700}
+#recDot{color:var(--red);font-size:10px;font-weight:700}
+#record{background:var(--red);color:#fff;border:0;border-radius:6px;padding:10px 16px;font-weight:700}
+main{position:relative;border:1px solid var(--line);border-radius:10px;overflow:hidden;
+  background:linear-gradient(var(--line) 1px,transparent 1px) 0 0/40px 40px,linear-gradient(90deg,var(--line) 1px,transparent 1px) 0 0/40px 40px,#F7F1E8}
+#view{position:absolute;inset:0}
+#view canvas{display:block}
+#title{position:absolute;left:18px;top:14px;width:440px;background:rgba(251,247,240,.92);border:1px solid var(--line);border-left:3px solid var(--red);padding:10px 12px;pointer-events:none}
+#title h2{margin:0;font-size:22px;font-weight:400}
+#title .what{color:#5c514a}
+#title .step{color:var(--red);font-size:12px;margin-top:6px}
+#title .op{font-weight:700;font-size:13px;margin-top:2px}
+#title .spec{color:var(--red);font-size:12px;min-height:17px}
+#dwg{position:absolute;right:18px;top:14px;width:270px;border:1px solid var(--red);background:rgba(251,247,240,.92);font-size:10px;pointer-events:none}
+#dwg div{display:grid;grid-template-columns:1fr 1fr}
+#dwg span{border:1px solid var(--line);padding:4px 6px}
+#dwg div:last-child span{grid-column:1/3}
+#dwg i,.card i{display:block;font-style:normal;color:var(--muted);font-size:9px;letter-spacing:.1em}
+#dwg b{font-size:12px}
+.call{position:absolute;font-size:12px;font-weight:700;letter-spacing:.03em;white-space:nowrap;pointer-events:none;transform:translate(14px,-50%)}
+.call small{display:block;font-weight:400;color:var(--red);font-size:11px}
+.call::before{content:"";position:absolute;left:-14px;top:50%;width:12px;border-top:1px solid var(--red)}
+.lvl{position:absolute;font-size:11px;color:var(--red);pointer-events:none;transform:translateY(-50%)}
+.lvl::before{content:"";display:inline-block;width:26px;border-top:1px solid var(--red);margin-right:4px;vertical-align:middle}
+#scale{position:absolute;left:18px;bottom:118px;font-size:11px;color:var(--muted)}
+#illus{position:absolute;left:18px;bottom:98px;font-size:10px;color:var(--muted)}
+#scrubWrap{position:absolute;left:18px;right:18px;bottom:64px;height:24px}
+#scrub{width:100%;accent-color:var(--red);margin:10px 0 0}
+#marks span{position:absolute;top:-4px;font-size:9px;color:var(--muted);letter-spacing:.1em}
+#ctrl{position:absolute;left:50%;transform:translateX(-50%);bottom:12px;display:flex;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px}
+#ctrl button{border:1px solid var(--line);background:#fff;border-radius:6px;padding:6px 10px;font-size:11px;font-weight:600}
+#ctrl button[aria-pressed=true]{background:var(--red);color:#fff;border-color:var(--red)}
+#time{min-width:120px}
+aside{border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:12px 14px;overflow:hidden;display:flex;flex-direction:column;gap:9px}
+aside h3{margin:0;font-size:13px;letter-spacing:.08em}
+#timeline div{display:grid;grid-template-columns:150px 1fr 40px;gap:8px;align-items:center;font-size:11px;margin:3px 0}
+#timeline .bar{height:8px;position:relative}
+#timeline .bar i{position:absolute;top:0;height:8px;background:var(--red);border-radius:2px}
+#timeline .cur{color:var(--red);font-weight:700}
+.card{border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:grid;grid-template-columns:1fr 1fr;gap:6px 12px}
+.card .w{grid-column:1/3}
+.card b{font-size:12px}
+#structure div{display:grid;grid-template-columns:60px 1fr 60px;gap:8px;align-items:center;font-size:11px;margin:3px 0}
+#structure .b{height:10px;background:#EADFD0;border-radius:2px;position:relative;overflow:hidden}
+#structure .b i{position:absolute;inset:0 auto 0 0;background:var(--red)}
+#structure .cur{color:var(--red);font-weight:700}
+#log{font-size:10.5px;color:#5c514a;flex:1;overflow:hidden}
+#log div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#log div:last-child{color:var(--red)}
+.tag{background:var(--red);color:#fff;border-radius:3px;padding:1px 5px;font-size:9px;vertical-align:1px}
+#strip{grid-column:1/3;display:flex;gap:10px}
+.st{flex:1;border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:6px;position:relative;text-align:left}
+.st[aria-current=true]{border:2px solid var(--red);padding:5px}
+.st img,.st .ph{display:block;width:100%;height:78px;object-fit:cover;border-radius:5px;background:#F2EADF}
+.st b{display:block;font-size:11.5px;margin-top:5px}
+.st small{color:var(--muted);font-size:10px}
+.st .t{position:absolute;left:12px;top:10px;font-size:10px;color:var(--muted)}
+#msg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--panel);border:1px solid var(--red);border-radius:8px;padding:12px 18px;font-weight:600;z-index:5}
+#msg a{color:var(--red)}
+#phone{display:none;padding:24px;font-size:15px}
+#phone a{color:var(--red)}
+@media (max-width:899px){#stage{display:none}#phone{display:block}}
+</style>
+</head>
+<body>
+<p id="phone">BTO Build is made for desktop recording. <a href="./">Back to BTOlab</a></p>
+<div id="stage">
+<header>
+  <a class="logo" href="./" aria-label="BTOlab home"><svg width="30" height="30" viewBox="0 0 30 30" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="8" width="8" height="19"/><rect x="16" y="3" width="10" height="24"/><path d="M2 27h26"/></svg></a>
+  <div><h1>BTO <b>BUILD</b></h1><div class="sub mono">PRECAST · FLOOR BY FLOOR · SECTION</div></div>
+  <div class="tb">
+    <div class="box mono"><b style="font-size:11px">ASSEMBLY</b><small id="stepBox">STEP 0 · UNITS</small></div>
+    <div class="box mono"><small id="projBox"></small><span id="clock">00:00.0</span> <span id="recDot" hidden>● REC</span></div>
+    <button id="record">● Record</button>
+  </div>
+</header>
+<main>
+  <div id="view"></div>
+  <div id="title"><h2 class="serif" id="projTitle"></h2><div class="what serif" id="projWhat"></div>
+    <div class="step mono" id="titleStep"></div><div class="op mono" id="titleOp"></div><div class="spec serif" id="titleSpec"></div></div>
+  <div id="dwg" class="mono"></div>
+  <div id="overlay"></div>
+  <div id="scale" class="mono">0 ─── 10 ─── 20 m &nbsp; SCALE 1:600</div>
+  <div id="illus">Illustrative sequence, not HDB's construction programme</div>
+  <div id="scrubWrap"><div id="marks" class="mono"></div><input id="scrub" type="range" min="0" max="25" step="0.01" value="0" aria-label="Moment in the build"></div>
+  <div id="ctrl" class="mono">
+    <button id="rebuild" aria-label="Rebuild from the start">⏮ REBUILD</button>
+    <button id="play" aria-label="Pause">❚❚</button>
+    <button id="time" disabled>00:00.0 / 00:25</button>
+    <button id="rotate" aria-pressed="true">AUTO-ROTATE</button>
+    <button id="colour" aria-pressed="false">COLOUR</button>
+    <button id="section" aria-pressed="false">SECTION</button>
+    <button id="speed">SPEED ×1</button>
+  </div>
+  <div id="msg" hidden></div>
+</main>
+<aside>
+  <h3 class="mono">BUILD SEQUENCE</h3>
+  <div id="timeline" class="mono"></div>
+  <h3 class="mono">ACTIVE OPERATION</h3>
+  <div id="active" class="card mono"></div>
+  <h3 class="mono">STRUCTURE <span style="float:right;color:var(--muted);font-weight:400">FLOORS</span></h3>
+  <div id="structure" class="mono"></div>
+  <h3 class="mono">BUILD LOG <span class="tag">ASSEMBLING</span></h3>
+  <div id="log" class="mono"></div>
+</aside>
+<nav id="strip" aria-label="Stages"></nav>
+</div>
+<script type="module" src="build-page.js"></script>
+</body>
+</html>
