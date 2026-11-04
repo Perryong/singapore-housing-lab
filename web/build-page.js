@@ -1,9 +1,9 @@
 // BTO build: the project's model revealed unit by unit as an assembly drawing, with the build panels and a stage strip.
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { buildLayout, catOf } from './project.js';
+import { buildLayout, catOf, sizeOf } from './project.js';
 import { esc } from './format.js';
-import { TOTAL, STAGES, stages, buildOrder, stateAt, timelineHtml, activeCardHtml, structureHtml, logLines, titleBlockHtml, pickMime } from './build.js';
+import { TOTAL, STAGES, stages, buildOrder, stateAt, timelineHtml, activeCardHtml, structureHtml, logLines, titleBlockHtml, pickMime, revealStep } from './build.js';
 
 const $ = s => document.querySelector(s);
 const pid = new URLSearchParams(location.search).get('p') || '';
@@ -108,7 +108,8 @@ const R = box.getSize(new THREE.Vector3()).length() * 1.75;
 centre.y *= 0.8;
 
 // the section cuts across the first block, through its middle
-const firstBlk = Object.keys(P.blocks)[0], fb = L.stacks.filter(s => s.blk === firstBlk);
+const firstBlk = Object.keys(P.blocks)[0], fb = L.stacks.filter(s => String(s.blk) === firstBlk);
+if (!fb.length) { fail(NO_LAYOUT); throw new Error(NO_LAYOUT); }
 const bc = new THREE.Vector3(fb.reduce((a, s) => a + s.x, 0) / fb.length, 0, fb.reduce((a, s) => a + s.z, 0) / fb.length);
 const bAxis = new THREE.Vector3(fb[0].ax, 0, fb[0].az).normalize();
 const bHalf = Math.max(...fb.map(s => Math.abs((s.x - bc.x) * bAxis.x + (s.z - bc.z) * bAxis.z))) + 8;
@@ -137,7 +138,7 @@ function place(el, x, y, z) {
   el.hidden = v3.z > 1 || panels().some(([a, b, c, d]) => px > a - 20 && px < c && py > b - 10 && py < d + 10);
   el.style.left = `${px}px`; el.style.top = `${py}px`;
 }
-const blockCentre = b => { const ss = L.stacks.filter(s => s.blk === b); return [ss.reduce((a, s) => a + s.x, 0) / ss.length, ss.reduce((a, s) => a + s.z, 0) / ss.length]; };
+const blockCentre = b => { const ss = L.stacks.filter(s => String(s.blk) === b); return [ss.reduce((a, s) => a + s.x, 0) / ss.length, ss.reduce((a, s) => a + s.z, 0) / ss.length]; };
 const [tx, tz] = blockCentre(tallest[0]), [vx, vz] = blockCentre(firstBlk);
 
 /* ---------- playback ---------- */
@@ -146,7 +147,7 @@ const cam = { az: 212, el: 24 };
 
 function frame(tt) {
   const s = stateAt(tt, order, L, P), FH = L.FH;
-  U.uStep.value = s.step; U.uDrop.value = s.drop;
+  U.uStep.value = revealStep(s); U.uDrop.value = s.drop;
   U.uPaint.value = forceColour ? 1 : s.paint;
   below.constant = s.topY; above.constant = -s.topY;
 
@@ -180,7 +181,7 @@ function frame(tt) {
   $('#stepBox').textContent = `STEP ${String(s.step).padStart(String(N).length, '0')}/${N} · UNITS`;
   $('#titleStep').textContent = `STEP ${String(s.step).padStart(String(N).length, '0')} / ${N}`;
   $('#titleOp').textContent = a ? `BLK ${a.st.blk} · LEVEL ${a.floor} · STACK ${a.st.no}` : STAGES[s.stage].label.toUpperCase();
-  $('#titleSpec').textContent = a ? `${P.categories[catOf(P, a.code)].name} · precast volumetric module` : '';
+  $('#titleSpec').textContent = a ? `${P.categories[catOf(P, a.code)].name} · ${sizeOf(P, a.code)[0]} m²` : '';
   $('#dwg').innerHTML = titleBlockHtml(P, s, cam);
   $('#timeline').innerHTML = timelineHtml(s);
   $('#active').innerHTML = activeCardHtml(s, P, N);
@@ -194,38 +195,46 @@ function frame(tt) {
 
 function tick(now) {
   const dt = (now - last) / 1000; last = now;
-  if (playing) { t = Math.min(TOTAL, t + dt * speed); if (t >= TOTAL) { setPlaying(false); recording?.stop(); } }
+  if (playing) { t = Math.min(TOTAL, t + dt * speed); if (t >= TOTAL) setPlaying(false); }
   frame(t);
   requestAnimationFrame(tick);
 }
 export function seek(v) { t = Math.min(TOTAL, Math.max(0, v)); frame(t); }
-function setPlaying(v) { playing = v; $('#play').textContent = v ? '❚❚' : '▶'; $('#play').setAttribute('aria-label', v ? 'Pause' : 'Play'); }
+function setPlaying(v) {
+  if (!v && recording?.state === 'recording') recording.stop();   // a recording is one uninterrupted run: pausing ends it
+  playing = v; $('#play').textContent = v ? '❚❚' : '▶'; $('#play').setAttribute('aria-label', v ? 'Pause' : 'Play'); }
 export function play(from = 0) { seek(from); setPlaying(true); }
 
 /* ---------- record: capture this tab while the sequence plays once ---------- */
-let recording = null, msgTimer = 0;
+let recording = null, busy = false, msgTimer = 0;
 function say(text) {
   $('#msg').hidden = false; $('#msg').textContent = text; window.__build.msg = text;
   clearTimeout(msgTimer); msgTimer = setTimeout(() => { $('#msg').hidden = true; }, 5000);
 }
 async function record() {
-  if (recording) return;
+  if (recording) { recording.stop(); return; }                // the button reads Stop while recording
+  if (busy) return;                                           // a share picker is already open
+  busy = true;
   const fmt = window.MediaRecorder ? pickMime(m => MediaRecorder.isTypeSupported(m)) : null;
   let stream;
   try {
     if (!fmt || !navigator.mediaDevices?.getDisplayMedia) throw new Error('unsupported');
     stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 60 }, audio: false, preferCurrentTab: true, selfBrowserSurface: 'include' });
-  } catch { say('Recording needs permission to capture this tab.'); return; }
+    recording = new MediaRecorder(stream, { mimeType: fmt.mime, videoBitsPerSecond: 12e6 });
+  } catch {
+    stream?.getTracks().forEach(tr => tr.stop());
+    say('Recording needs permission to capture this tab.'); return;
+  } finally { busy = false; }
   const parts = [];
-  recording = new MediaRecorder(stream, { mimeType: fmt.mime, videoBitsPerSecond: 12e6 });
   recording.ondataavailable = e => { if (e.data.size) parts.push(e.data); };
   recording.onstop = () => {
     stream.getTracks().forEach(tr => tr.stop());
     const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob(parts, { type: fmt.mime })), download: `${pid}-build.${fmt.ext}` });
     a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 10000);
-    recording = null; $('#recDot').hidden = true;
+    recording = null; $('#recDot').hidden = true; $('#record').textContent = '● Record';
   };
-  $('#recDot').hidden = false; $('#msg').hidden = true;
+  stream.getVideoTracks()[0]?.addEventListener('ended', () => recording?.stop());   // "Stop sharing" in the browser bar
+  $('#recDot').hidden = false; $('#msg').hidden = true; $('#record').textContent = '■ Stop';
   play(0); recording.start(250);
 }
 

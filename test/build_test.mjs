@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { buildLayout } from '../web/project.js';
-import { STAGES, TOTAL, stages, buildOrder, stateAt, timelineHtml, activeCardHtml, structureHtml, logLines, titleBlockHtml, pickMime } from '../web/build.js';
+import { STAGES, TOTAL, stages, buildOrder, stateAt, timelineHtml, activeCardHtml, structureHtml, logLines, titleBlockHtml, pickMime, revealStep } from '../web/build.js';
 import { catOf, sizeOf } from '../web/project.js';
 
 const P = JSON.parse(readFileSync(new URL('../projects/kim-keat-crest/project.json', import.meta.url)));
@@ -85,5 +85,23 @@ assert.ok(titleBlockHtml(P, s, { az: 212, el: 24 }).includes('AZ 212° · EL +24
 assert.deepEqual(pickMime(m => m === 'video/webm'), { mime: 'video/webm', ext: 'webm' });
 assert.deepEqual(pickMime(m => m.startsWith('video/mp4')), { mime: 'video/mp4;codecs=avc1', ext: 'mp4' });
 assert.equal(pickMime(() => false), null);
+
+// numeric block ids in stacks (thomson-reserve: "block": 1, blocks {"1": ...}) keep their block order and floors
+const T = JSON.parse(readFileSync(new URL('../projects/thomson-reserve/project.json', import.meta.url)));
+const TL = buildLayout(T), TO = buildOrder(TL, T), tb = Object.keys(T.blocks);
+for (let i = 1; i < TO.length; i++) if (TO[i - 1].floor === TO[i].floor) assert.ok(tb.indexOf(String(TO[i - 1].st.blk)) <= tb.indexOf(String(TO[i].st.blk)), `thomson block order at ${i}`);
+const te = stateAt(17.8, TO, TL, T);
+for (const [b, B] of Object.entries(T.blocks)) assert.equal(te.floors[b], B.floors, `thomson ${b}`);
+const tm = stateAt(10, TO, TL, T);
+assert.ok(structureHtml(tm, T).includes('class="cur"'), 'active numeric block highlighted');
+
+// nothing hangs in the air before the floors stage; the unit being placed is step's own
+assert.equal(revealStep(stateAt(1, order, L, P)), -1);
+assert.equal(revealStep(stateAt(3, order, L, P)), -1);
+assert.equal(revealStep(stateAt(10, order, L, P)), stateAt(10, order, L, P).step);
+assert.equal(revealStep(stateAt(20, order, L, P)), N);
+
+// no scale on a perspective drawing
+assert.ok(!titleBlockHtml(P, s, { az: 212, el: 24 }).includes('1:600') && titleBlockHtml(P, s, { az: 212, el: 24 }).includes('NTS'));
 
 console.log('ok: build order and state');

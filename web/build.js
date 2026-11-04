@@ -17,7 +17,8 @@ export function stages() {
 // floor by floor across all blocks (precast cycles run in parallel), then block, then stack, as in project.json
 export function buildOrder(L, P) {
   const blk = Object.keys(P.blocks), stack = new Map(L.stacks.map((s, i) => [s, i]));
-  return [...L.units].sort((a, b) => a.floor - b.floor || blk.indexOf(a.st.blk) - blk.indexOf(b.st.blk) || stack.get(a.st) - stack.get(b.st));
+  // P.blocks keys are strings; a stack's block can be a number (thomson-reserve), so compare as strings
+  return [...L.units].sort((a, b) => a.floor - b.floor || blk.indexOf(String(a.st.blk)) - blk.indexOf(String(b.st.blk)) || stack.get(a.st) - stack.get(b.st));
 }
 
 export function stateAt(t, order, L, P) {
@@ -47,6 +48,9 @@ function floorsDone(order, step, P) {
   }));
 }
 
+// the step the shaders reveal up to: -1 before the floors stage, so no unit hangs over its slot during site and void deck
+export const revealStep = s => s.stage < 2 ? -1 : s.step;
+
 /* ---------- panels ---------- */
 const up = s => s.toUpperCase();
 const typeName = (P, code) => P.categories[catOf(P, code)].name;
@@ -72,7 +76,7 @@ export function activeCardHtml(s, P, N) {
 export function structureHtml(s, P) {
   return Object.entries(P.blocks).map(([b, B]) => {
     const n = s.floors[b] ?? 0;
-    return `<div${s.active?.st.blk === b ? ' class="cur"' : ''}><span>${esc(b)}</span><span class="b"><i style="width:${(n / B.floors * 100).toFixed(1)}%"></i></span><span>${n} / ${B.floors}</span></div>`;
+    return `<div${s.active && String(s.active.st.blk) === b ? ' class="cur"' : ''}><span>${esc(b)}</span><span class="b"><i style="width:${(n / B.floors * 100).toFixed(1)}%"></i></span><span>${n} / ${B.floors}</span></div>`;
   }).join('');
 }
 
@@ -96,7 +100,7 @@ export function logLines(order, from, to, P, stepDur) {
 
 export function titleBlockHtml(P, s, cam) {
   const cell = (k, v) => `<span><i>${k}</i><b>${v}</b></span>`;
-  return `<div>${cell('DRAWING', esc(up(P.name)))}${cell('SCALE', '1:600')}</div>` +
+  return `<div>${cell('DRAWING', esc(up(P.name)))}${cell('SCALE', 'NTS · illustrative')}</div>` +
     `<div>${cell('PHASE', up(STAGES[s.stage].label))}${cell('SHEET', `${s.stage + 1} / 6`)}</div>` +
     `<div>${cell('CAMERA', `AZ ${Math.round(cam.az)}° · EL +${Math.round(cam.el)}°`)}</div>`;
 }

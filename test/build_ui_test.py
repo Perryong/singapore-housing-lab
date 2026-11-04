@@ -89,6 +89,31 @@ with sync_playwright() as p:
     assert __import__('os').path.getsize(dl.value.path()) > 10_000
     assert page.evaluate('document.querySelector("#recDot").hidden')
 
+    # pausing mid-recording ends it (and downloads what was recorded); while recording, Record reads Stop and stops it
+    stub = 'navigator.mediaDevices.getDisplayMedia = async () => document.querySelector("#view canvas").captureStream(30)'
+    page = open_page(b, init=stub)
+    page.wait_for_function('window.__build && __build.ready', timeout=60000)
+    with page.expect_download(timeout=30000):
+        page.click('#record')
+        page.wait_for_function('!document.querySelector("#recDot").hidden', timeout=10000)
+        assert 'Stop' in page.inner_text('#record')
+        page.click('#play')                                                      # pause
+    page.wait_for_function('document.querySelector("#recDot").hidden', timeout=10000)
+    assert 'Record' in page.inner_text('#record')
+    with page.expect_download(timeout=30000):
+        page.click('#record')
+        page.wait_for_function('!document.querySelector("#recDot").hidden', timeout=10000)
+        page.click('#record')                                                    # Stop
+    page.wait_for_function('document.querySelector("#recDot").hidden', timeout=10000)
+
+    # a project whose stacks name their block by number still builds; no made-up scale or method on the drawing
+    page = open_page(b, p='thomson-reserve')
+    page.wait_for_function('window.__build && __build.ready', timeout=60000)
+    seek(page, 10)
+    assert not page.errors and 'BLK ' in page.inner_text('#active'), page.errors
+    assert '1:600' not in page.inner_text('#stage'), 'no scale on a perspective drawing'
+    assert 'precast' not in (page.inner_text('#titleSpec') + page.inner_text('#active')).lower(), 'no construction method the data does not give'
+
     page = open_page(b, size=(800, 900))
     assert 'BTO Build is made for desktop recording.' in page.inner_text('body')
     b.close()
