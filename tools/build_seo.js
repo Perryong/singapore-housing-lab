@@ -5,6 +5,9 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { esc, money, range } from '../web/format.js';
 import { catOf } from '../web/project.js';
+// flat names by price code, for launched projects with no site-plan legend (categories) yet
+const FLAT = { CCA: 'Community Care Apartment', '2RF1': '2-room Flexi (smaller)', '2RF2': '2-room Flexi', '3RM': '3-room', '4RM': '4-room',
+  '4RMB': '4-room with balcony', '5RM': '5-room', '3GEN': '3Gen' };
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SITE = 'https://singapore-housing-lab.vercel.app';
@@ -43,7 +46,7 @@ function projectPage(p) {
 <a class="cta" href="/web/?p=${encodeURIComponent(p.id)}">${p.hasLayout ? 'Open the 3D sun study' : 'Open the site in 3D'}</a>
 <h2>Project facts</h2>${table(['Item', 'Detail'], facts)}`;
   if (sale.length) body += `<h2>HDB launch prices</h2>${table(['Flat', 'Price', 'Floor area', 'Wait'], sale.map(([c, v]) => [
-    esc(P.categories?.[catOf(P, c)]?.name || c) + ` (${esc(c)})`, range(v.min, v.max), v.sqm ? `${v.sqm} sqm` : '', v.waitingMonths ? `${v.waitingMonths} months` : '']))}`;
+    esc(P.categories?.[catOf(P, c)]?.name || FLAT[c] || c) + ` (${esc(c)})`, range(v.min, v.max), v.sqm ? `${v.sqm} sqm` : '', v.waitingMonths ? `${v.waitingMonths} months` : '']))}`;
   else if (p.status === 'upcoming') body += `<h2>Prices and layout</h2><p>HDB releases prices and the site plan at the sales launch.</p>`;
   const rs = Object.entries(P.resale?.summary || {}).filter(([, v]) => v.median);
   if (rs.length) body += `<h2>Resale prices within ${P.resale.radiusM} m</h2><p class="m">HDB resale sales in the ${P.resale.months} months up to ${esc(P.resale.asOf)}.</p>${

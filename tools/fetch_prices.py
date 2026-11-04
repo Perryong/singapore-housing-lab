@@ -10,7 +10,7 @@ import json, re, subprocess, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-RANK = {'CCA': 0, '2RF': 1, '3RM': 2, '4RM': 3, '5RM': 4, '3GEN': 5}
+RANK = {'CCA': 0, '2RF': 1, '3RM': 2, '4RM': 3, '4RMB': 3.5, '5RM': 4, '3GEN': 5}   # 4RMB: 4-room with balcony (Prime)
 TYPE_RE = re.compile(r'\b(CCA|3Gen|[2-5]-room)\b')
 PRICE_RE = re.compile(r'\$([\d,]+)\s*-\s*\$([\d,]+)')
 GRANT = {  # illustrative Enhanced CPF Housing Grant used in HDB's launch press releases
@@ -32,7 +32,9 @@ def money(s):
 
 
 def known_names():
-    return [p['name'] for p in json.loads((ROOT / 'reference/hdb/launched.json').read_text())]
+    # traced projects, plus launched ones still placed by pin only (upcoming.json entries marked launched)
+    return [p['name'] for p in json.loads((ROOT / 'reference/hdb/launched.json').read_text())] + \
+        [u['name'] for u in json.loads((ROOT / 'reference/hdb/upcoming.json').read_text()) if u.get('status') == 'launched']
 
 
 def parse_annex(pdf):
@@ -60,6 +62,8 @@ def parse_annex(pdf):
                 t = TYPE_RE.findall(lines[j])
                 if t:
                     typ = code_of(t[0]); break
+        if typ == '4RM' and any('balcony' in lines[j] for j in (i, i + 1) if j < len(lines)):
+            typ = '4RMB'                              # '4-room' above the row, '(with balcony)' below it
         typecol = min((mm.start() for j in range(max(0, i - 2), min(len(lines), i + 2))
                        for mm in TYPE_RE.finditer(lines[j])), default=pm.start())
         rows.append({'i': i, 'type': typ, 'sqm': sqm, 'internalSqm': internal, 'units': units,
@@ -95,7 +99,7 @@ def parse_annex(pdf):
         # the block's own row span first (a wider window reaches the previous project's waiting time)
         for lo, hi in ((blk[0]['i'], blk[-1]['i'] + 1), (blk[0]['i'] - 2, blk[-1]['i'] + 3)):
             for i, seg in left[max(0, lo):hi]:
-                m = re.search(r'(?<![\d$,.])(\d{2})(?:/(\d{2}))?(?![\d,])', re.sub(r'\(.*?\)', '', seg))
+                m = re.search(r'(?<![\d$,.])(\d{2})(?:\s*/\s*(\d{2}))?(?![\d,])', re.sub(r'\(.*?\)', '', seg))
                 if m:                                         # '49/54': blocks complete at different times
                     wait, wait_max = int(m.group(1)), m.group(2) and int(m.group(2)); break
             if wait is not None:

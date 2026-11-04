@@ -1,15 +1,41 @@
 [
  {
-  "id": "bedok-bayshore-i-oct-2026",
-  "name": "Bedok (Bayshore I)",
+  "id": "bedok-bayshore-ii-oct-2026",
+  "name": "Bayshore Oasis",
   "town": "Bedok",
   "launch": "Nov 2026",
-  "status": "upcoming",
+  "status": "launched",
   "kind": "bto",
-  "classification": null,
+  "classification": "Plus",
+  "lat": 1.3123773,
+  "lon": 103.9427501,
+  "units": 855,
+  "flatTypes": [
+   "2-room Flexi",
+   "4-room"
+  ],
+  "hasLayout": false,
+  "cmp": {
+   "type": "4 ROOM",
+   "bto": [
+    559000,
+    786000
+   ],
+   "resale": 955000,
+   "radiusM": 900
+  }
+ },
+ {
+  "id": "bedok-bayshore-i-oct-2026",
+  "name": "Bayshore Sails",
+  "town": "Bedok",
+  "launch": "Nov 2026",
+  "status": "launched",
+  "kind": "bto",
+  "classification": "Plus",
   "lat": 1.3136983,
   "lon": 103.9417577,
-  "units": 1640,
+  "units": 1637,
   "flatTypes": [
    "2-room Flexi",
    "3-room",
@@ -18,68 +44,25 @@
   "hasLayout": false,
   "cmp": {
    "type": "4 ROOM",
-   "bto": null,
+   "bto": [
+    580000,
+    758000
+   ],
    "resale": 913000,
    "radiusM": 900
   }
  },
  {
-  "id": "bedok-bayshore-ii-oct-2026",
-  "name": "Bedok (Bayshore II)",
-  "town": "Bedok",
+  "id": "yishun-chencharu-oct-2026",
+  "name": "Chencharu Acres",
+  "town": "Yishun",
   "launch": "Nov 2026",
-  "status": "upcoming",
+  "status": "launched",
   "kind": "bto",
-  "classification": null,
-  "lat": 1.3123773,
-  "lon": 103.9427501,
-  "units": 860,
-  "flatTypes": [
-   "2-room Flexi",
-   "4-room"
-  ],
-  "hasLayout": false,
-  "cmp": {
-   "type": "4 ROOM",
-   "bto": null,
-   "resale": 955000,
-   "radiusM": 900
-  }
- },
- {
-  "id": "geylang-oct-2026",
-  "name": "Geylang",
-  "town": "Geylang",
-  "launch": "Nov 2026",
-  "status": "upcoming",
-  "kind": "bto",
-  "classification": null,
-  "lat": 1.3281013,
-  "lon": 103.8810539,
-  "units": 440,
-  "flatTypes": [
-   "2-room Flexi",
-   "4-room"
-  ],
-  "hasLayout": false,
-  "cmp": {
-   "type": "4 ROOM",
-   "bto": null,
-   "resale": 758888,
-   "radiusM": 900
-  }
- },
- {
-  "id": "sembawang-oct-2026",
-  "name": "Sembawang",
-  "town": "Sembawang",
-  "launch": "Nov 2026",
-  "status": "upcoming",
-  "kind": "bto",
-  "classification": null,
-  "lat": 1.4580026,
-  "lon": 103.8155222,
-  "units": 1310,
+  "classification": "Standard",
+  "lat": 1.4132207,
+  "lon": 103.8287616,
+  "units": 1582,
   "flatTypes": [
    "2-room Flexi",
    "3-room",
@@ -89,19 +72,48 @@
   "hasLayout": false,
   "cmp": {
    "type": "4 ROOM",
-   "bto": null,
-   "resale": 535000,
+   "bto": [
+    353000,
+    428000
+   ],
+   "resale": 592000,
+   "radiusM": 900
+  }
+ },
+ {
+  "id": "geylang-oct-2026",
+  "name": "Merpati Meadow",
+  "town": "Geylang",
+  "launch": "Nov 2026",
+  "status": "launched",
+  "kind": "bto",
+  "classification": "Plus",
+  "lat": 1.3281013,
+  "lon": 103.8810539,
+  "units": 438,
+  "flatTypes": [
+   "2-room Flexi",
+   "4-room"
+  ],
+  "hasLayout": false,
+  "cmp": {
+   "type": "4 ROOM",
+   "bto": [
+    545000,
+    726000
+   ],
+   "resale": 758888,
    "radiusM": 900
   }
  },
  {
   "id": "tengah-oct-2026",
-  "name": "Tengah",
+  "name": "Plantation Dew",
   "town": "Tengah",
   "launch": "Nov 2026",
-  "status": "upcoming",
+  "status": "launched",
   "kind": "bto",
-  "classification": null,
+  "classification": "Standard",
   "lat": 1.3521431,
   "lon": 103.7330282,
   "units": 710,
@@ -115,46 +127,25 @@
   "hasLayout": false,
   "cmp": {
    "type": "4 ROOM",
-   "bto": null,
+   "bto": [
+    339000,
+    445000
+   ],
    "resale": 645000,
    "radiusM": 900
   }
  },
  {
-  "id": "toa-payoh-caldecott-oct-2026",
-  "name": "Toa Payoh (Caldecott)",
-  "town": "Toa Payoh",
+  "id": "sembawang-oct-2026",
+  "name": "Sembawang Anchor",
+  "town": "Sembawang",
   "launch": "Nov 2026",
-  "status": "upcoming",
+  "status": "launched",
   "kind": "bto",
-  "classification": null,
-  "lat": 1.3372302,
-  "lon": 103.841089,
-  "units": 1430,
-  "flatTypes": [
-   "Community Care Apartment",
-   "2-room Flexi",
-   "4-room"
-  ],
-  "hasLayout": false,
-  "cmp": {
-   "type": "4 ROOM",
-   "bto": null,
-   "resale": 988000,
-   "radiusM": 900
-  }
- },
- {
-  "id": "yishun-chencharu-oct-2026",
-  "name": "Yishun (Chencharu)",
-  "town": "Yishun",
-  "launch": "Nov 2026",
-  "status": "upcoming",
-  "kind": "bto",
-  "classification": null,
-  "lat": 1.4132207,
-  "lon": 103.8287616,
-  "units": 1580,
+  "classification": "Standard",
+  "lat": 1.4580026,
+  "lon": 103.8155222,
+  "units": 1310,
   "flatTypes": [
    "2-room Flexi",
    "3-room",
@@ -164,8 +155,38 @@
   "hasLayout": false,
   "cmp": {
    "type": "4 ROOM",
-   "bto": null,
-   "resale": 592000,
+   "bto": [
+    312000,
+    428000
+   ],
+   "resale": 535000,
+   "radiusM": 900
+  }
+ },
+ {
+  "id": "toa-payoh-caldecott-oct-2026",
+  "name": "Toa Payoh Hillside",
+  "town": "Toa Payoh",
+  "launch": "Nov 2026",
+  "status": "launched",
+  "kind": "bto",
+  "classification": "Prime",
+  "lat": 1.3372302,
+  "lon": 103.841089,
+  "units": 1432,
+  "flatTypes": [
+   "Community Care Apartment",
+   "2-room Flexi",
+   "4-room"
+  ],
+  "hasLayout": false,
+  "cmp": {
+   "type": "4 ROOM",
+   "bto": [
+    558000,
+    796000
+   ],
+   "resale": 988000,
    "radiusM": 900
   }
  },
