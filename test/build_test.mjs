@@ -2,7 +2,8 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { buildLayout } from '../web/project.js';
-import { STAGES, TOTAL, stages, buildOrder, stateAt } from '../web/build.js';
+import { STAGES, TOTAL, stages, buildOrder, stateAt, timelineHtml, activeCardHtml, structureHtml, logLines, titleBlockHtml, pickMime } from '../web/build.js';
+import { catOf, sizeOf } from '../web/project.js';
 
 const P = JSON.parse(readFileSync(new URL('../projects/kim-keat-crest/project.json', import.meta.url)));
 const L = buildLayout(P), order = buildOrder(L, P), N = order.length;
@@ -53,5 +54,36 @@ assert.ok(stateAt(19.6, order, L, P).topY >= maxFloors * L.FH + 4);
 
 assert.equal(stateAt(19.5, order, L, P).paint, 0); assert.equal(stateAt(21.4, order, L, P).paint, 1);
 assert.equal(stateAt(21.3, order, L, P).cut, 0); near(stateAt(21.4 + 1.8, order, L, P).cut, 0.5, 1e-6);
+
+// panels: real flat type and area, per-block floors, log batching, scrubbing back
+s = stateAt(3.8 + dur * k + dur / 2, order, L, P);
+let h = activeCardHtml(s, P, N);
+const u = s.active;
+assert.ok(h.includes(`BLK 271A · #15-${u.st.no}`), h);
+assert.ok(h.includes(P.categories[catOf(P, u.code)].name) && h.includes(`${sizeOf(P, u.code)[0]} m²`) && h.includes(`/ ${N}`), h);
+assert.ok(h.includes(`#${String(k).padStart(String(N).length, '0')} / ${N}`), h);
+assert.ok(activeCardHtml(stateAt(1, order, L, P), P, N).includes('—'));
+
+h = structureHtml(stateAt(17.8, order, L, P), P);
+assert.equal((h.match(/<div/g) || []).length, 5);
+assert.ok(h.includes('24 / 24') && h.includes('30 / 30'));
+assert.ok(structureHtml(s, P).includes('class="cur"'));
+
+const lines = logLines(order, 0, 25, P, 0.012);
+assert.ok(lines.length && lines.every(l => l.startsWith('ASM BLK ')), lines);
+const l2 = order.filter(v => v.floor === order[0].floor && v.st.blk === order[0].st.blk).length;
+assert.ok(lines[0].startsWith(`ASM BLK ${order[0].st.blk} · L${order[0].floor} · ${l2} units · `), lines[0]);
+assert.deepEqual(logLines(order, 5, 3, P, 0.2), []);
+const one = logLines(order, 0, 1, P, 0.2);
+assert.equal(one.length, 1); assert.match(one[0], /^ASM BLK \S+ · L\d+ · stack \d+ · /);
+
+h = timelineHtml(stateAt(10, order, L, P));
+assert.match(h, /class="cur"[^]*?03 TYPICAL FLOORS/);
+assert.ok(titleBlockHtml({ ...P, name: '<x>' }, s, { az: 212, el: 24 }).includes('&lt;X&gt;'));
+assert.ok(titleBlockHtml(P, s, { az: 212, el: 24 }).includes('AZ 212° · EL +24°'));
+
+assert.deepEqual(pickMime(m => m === 'video/webm'), { mime: 'video/webm', ext: 'webm' });
+assert.deepEqual(pickMime(m => m.startsWith('video/mp4')), { mime: 'video/mp4;codecs=avc1', ext: 'mp4' });
+assert.equal(pickMime(() => false), null);
 
 console.log('ok: build order and state');
