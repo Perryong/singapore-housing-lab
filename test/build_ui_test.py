@@ -66,7 +66,7 @@ with sync_playwright() as p:
 
     page = open_page(b, no_model=True)
     page.wait_for_function(f'document.body.innerText.includes("{NO_LAYOUT}")', timeout=30000)
-    page = open_page(b, p='bedok-bayshore-i-oct-2026')
+    page = open_page(b, p='bedok-bayshore-ii-oct-2026')                         # still placed by pin only
     page.wait_for_function(f'document.body.innerText.includes("{NO_LAYOUT}")', timeout=30000)
 
     # capture refused: say so, keep playing

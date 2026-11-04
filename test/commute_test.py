@@ -93,7 +93,7 @@ else:
     assert all(len(v) == 3 and v[1][2] == ':' for s in C['stops'] for v in s['svc'])
     assert C['at'] == 'weekday 08:00' and len(C['asOf']) == 7
     assert not any(a['name'].startswith('Bus stop ') for a in Pb['amenities'] if a['cat'] == 'bus')
-    U = commute_for(json.loads(Path('projects/bedok-bayshore-i-oct-2026/project.json').read_text()), G, stops_by_code, routes)
+    U = commute_for(json.loads(Path('projects/bedok-bayshore-ii-oct-2026/project.json').read_text()), G, stops_by_code, routes)   # a pin-only project: one hub, the site
     assert list(U['hubs']) == ['site'] and U['near'] == 'site'
     from tools.build_commute import block_centres
     assert C['near'] == min(block_centres(Pb).items(), key=lambda kv: math.hypot(*kv[1]))[0], C['near']

@@ -297,5 +297,18 @@
 "lat": 1.3496201,
 "lon": 103.8359314,
 "town": "Bishan"
+},
+{
+"slug": "bedok-bayshore-i-oct-2026",
+"launch": "nov-2026-bto",
+"name": "Bayshore Sails",
+"type": "Plus",
+"address": "Bounded by Bayshore Drive",
+"blocks": 7,
+"units": 1637,
+"highest": 34,
+"lat": 1.3138879,
+"lon": 103.942528,
+"town": "Bedok"
 }
 ]

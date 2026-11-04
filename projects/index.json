@@ -33,22 +33,22 @@
   "status": "launched",
   "kind": "bto",
   "classification": "Plus",
-  "lat": 1.3136983,
-  "lon": 103.9417577,
+  "lat": 1.3138879,
+  "lon": 103.942528,
   "units": 1637,
   "flatTypes": [
    "2-room Flexi",
    "3-room",
    "4-room"
   ],
-  "hasLayout": false,
+  "hasLayout": true,
   "cmp": {
    "type": "4 ROOM",
    "bto": [
     580000,
     758000
    ],
-   "resale": 913000,
+   "resale": 652500,
    "radiusM": 900
   }
  },
@@ -184,7 +184,7 @@
    "type": "4 ROOM",
    "bto": [
     558000,
-    796000
+    832000
    ],
    "resale": 988000,
    "radiusM": 900
