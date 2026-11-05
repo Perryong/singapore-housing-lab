@@ -375,5 +375,18 @@
 "lat": 1.3130248,
 "lon": 103.9440262,
 "town": "Bedok"
+},
+{
+"slug": "tengah-oct-2026",
+"launch": "nov-2026-bto",
+"name": "Plantation Dew",
+"type": "Standard",
+"address": "Bounded by Tengah Garden Avenue and Plantation Walk",
+"blocks": 5,
+"units": 710,
+"highest": 15,
+"lat": 1.3523466,
+"lon": 103.7331913,
+"town": "Tengah"
 }
 ]
