@@ -349,5 +349,18 @@
 "lat": 1.4576906,
 "lon": 103.815845,
 "town": "Sembawang"
+},
+{
+"slug": "geylang-oct-2026",
+"launch": "nov-2026-bto",
+"name": "Merpati Meadow",
+"type": "Plus",
+"address": "Along Merpati Road",
+"blocks": 3,
+"units": 438,
+"highest": 18,
+"lat": 1.3281835,
+"lon": 103.8812733,
+"town": "Geylang"
 }
 ]
