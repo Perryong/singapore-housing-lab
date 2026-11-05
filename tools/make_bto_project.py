@@ -21,7 +21,7 @@ DIR = ROOT / 'projects' / slug
 cat = {p['slug']: p for p in json.loads((ROOT / 'reference/hdb/launched.json').read_text())}[slug]
 P = json.loads((DIR / 'project.json').read_text())
 
-LAUNCH = {'oct-2025-bto': 'Oct 2025', 'feb-2026-bto': 'Feb 2026', 'jun-2026-bto': 'Jun 2026'}
+LAUNCH = {'oct-2025-bto': 'Oct 2025', 'feb-2026-bto': 'Feb 2026', 'jun-2026-bto': 'Jun 2026', 'nov-2026-bto': 'Nov 2026'}
 CATEGORIES = {   # HDB brochure colours, typical internal floor areas (sqm, sq ft)
     '2RF': {'name': '2-room Flexi', 'col': '#F2A07B', 'size': [42, 452]},
     '3RM': {'name': '3-room', 'col': '#9FCB72', 'size': [66, 710]},
