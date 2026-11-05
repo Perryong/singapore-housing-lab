@@ -27,5 +27,9 @@ for (const p of INDEX) {
 assert.equal(titles.size, INDEX.length); assert.equal(descs.size, INDEX.length);       // no duplicate titles or descriptions
 const launched = INDEX.find(p => p.status === 'launched'), up = INDEX.find(p => p.status === 'upcoming');
 assert.match(readFileSync(`bto/${launched.id}/index.html`, 'utf8'), /HDB launch prices/);
-assert.match(readFileSync(`bto/${up.id}/index.html`, 'utf8'), /releases prices and the site plan at the sales launch/);
+if (up) assert.match(readFileSync(`bto/${up.id}/index.html`, 'utf8'), /releases prices and the site plan at the sales launch/);
+// a launched project still placed by pin only (no site-plan legend) names its flat types in words
+const hill = readFileSync('bto/toa-payoh-caldecott-oct-2026/index.html', 'utf8');
+assert.match(hill, /Toa Payoh Hillside/); assert.match(hill, /4-room with balcony \(4RMB\)/); assert.match(hill, /Community Care Apartment \(CCA\)/);
+assert.ok(!/<td>2RF1 \(2RF1\)/.test(hill), 'raw code as a flat name');
 console.log('ok');

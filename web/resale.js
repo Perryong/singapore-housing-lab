@@ -1,6 +1,6 @@
 // Resale-nearby helpers (pure; no three.js).
 import { money, range, esc, titleCase } from './format.js';
-export const RESALE_TYPE = { '2RF1': '2 ROOM', '2RF2': '2 ROOM', '3RM': '3 ROOM', '4RM': '4 ROOM', '5RM': '5 ROOM', '3GEN': 'MULTI-GENERATION' };
+export const RESALE_TYPE = { '2RF1': '2 ROOM', '2RF2': '2 ROOM', '3RM': '3 ROOM', '4RM': '4 ROOM', '4RMB': '4 ROOM', '5RM': '5 ROOM', '3GEN': 'MULTI-GENERATION' };
 
 export function defaultType(resale) {
   const s = resale.summary || {};

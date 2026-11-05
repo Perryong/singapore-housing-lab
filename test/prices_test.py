@@ -18,3 +18,13 @@ print('ok waiting')
 assert J['Berlayar Rise']['prices']['4RM']['waitingMonths'] == 49 and J['Berlayar Rise']['prices']['4RM'].get('waitingMonthsMax') == 54
 assert 'waitingMonthsMax' not in J['Kebun Baru Ridge']['prices']['4RM']    # single waiting time
 print('ok waiting range')
+N = parse_annex('reference/hdb/annex-nov26.pdf')               # names come from upcoming.json once marked launched
+assert sorted(N) == sorted(['Sembawang Anchor', 'Plantation Dew', 'Chencharu Acres', 'Bayshore Sails', 'Bayshore Oasis',
+                            'Merpati Meadow', 'Toa Payoh Hillside']), sorted(N)
+H = N['Toa Payoh Hillside']['prices']                          # "4-room (with balcony)" is its own row, not a new project
+assert H['4RM']['units'] == 428 and H['4RMB'] == {'min': 619000, 'max': 832000, 'sqm': 93, 'internalSqm': 89, 'units': 156, 'waitingMonths': 45}, H
+assert H['CCA']['units'] == 256
+assert N['Bayshore Sails']['prices']['3RM']['units'] == 90 and '3RM' not in N['Bayshore Oasis']['prices']
+assert sum(p['units'] for d in N.values() for p in d['prices'].values()) == 7964       # HDB's headline total
+assert N['Chencharu Acres']['prices']['4RM'].get('waitingMonthsMax') == 41, N['Chencharu Acres']['prices']['4RM']   # '39 / 41' with spaces
+print('ok nov 2026')
