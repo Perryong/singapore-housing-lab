@@ -323,5 +323,18 @@
 "lat": 1.3373855,
 "lon": 103.8417455,
 "town": "Toa Payoh"
+},
+{
+"slug": "yishun-chencharu-oct-2026",
+"launch": "nov-2026-bto",
+"name": "Chencharu Acres",
+"type": "Standard",
+"address": "Bounded by Yishun Street 82, Yishun Walk and Yishun Avenue 2",
+"blocks": 12,
+"units": 1582,
+"highest": 15,
+"lat": 1.4136835,
+"lon": 103.8293822,
+"town": "Yishun"
 }
 ]
