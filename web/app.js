@@ -110,7 +110,7 @@ new GLTFLoader().loadAsync(base + 'model.glb').then(gltf => {
   gltf.scene.traverse(o => {
     if (!o.isMesh) return;
     o.castShadow = o.receiveShadow = true;
-    if (o.geometry.attributes._unit) {
+    if (o.geometry.attributes._unit && hasLayout) {             // a model newer than its project.json: no stacks to paint
       unitMesh = o; vUnit = o.geometry.attributes._unit.array;
       o.geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(vUnit.length * 3), 3));
       o.material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.8 });
