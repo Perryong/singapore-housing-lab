@@ -19,7 +19,7 @@ NO_LAYOUT = "This project's blocks aren't released yet"
 pages = []
 
 
-def open_page(b, p='kim-keat-crest', size=(1600, 900), no_model=False, init=None):
+def open_page(b, p='kim-keat-crest', size=(1600, 900), no_model=False, init=None, pin_only=False):
     while pages: pages.pop().close()                                       # one render loop at a time, or software GL starves
     page = b.new_context(viewport={'width': size[0], 'height': size[1]}).new_page()
     page.errors = []
@@ -28,11 +28,20 @@ def open_page(b, p='kim-keat-crest', size=(1600, 900), no_model=False, init=None
     page.route('https://static.cloudflareinsights.com/**', lambda r: r.abort())
     if no_model:
         page.route('**/projects/*/model.glb', lambda r: r.fulfill(status=404, body='missing'))
+    if pin_only:
+        page.route('**/projects/*/project.json', strip_layout)
     if init:
         page.add_init_script(init)
     page.goto(f'{base}?p={p}')
     pages.append(page)
     return page
+
+
+def strip_layout(route):
+    # a project as it is before HDB releases its site plan: placed by pin only, no blocks or stacks
+    r = route.fetch(); P = r.json()
+    P.update(stacks=[], blocks={}); P.pop('plan', None)
+    route.fulfill(response=r, json=P)
 
 
 def seek(page, t):
@@ -66,7 +75,7 @@ with sync_playwright() as p:
 
     page = open_page(b, no_model=True)
     page.wait_for_function(f'document.body.innerText.includes("{NO_LAYOUT}")', timeout=30000)
-    page = open_page(b, p='bedok-bayshore-ii-oct-2026')                         # still placed by pin only
+    page = open_page(b, p='bedok-bayshore-ii-oct-2026', pin_only=True)
     page.wait_for_function(f'document.body.innerText.includes("{NO_LAYOUT}")', timeout=30000)
 
     # capture refused: say so, keep playing

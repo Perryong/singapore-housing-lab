@@ -20,7 +20,14 @@ def payloads(age_min, rain):
     return {'wind-speed': feed(10), 'wind-direction': feed(20), 'rainfall': feed(rain),
             'two-hr-forecast': {'area_metadata': [{'name': 'Bishan', 'label_location': {'latitude': 1.35, 'longitude': 103.84}}], 'items': [{'forecasts': [{'area': 'Bishan', 'forecast': 'Thundery Showers'}]}]}}
 
-def open_page(b, slug='bishan-terraces', age_min=0, rain=1.5, broken=False, reduced=False, ready=True):
+def strip_layout(route):
+    # a project as it is before HDB releases its site plan: placed by pin only, no blocks or stacks
+    r = route.fetch(); P = r.json()
+    P.update(stacks=[], blocks={}); P.pop('plan', None)
+    route.fulfill(response=r, json=P)
+
+
+def open_page(b, slug='bishan-terraces', age_min=0, rain=1.5, broken=False, reduced=False, ready=True, pin_only=False):
     page = b.new_context(viewport={'width': 1280, 'height': 900}, reduced_motion='reduce' if reduced else 'no-preference').new_page()
     page.calls, page.errors = [], []
     page.on('pageerror', lambda e: page.errors.append(str(e)))
@@ -33,6 +40,7 @@ def open_page(b, slug='bishan-terraces', age_min=0, rain=1.5, broken=False, redu
     page.route('https://api-open.data.gov.sg/**', nea)
     page.route('https://www.onemap.gov.sg/**', lambda r: r.abort())
     page.route('https://static.cloudflareinsights.com/**', lambda r: r.abort())
+    if pin_only: page.route('**/projects/*/project.json', strip_layout)
     page.goto(f'{base}?p={slug}')
     page.wait_for_function('window.__wxView', timeout=60000)
     if ready: page.wait_for_selector('#loading', state='detached', timeout=60000)
@@ -162,7 +170,7 @@ with sync_playwright() as p:
     down.close()
 
     # a site with no layout: effects and readout, no unit colours
-    site = open_page(b, slug='tengah-oct-2026', ready=False)
+    site = open_page(b, slug='tengah-oct-2026', ready=False, pin_only=True)
     site.click('[data-wl=rain]')
     assert fx(site)['rain'] and site.evaluate('__wxView.mode()') == 'now'
     assert site.is_hidden('#modes .mode[data-m=rain]')

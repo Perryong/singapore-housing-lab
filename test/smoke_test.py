@@ -13,6 +13,13 @@ srv = socketserver.TCPServer(('127.0.0.1', 0), handler)
 threading.Thread(target=srv.serve_forever, daemon=True).start()
 url = f'http://127.0.0.1:{srv.server_address[1]}/web/?p=kim-keat-crest'
 
+def strip_layout(route):
+    # a project as it is before HDB releases its site plan: placed by pin only, no blocks or stacks
+    r = route.fetch(); P = r.json()
+    P.update(stacks=[], blocks={}); P.pop('plan', None)
+    route.fulfill(response=r, json=P)
+
+
 with sync_playwright() as p:
     b = p.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader'])
     page = b.new_page(viewport={'width': 1280, 'height': 800})
@@ -63,15 +70,16 @@ with sync_playwright() as p:
     CAM = '([g, d, far]) => { const v = Math.hypot(...__cam().map((x, i) => x - g[i])); return far ? v > d : v < d; }'
     def cam(goal, d, far=False):                                                 # software rendering runs at ~1 fps
         page.wait_for_function(CAM, arg=[goal, d, far], timeout=90000)
-    def visit(u):                                                                # a fresh page: the old one's render loop slows CI
+    def visit(u, pin_only=False):                                                # a fresh page: the old one's render loop slows CI
         global page
         page.close(); page = b.new_page(viewport={'width': 1280, 'height': 800})
         page.on('pageerror', lambda e: errors.append(str(e)))
+        if pin_only: page.route('**/projects/*/project.json', strip_layout)
         page.goto(u, wait_until='domcontentloaded', timeout=90000)
         page.wait_for_selector('#loading', state='detached', timeout=90000)
     for slug, off in (('kim-keat-crest', '#modes .mode[data-m=resale]'), ('tengah-oct-2026', '#resaleOff')):
-        visit(url.replace('kim-keat-crest', slug))
-        assert page.is_visible('#buildLink') == (slug == 'kim-keat-crest'), slug              # upcoming: no layout to build
+        visit(url.replace('kim-keat-crest', slug), pin_only=slug != 'kim-keat-crest')
+        assert page.is_visible('#buildLink') == (slug == 'kim-keat-crest'), slug              # pin only: no layout to build
         before = page.evaluate('__cam()')
         resale_is(False, f'{slug}: starts off')
         page.click('#modes .mode[data-m=resale]')
