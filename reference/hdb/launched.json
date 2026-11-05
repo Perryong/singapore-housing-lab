@@ -310,5 +310,83 @@
 "lat": 1.3138879,
 "lon": 103.942528,
 "town": "Bedok"
+},
+{
+"slug": "toa-payoh-caldecott-oct-2026",
+"launch": "nov-2026-bto",
+"name": "Toa Payoh Hillside",
+"type": "Prime",
+"address": "Bounded by Toa Payoh Rise and Toa Payoh Link",
+"blocks": 5,
+"units": 1432,
+"highest": 43,
+"lat": 1.3373855,
+"lon": 103.8417455,
+"town": "Toa Payoh"
+},
+{
+"slug": "yishun-chencharu-oct-2026",
+"launch": "nov-2026-bto",
+"name": "Chencharu Acres",
+"type": "Standard",
+"address": "Bounded by Yishun Street 82, Yishun Walk and Yishun Avenue 2",
+"blocks": 12,
+"units": 1582,
+"highest": 15,
+"lat": 1.4136835,
+"lon": 103.8293822,
+"town": "Yishun"
+},
+{
+"slug": "sembawang-oct-2026",
+"launch": "nov-2026-bto",
+"name": "Sembawang Anchor",
+"type": "Standard",
+"address": "Bounded by Admiralty Lane and Sembawang Drive",
+"blocks": 6,
+"units": 1310,
+"highest": 26,
+"lat": 1.4576906,
+"lon": 103.815845,
+"town": "Sembawang"
+},
+{
+"slug": "geylang-oct-2026",
+"launch": "nov-2026-bto",
+"name": "Merpati Meadow",
+"type": "Plus",
+"address": "Along Merpati Road",
+"blocks": 3,
+"units": 438,
+"highest": 18,
+"lat": 1.3281835,
+"lon": 103.8812733,
+"town": "Geylang"
+},
+{
+"slug": "bedok-bayshore-ii-oct-2026",
+"launch": "nov-2026-bto",
+"name": "Bayshore Oasis",
+"type": "Plus",
+"address": "Bounded by Bayshore Drive and Bayshore Walk",
+"blocks": 4,
+"units": 855,
+"highest": 30,
+"lat": 1.3130248,
+"lon": 103.9440262,
+"town": "Bedok"
+},
+{
+"slug": "tengah-oct-2026",
+"launch": "nov-2026-bto",
+"name": "Plantation Dew",
+"type": "Standard",
+"address": "Bounded by Tengah Garden Avenue and Plantation Walk",
+"blocks": 5,
+"units": 710,
+"highest": 15,
+"lat": 1.3523466,
+"lon": 103.7331913,
+"town": "Tengah"
 }
 ]

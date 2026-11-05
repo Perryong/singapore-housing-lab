@@ -19,6 +19,7 @@ sys.path.insert(0, str(ROOT / 'tools'))
 from fetch_context import local_xz, norm, CACHE, REF, STOREY_M, ROOF_M   # noqa: E402
 
 RADIUS, LEVEL_M, BLOCK_R = 1500, 4.0, 900
+FAR_TOL = 2.0   # beyond BLOCK_R footprints are map massing only (never sun blockers): coarser, in whole metres, to fit the load budget
 DEFAULT_H = {'mall': 16.0, 'mrt': 12.0, 'school': 12.0, 'cc': 10.0, 'library': 12.0, 'hawker': 8.0, 'health': 20.0, 'bldg': 10.0}
 # shortcut: untagged heights are guesses by building type (about 2/3 of OSM buildings); fine for massing, refine per area if shade looks off
 BLDG_H = {'apartments': 36.0, 'residential': 20.0, 'house': 9.0, 'detached': 9.0, 'semidetached_house': 9.0, 'terrace': 9.0,
@@ -342,6 +343,10 @@ def surround(P):
     fs, blockers = features(P, existing=[s['p'] for s in out])
     bto = bto_neighbours(P)
     ob, obb = others(P, [s['p'] for s in out + fs + bto if s['h'] > 0.2] + [c['p'] for c in P.get('context', [])])
+    for x in out + ob:
+        if x['k'] in ('hdb', 'bldg') and math.hypot(*cen(x['p'])) > BLOCK_R:
+            x['p'] = [[round(a), round(b)] for a, b in simplify(x['p'], FAR_TOL)]
+    out, ob = ([x for x in v if len(x['p']) >= 3 and math.hypot(*cen(x['p'])) <= RADIUS] for v in (out, ob))
     return out + fs + bto + ob, blockers + [b for b in bto if math.hypot(*cen(b['p'])) <= BLOCK_R] + obb
 
 

@@ -7,21 +7,21 @@
   "status": "launched",
   "kind": "bto",
   "classification": "Plus",
-  "lat": 1.3123773,
-  "lon": 103.9427501,
+  "lat": 1.3130248,
+  "lon": 103.9440262,
   "units": 855,
   "flatTypes": [
    "2-room Flexi",
    "4-room"
   ],
-  "hasLayout": false,
+  "hasLayout": true,
   "cmp": {
    "type": "4 ROOM",
    "bto": [
     559000,
     786000
    ],
-   "resale": 955000,
+   "resale": 930000,
    "radiusM": 900
   }
  },
@@ -60,8 +60,8 @@
   "status": "launched",
   "kind": "bto",
   "classification": "Standard",
-  "lat": 1.4132207,
-  "lon": 103.8287616,
+  "lat": 1.4136835,
+  "lon": 103.8293822,
   "units": 1582,
   "flatTypes": [
    "2-room Flexi",
@@ -69,14 +69,14 @@
    "4-room",
    "5-room"
   ],
-  "hasLayout": false,
+  "hasLayout": true,
   "cmp": {
    "type": "4 ROOM",
    "bto": [
     353000,
     428000
    ],
-   "resale": 592000,
+   "resale": 583688,
    "radiusM": 900
   }
  },
@@ -88,21 +88,21 @@
   "status": "launched",
   "kind": "bto",
   "classification": "Plus",
-  "lat": 1.3281013,
-  "lon": 103.8810539,
+  "lat": 1.3281835,
+  "lon": 103.8812733,
   "units": 438,
   "flatTypes": [
    "2-room Flexi",
    "4-room"
   ],
-  "hasLayout": false,
+  "hasLayout": true,
   "cmp": {
    "type": "4 ROOM",
    "bto": [
     545000,
     726000
    ],
-   "resale": 758888,
+   "resale": 850000,
    "radiusM": 900
   }
  },
@@ -114,8 +114,8 @@
   "status": "launched",
   "kind": "bto",
   "classification": "Standard",
-  "lat": 1.3521431,
-  "lon": 103.7330282,
+  "lat": 1.3523466,
+  "lon": 103.7331913,
   "units": 710,
   "flatTypes": [
    "2-room Flexi",
@@ -124,14 +124,14 @@
    "5-room",
    "3Gen"
   ],
-  "hasLayout": false,
+  "hasLayout": true,
   "cmp": {
    "type": "4 ROOM",
    "bto": [
     339000,
     445000
    ],
-   "resale": 645000,
+   "resale": 650000,
    "radiusM": 900
   }
  },
@@ -143,8 +143,8 @@
   "status": "launched",
   "kind": "bto",
   "classification": "Standard",
-  "lat": 1.4580026,
-  "lon": 103.8155222,
+  "lat": 1.4576906,
+  "lon": 103.815845,
   "units": 1310,
   "flatTypes": [
    "2-room Flexi",
@@ -152,7 +152,7 @@
    "4-room",
    "5-room"
   ],
-  "hasLayout": false,
+  "hasLayout": true,
   "cmp": {
    "type": "4 ROOM",
    "bto": [
@@ -171,22 +171,22 @@
   "status": "launched",
   "kind": "bto",
   "classification": "Prime",
-  "lat": 1.3372302,
-  "lon": 103.841089,
+  "lat": 1.3373855,
+  "lon": 103.8417455,
   "units": 1432,
   "flatTypes": [
    "Community Care Apartment",
    "2-room Flexi",
    "4-room"
   ],
-  "hasLayout": false,
+  "hasLayout": true,
   "cmp": {
    "type": "4 ROOM",
    "bto": [
     558000,
     832000
    ],
-   "resale": 988000,
+   "resale": 980000,
    "radiusM": 900
   }
  },

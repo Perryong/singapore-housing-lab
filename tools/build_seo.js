@@ -45,8 +45,10 @@ function projectPage(p) {
   let body = `<h1>${esc(p.name)} BTO</h1><p class="m">${esc(P.tagline || when)}</p>
 <a class="cta" href="/web/?p=${encodeURIComponent(p.id)}">${p.hasLayout ? 'Open the 3D sun study' : 'Open the site in 3D'}</a>
 <h2>Project facts</h2>${table(['Item', 'Detail'], facts)}`;
+  // codes that share a legend category (4RM and 4RMB both colour as 4-room) keep their own names
+  const shared = c => sale.some(([o]) => o !== c && catOf(P, o) === catOf(P, c));
   if (sale.length) body += `<h2>HDB launch prices</h2>${table(['Flat', 'Price', 'Floor area', 'Wait'], sale.map(([c, v]) => [
-    esc(P.categories?.[catOf(P, c)]?.name || FLAT[c] || c) + ` (${esc(c)})`, range(v.min, v.max), v.sqm ? `${v.sqm} sqm` : '', v.waitingMonths ? `${v.waitingMonths} months` : '']))}`;
+    esc((shared(c) && FLAT[c]) || P.categories?.[catOf(P, c)]?.name || FLAT[c] || c) + ` (${esc(c)})`, range(v.min, v.max), v.sqm ? `${v.sqm} sqm` : '', v.waitingMonths ? `${v.waitingMonths} months` : '']))}`;
   else if (p.status === 'upcoming') body += `<h2>Prices and layout</h2><p>HDB releases prices and the site plan at the sales launch.</p>`;
   const rs = Object.entries(P.resale?.summary || {}).filter(([, v]) => v.median);
   if (rs.length) body += `<h2>Resale prices within ${P.resale.radiusM} m</h2><p class="m">HDB resale sales in the ${P.resale.months} months up to ${esc(P.resale.asOf)}.</p>${
