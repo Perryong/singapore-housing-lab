@@ -310,5 +310,18 @@
 "lat": 1.3138879,
 "lon": 103.942528,
 "town": "Bedok"
+},
+{
+"slug": "toa-payoh-caldecott-oct-2026",
+"launch": "nov-2026-bto",
+"name": "Toa Payoh Hillside",
+"type": "Prime",
+"address": "Bounded by Toa Payoh Rise and Toa Payoh Link",
+"blocks": 5,
+"units": 1432,
+"highest": 43,
+"lat": 1.3373855,
+"lon": 103.8417455,
+"town": "Toa Payoh"
 }
 ]
