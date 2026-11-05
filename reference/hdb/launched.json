@@ -336,5 +336,18 @@
 "lat": 1.4136835,
 "lon": 103.8293822,
 "town": "Yishun"
+},
+{
+"slug": "sembawang-oct-2026",
+"launch": "nov-2026-bto",
+"name": "Sembawang Anchor",
+"type": "Standard",
+"address": "Bounded by Admiralty Lane and Sembawang Drive",
+"blocks": 6,
+"units": 1310,
+"highest": 26,
+"lat": 1.4576906,
+"lon": 103.815845,
+"town": "Sembawang"
 }
 ]
