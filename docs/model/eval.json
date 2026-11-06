@@ -1,238 +1,238 @@
 {
- "asOf": "2026-10",
- "nTrain": 230041,
- "nTest": 13459,
+ "asOf": "2026-11",
+ "nTrain": 232167,
+ "nTest": 12148,
  "model": {
-  "mdape": 3.06,
-  "within5": 70.8,
-  "within10": 93.3
+  "mdape": 3.05,
+  "within5": 71.2,
+  "within10": 93.5
  },
  "baselines": {
-  "Town x type median price": 9.23,
+  "Town x type median price": 9.22,
   "Town x type median $/sqm x area": 9.72,
-  "Linear model (same features)": 6.57
+  "Linear model (same features)": 6.68
  },
  "byType": [
   {
    "k": "1 ROOM",
-   "n": 5,
-   "mdape": 4.16
+   "n": 4,
+   "mdape": 3.02
   },
   {
    "k": "2 ROOM",
-   "n": 392,
-   "mdape": 2.88
+   "n": 351,
+   "mdape": 3.0
   },
   {
    "k": "3 ROOM",
-   "n": 2977,
-   "mdape": 3.18
+   "n": 2649,
+   "mdape": 3.13
   },
   {
    "k": "4 ROOM",
-   "n": 5855,
-   "mdape": 2.84
+   "n": 5238,
+   "mdape": 2.85
   },
   {
    "k": "5 ROOM",
-   "n": 3295,
-   "mdape": 3.3
+   "n": 3037,
+   "mdape": 3.26
   },
   {
    "k": "EXECUTIVE",
-   "n": 927,
-   "mdape": 3.2
+   "n": 862,
+   "mdape": 3.54
   },
   {
    "k": "MULTI-GENERATION",
-   "n": 8,
-   "mdape": 12.63
+   "n": 7,
+   "mdape": 10.54
   }
  ],
  "byFloors": [
   {
    "k": "1-6",
-   "n": 5288,
+   "n": 4785,
    "mdape": 3.11
   },
   {
    "k": "7-12",
-   "n": 5308,
-   "mdape": 2.98
+   "n": 4799,
+   "mdape": 2.97
   },
   {
    "k": "13-24",
-   "n": 2489,
-   "mdape": 3.1
+   "n": 2217,
+   "mdape": 3.09
   },
   {
    "k": "25+",
-   "n": 374,
-   "mdape": 3.28
+   "n": 347,
+   "mdape": 3.31
   }
  ],
  "byTown": [
   {
-   "k": "CENTRAL AREA",
-   "n": 100,
-   "mdape": 5.25
-  },
-  {
    "k": "MARINE PARADE",
-   "n": 74,
-   "mdape": 5.14
+   "n": 66,
+   "mdape": 6.38
   },
   {
    "k": "BUKIT TIMAH",
-   "n": 30,
-   "mdape": 4.74
+   "n": 33,
+   "mdape": 5.13
   },
   {
-   "k": "BUKIT MERAH",
-   "n": 491,
-   "mdape": 4.49
-  },
-  {
-   "k": "TOA PAYOH",
-   "n": 534,
-   "mdape": 4.12
-  },
-  {
-   "k": "QUEENSTOWN",
-   "n": 453,
-   "mdape": 3.97
-  },
-  {
-   "k": "KALLANG/WHAMPOA",
-   "n": 435,
-   "mdape": 3.94
-  },
-  {
-   "k": "ANG MO KIO",
-   "n": 453,
-   "mdape": 3.89
+   "k": "CENTRAL AREA",
+   "n": 86,
+   "mdape": 4.73
   },
   {
    "k": "BISHAN",
-   "n": 243,
-   "mdape": 3.85
+   "n": 228,
+   "mdape": 4.62
   },
   {
-   "k": "SERANGOON",
-   "n": 227,
-   "mdape": 3.64
+   "k": "BUKIT MERAH",
+   "n": 433,
+   "mdape": 4.15
   },
   {
-   "k": "GEYLANG",
-   "n": 326,
-   "mdape": 3.57
-  },
-  {
-   "k": "CLEMENTI",
-   "n": 268,
-   "mdape": 3.56
-  },
-  {
-   "k": "BEDOK",
-   "n": 755,
-   "mdape": 3.53
+   "k": "QUEENSTOWN",
+   "n": 400,
+   "mdape": 4.04
   },
   {
    "k": "JURONG EAST",
-   "n": 260,
-   "mdape": 3.33
+   "n": 224,
+   "mdape": 3.99
+  },
+  {
+   "k": "ANG MO KIO",
+   "n": 407,
+   "mdape": 3.91
+  },
+  {
+   "k": "TOA PAYOH",
+   "n": 503,
+   "mdape": 3.76
+  },
+  {
+   "k": "KALLANG/WHAMPOA",
+   "n": 401,
+   "mdape": 3.75
+  },
+  {
+   "k": "GEYLANG",
+   "n": 278,
+   "mdape": 3.64
+  },
+  {
+   "k": "CLEMENTI",
+   "n": 224,
+   "mdape": 3.44
   },
   {
    "k": "BUKIT PANJANG",
-   "n": 413,
-   "mdape": 3.29
+   "n": 368,
+   "mdape": 3.43
+  },
+  {
+   "k": "BEDOK",
+   "n": 691,
+   "mdape": 3.31
+  },
+  {
+   "k": "SERANGOON",
+   "n": 209,
+   "mdape": 3.12
   },
   {
    "k": "HOUGANG",
-   "n": 687,
-   "mdape": 2.96
+   "n": 615,
+   "mdape": 3.0
   },
   {
    "k": "JURONG WEST",
-   "n": 760,
-   "mdape": 2.92
-  },
-  {
-   "k": "SEMBAWANG",
-   "n": 412,
-   "mdape": 2.86
+   "n": 687,
+   "mdape": 2.95
   },
   {
    "k": "SENGKANG",
-   "n": 954,
-   "mdape": 2.85
-  },
-  {
-   "k": "WOODLANDS",
-   "n": 958,
-   "mdape": 2.78
-  },
-  {
-   "k": "PUNGGOL",
-   "n": 929,
-   "mdape": 2.77
-  },
-  {
-   "k": "CHOA CHU KANG",
-   "n": 537,
-   "mdape": 2.63
+   "n": 869,
+   "mdape": 2.9
   },
   {
    "k": "YISHUN",
-   "n": 834,
-   "mdape": 2.61
+   "n": 761,
+   "mdape": 2.87
+  },
+  {
+   "k": "WOODLANDS",
+   "n": 846,
+   "mdape": 2.86
+  },
+  {
+   "k": "PUNGGOL",
+   "n": 852,
+   "mdape": 2.84
+  },
+  {
+   "k": "SEMBAWANG",
+   "n": 387,
+   "mdape": 2.79
   },
   {
    "k": "BUKIT BATOK",
-   "n": 743,
+   "n": 655,
+   "mdape": 2.62
+  },
+  {
+   "k": "CHOA CHU KANG",
+   "n": 495,
+   "mdape": 2.51
+  },
+  {
+   "k": "PASIR RIS",
+   "n": 376,
    "mdape": 2.51
   },
   {
    "k": "TAMPINES",
-   "n": 1168,
-   "mdape": 2.47
-  },
-  {
-   "k": "PASIR RIS",
-   "n": 415,
-   "mdape": 2.43
+   "n": 1054,
+   "mdape": 2.48
   }
  ],
  "backtest": [
   {
-   "test": "2023-11 +6 mo",
-   "n": 13292,
-   "mdape": 3.27
+   "test": "2023-12 +6 mo",
+   "n": 13654,
+   "mdape": 3.25
   },
   {
-   "test": "2024-05 +6 mo",
-   "n": 14631,
-   "mdape": 3.68
+   "test": "2024-06 +6 mo",
+   "n": 14070,
+   "mdape": 3.65
   },
   {
-   "test": "2024-11 +6 mo",
-   "n": 12641,
-   "mdape": 3.2
+   "test": "2024-12 +6 mo",
+   "n": 12978,
+   "mdape": 3.11
   },
   {
-   "test": "2025-05 +6 mo",
-   "n": 12802,
-   "mdape": 2.86
+   "test": "2025-06 +6 mo",
+   "n": 12194,
+   "mdape": 2.81
   },
   {
-   "test": "2025-11 +6 mo",
-   "n": 11657,
-   "mdape": 2.96
+   "test": "2025-12 +6 mo",
+   "n": 12125,
+   "mdape": 3.0
   },
   {
    "test": "latest 6 months",
-   "n": 13459,
-   "mdape": 3.06
+   "n": 12148,
+   "mdape": 3.05
   }
  ]
 }
