@@ -123,7 +123,20 @@ with sync_playwright() as p:
     assert '1:600' not in page.inner_text('#stage'), 'no scale on a perspective drawing'
     assert 'precast' not in (page.inner_text('#titleSpec') + page.inner_text('#active')).lower(), 'no construction method the data does not give'
 
-    page = open_page(b, size=(800, 900))
-    assert 'BTO Build is made for desktop recording.' in page.inner_text('body')
+    # a phone gets the build in a portrait layout: no sideways scroll, a full-width view, scrubbing works, no Record
+    page = open_page(b, size=(390, 844))
+    page.wait_for_function('window.__build && __build.ready', timeout=60000)
+    assert 'made for desktop' not in page.inner_text('body')
+    assert page.evaluate('document.scrollingElement.scrollWidth <= innerWidth')
+    cv = page.locator('#view canvas').bounding_box()
+    assert cv['x'] >= 0 and cv['x'] + cv['width'] <= 390 and cv['width'] >= 340 and cv['height'] >= 300, cv
+    assert page.is_hidden('#record') and page.is_visible('#scrub') and page.is_visible('#section') and page.is_visible('#timeline')
+    seek(page, 10)
+    assert page.evaluate('__build.step') > 0
+    page.set_viewport_size({'width': 844, 'height': 390})                     # turned sideways: the canvas follows its view
+    page.wait_for_timeout(400)
+    vb, cv = page.locator('#view').bounding_box(), page.locator('#view canvas').bounding_box()
+    assert abs(vb['width'] - cv['width']) < 2 and abs(vb['height'] - cv['height']) < 2, (vb, cv)
+    assert not page.errors, page.errors
     b.close()
 print('ok: build page')
