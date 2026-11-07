@@ -34,11 +34,14 @@ $('#projBox').textContent = `${P.name} · ${P.town}`.toUpperCase();
 document.title = `${P.name}: BTO build | BTOlab`;
 
 /* ---------- scene ---------- */
-const view = $('#view'), W = view.clientWidth, H = view.clientHeight;
+const view = $('#view');
+let W = view.clientWidth, H = view.clientHeight;
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
 renderer.setPixelRatio(Math.min(2, devicePixelRatio)); renderer.setSize(W, H); renderer.localClippingEnabled = true;
 view.append(renderer.domElement);
 const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(30, W / H, 1, 5000);
+// the desktop stage is a fixed 1600 x 900 cell; on a phone the view follows the window (and the phone turning)
+addEventListener('resize', () => { W = view.clientWidth; H = view.clientHeight; renderer.setSize(W, H); camera.aspect = W / H; camera.updateProjectionMatrix(); });
 scene.add(new THREE.HemisphereLight(0xffffff, 0xd9cdbd, 2.2));
 const sun = new THREE.DirectionalLight(0xffffff, 1.4); sun.position.set(-150, 300, 200); scene.add(sun);
 
@@ -154,7 +157,8 @@ function frame(tt) {
   cam.az = 212 + (rotate ? 40 * s.t / TOTAL : 0);
   const sectionOn = forceCut || s.key === 'section', c = forceCut ? 1 : s.cut, zoom = sectionOn ? 1 - 0.3 * Math.min(1, c * 2) : 1;
   const tgt = centre.clone().lerp(new THREE.Vector3(bc.x, centre.y, bc.z), sectionOn ? Math.min(1, c * 2) : 0);
-  const az = cam.az * Math.PI / 180, el = cam.el * Math.PI / 180, r = R * zoom;
+  // narrower than 16:9 (a phone held upright): back off so the whole estate stays in view
+  const az = cam.az * Math.PI / 180, el = cam.el * Math.PI / 180, r = R * zoom * Math.max(1, 16 / 9 / camera.aspect) ** 0.8;
   camera.position.set(tgt.x + r * Math.sin(az) * Math.cos(el), tgt.y + r * Math.sin(el), tgt.z - r * Math.cos(az) * Math.cos(el));
   camera.lookAt(tgt);
   if (sectionOn) {                                             // remove the half facing the camera, sliding to the middle

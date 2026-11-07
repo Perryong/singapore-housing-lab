@@ -92,13 +92,37 @@ aside h3{margin:0;font-size:13px;letter-spacing:.08em}
 .st .t{position:absolute;left:12px;top:10px;font-size:10px;color:var(--muted)}
 #msg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--panel);border:1px solid var(--red);border-radius:8px;padding:12px 18px;font-weight:600;z-index:5}
 #msg a{color:var(--red)}
-#phone{display:none;padding:24px;font-size:15px}
-#phone a{color:var(--red)}
-@media (max-width:899px){#stage{display:none}#phone{display:block}}
+/* phones: one scrolling column; the drawing sheet, log, speed and Record (phones can't capture a tab) are left out */
+@media (max-width:899px){
+html,body{height:auto;overflow:auto}
+#stage{position:static;transform:none;width:auto;height:auto;display:flex;flex-direction:column;gap:10px;padding:10px}
+header{gap:10px;padding-bottom:8px}
+.logo{width:36px;height:36px}
+.logo svg{width:20px;height:20px}
+h1{font-size:24px}
+.sub{font-size:8px;letter-spacing:.2em}
+.tb .box:first-child,#record,#recDot,#projBox,#dwg,.lvl,#scale,#illus,#marks,#rotate,#speed,#active,#log,aside h3:nth-of-type(2),aside h3:nth-of-type(4){display:none}
+.tb .box{padding:4px 8px}
+#clock{font-size:16px}
+main{height:min(62vh,520px);flex:none}
+#title{left:8px;right:8px;top:8px;width:auto;padding:6px 8px}
+#title h2{font-size:15px}
+#title .what{font-size:11px}
+#title .step,#title .op,#title .spec{font-size:10px;margin-top:2px;min-height:0}
+.call{font-size:9px}
+.call small{font-size:8px}
+#scrubWrap{left:10px;right:10px;bottom:52px}
+#ctrl{left:8px;right:8px;transform:none;bottom:8px;padding:4px;gap:4px;overflow-x:auto}
+#ctrl button{padding:6px 7px;font-size:10px;white-space:nowrap}
+#time{min-width:0}
+aside{padding:10px 12px;overflow:visible}
+#timeline div{grid-template-columns:120px 1fr 36px}
+#strip{overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:4px}
+.st{flex:0 0 42%;scroll-snap-align:start}
+}
 </style>
 </head>
 <body>
-<p id="phone">BTO Build is made for desktop recording. <a href="./">Back to BTOlab</a></p>
 <div id="stage">
 <header>
   <a class="logo" href="./" aria-label="BTOlab home"><svg width="30" height="30" viewBox="0 0 30 30" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="8" width="8" height="19"/><rect x="16" y="3" width="10" height="24"/><path d="M2 27h26"/></svg></a>
