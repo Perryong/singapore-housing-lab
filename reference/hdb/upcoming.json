@@ -1,1 +1,5 @@
-[]
+[{"slug":"bishan-feb-2027","name":"Bishan (Bright Hill)","town":"Bishan","code":"BH N3C42A","launch":"Feb 2027","lat":1.3565749,"lon":103.8402253,"flatTypes":["2-room Flexi","3-room","4-room"],"units":1070},
+{"slug":"tampines-upper-changi-feb-2027","name":"Tampines (Upper Changi)","town":"Tampines","code":"TAP N0C25","launch":"Feb 2027","lat":1.3394756,"lon":103.9598894,"flatTypes":["2-room Flexi","3-room","4-room","5-room"],"units":460},
+{"slug":"tampines-simei-feb-2027","name":"Tampines (Simei)","town":"Tampines","code":"TAP N1C14","launch":"Feb 2027","lat":1.3463672,"lon":103.948828,"flatTypes":["Community Care Apartment","4-room"],"units":330},
+{"slug":"tengah-feb-2027","name":"Tengah","town":"Tengah","code":"TG D5C3","launch":"Feb 2027","lat":1.3698346,"lon":103.7463266,"flatTypes":["2-room Flexi","3-room","4-room","5-room"],"units":1280},
+{"slug":"toa-payoh-mount-pleasant-feb-2027","name":"Toa Payoh (Mount Pleasant)","town":"Toa Payoh","code":"TP N10C5","launch":"Feb 2027","lat":1.3293722,"lon":103.8353169,"flatTypes":["2-room Flexi","3-room","4-room"],"units":1140}]

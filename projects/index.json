@@ -1,5 +1,126 @@
 [
  {
+  "id": "bishan-feb-2027",
+  "name": "Bishan (Bright Hill)",
+  "town": "Bishan",
+  "launch": "Feb 2027",
+  "status": "upcoming",
+  "kind": "bto",
+  "classification": null,
+  "lat": 1.3565749,
+  "lon": 103.8402253,
+  "units": 1070,
+  "flatTypes": [
+   "2-room Flexi",
+   "3-room",
+   "4-room"
+  ],
+  "hasLayout": false,
+  "cmp": {
+   "type": "4 ROOM",
+   "bto": null,
+   "resale": 832944,
+   "radiusM": 900
+  }
+ },
+ {
+  "id": "tampines-simei-feb-2027",
+  "name": "Tampines (Simei)",
+  "town": "Tampines",
+  "launch": "Feb 2027",
+  "status": "upcoming",
+  "kind": "bto",
+  "classification": null,
+  "lat": 1.3463672,
+  "lon": 103.948828,
+  "units": 330,
+  "flatTypes": [
+   "Community Care Apartment",
+   "4-room"
+  ],
+  "hasLayout": false,
+  "cmp": {
+   "type": "4 ROOM",
+   "bto": null,
+   "resale": 625000,
+   "radiusM": 900
+  }
+ },
+ {
+  "id": "tampines-upper-changi-feb-2027",
+  "name": "Tampines (Upper Changi)",
+  "town": "Tampines",
+  "launch": "Feb 2027",
+  "status": "upcoming",
+  "kind": "bto",
+  "classification": null,
+  "lat": 1.3394756,
+  "lon": 103.9598894,
+  "units": 460,
+  "flatTypes": [
+   "2-room Flexi",
+   "3-room",
+   "4-room",
+   "5-room"
+  ],
+  "hasLayout": false,
+  "cmp": {
+   "type": "4 ROOM",
+   "bto": null,
+   "resale": 650000,
+   "radiusM": 900
+  }
+ },
+ {
+  "id": "tengah-feb-2027",
+  "name": "Tengah",
+  "town": "Tengah",
+  "launch": "Feb 2027",
+  "status": "upcoming",
+  "kind": "bto",
+  "classification": null,
+  "lat": 1.3698346,
+  "lon": 103.7463266,
+  "units": 1280,
+  "flatTypes": [
+   "2-room Flexi",
+   "3-room",
+   "4-room",
+   "5-room"
+  ],
+  "hasLayout": false,
+  "cmp": {
+   "type": "4 ROOM",
+   "bto": null,
+   "resale": 580000,
+   "radiusM": 900
+  }
+ },
+ {
+  "id": "toa-payoh-mount-pleasant-feb-2027",
+  "name": "Toa Payoh (Mount Pleasant)",
+  "town": "Toa Payoh",
+  "launch": "Feb 2027",
+  "status": "upcoming",
+  "kind": "bto",
+  "classification": null,
+  "lat": 1.3293722,
+  "lon": 103.8353169,
+  "units": 1140,
+  "flatTypes": [
+   "2-room Flexi",
+   "3-room",
+   "4-room"
+  ],
+  "hasLayout": false,
+  "cmp": {
+   "type": "4 ROOM",
+   "bto": null,
+   "resale": 760000,
+   "radiusM": 900
+  }
+ },
+ {
   "id": "bedok-bayshore-ii-oct-2026",
   "name": "Bayshore Oasis",
   "town": "Bedok",
