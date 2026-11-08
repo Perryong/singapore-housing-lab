@@ -439,6 +439,7 @@ function renderCommute() {
     : a?.matches?.('#commutePanel button.stn') ? `button.stn[data-station="${CSS.escape(a.dataset.station)}"]` : null;   // keep keyboard focus across re-renders
   $('#commutePanel').innerHTML = commuteHtml(P, stacks, selStack, T, R, pick, bus && bus.stop === pick.stop ? { ...bus, nowMs: liveNow() } : null);
   if (sel) $('#commutePanel').querySelector(sel)?.focus({ preventScroll: true });
+  syncFold();
   if (reachDlg.open) renderReach();
   if (!focus || T === undefined) return;                         // still loading: the post-load render scrolls
   const el = T && focus(); focus = null;
@@ -467,7 +468,10 @@ function syncLive() {
   poll(); livePoll = setInterval(poll, window.__liveInterval || 30000);   // test hook: window.__liveInterval (ms)
 }
 document.addEventListener('visibilitychange', syncLive);
-function renderValue() { $('#valuePanel').innerHTML = valueHtml(P, stacks, selStack, selFloor); }
+function renderValue() { $('#valuePanel').innerHTML = valueHtml(P, stacks, selStack, selFloor); syncFold(); }
+// each tab's main heading folds its content away (long on phones); one shared state, kept across re-renders
+function syncFold() { const open = !$('.panel.right').classList.contains('shut'); document.querySelectorAll('.panel.right .fold').forEach(b => b.setAttribute('aria-expanded', open)); }
+$('.panel.right').addEventListener('click', e => { if (e.target.closest('.fold')) { $('.panel.right').classList.toggle('shut'); syncFold(); } });
 $('#valuePanel').addEventListener('click', e => { const r = e.target.closest('tr[data-s]'); if (r) select(+r.dataset.s); });
 let camBack = null;                                            // the view to return to when resale mode ends
 window.__cam = () => camera.position.toArray();                // test hook

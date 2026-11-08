@@ -128,7 +128,7 @@ assert.match(hh, /h&lt;u&gt;&amp; \(NS\)/);
 import { createHash } from 'node:crypto';
 const sel = { svc: '88/2', stop: '2' };
 const base = commuteHtml(P, stacks, 301, T, R, sel);
-assert.equal(createHash('sha256').update(base).digest('hex'), 'db135968809f534821f7edd0a95660e31ebcf7cb4c34faa848525e95d490e982'); // pre-live output (+ route chevrons, expand button, label halos)
+assert.equal(createHash('sha256').update(base).digest('hex'), '22ecfcf3c4b8e8e8735cfff296c409177deea6ff298c8971d631ac521330d08c'); // pre-live output (+ route chevrons, expand button, label halos, fold heading)
 assert.equal(commuteHtml(P, stacks, 301, T, R, sel, null), base);
 const nowMs = Date.parse('2026-10-16T08:00:00Z'), at = m => new Date(nowMs + m * 60000).toISOString();
 const live = { stop: '2', data: { stop: '2', at: at(0), services: [{ no: '88', arrivals: [at(3.5), at(9.5), at(15.5)] }, { no: '9<', arrivals: [at(1)] }] }, updatedMs: nowMs - 5000, failed: false, nowMs };

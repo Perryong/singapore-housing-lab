@@ -42,5 +42,5 @@ export function valueHtml(P, stacks, selStack, selFloor) {
     `<tr data-s="${no}" class="${String(selStack) === no ? 'on' : ''}"><td>${no}</td><td>${esc(s?.blk || '')}</td><td>${esc(s?.type || '')}</td><td>${k(a)}–${k(b)}</td></tr>`).join('')}</tbody></table>`
     : `<div class="lbl">Typical unit at this site (floor 10)</div><table class="rtable"><tbody>${Object.entries(V.types).map(([t, [e, lo, hi]]) =>
       `<tr><td>${esc(t.toLowerCase())}</td><td>${k(e)}</td><td class="unit-meta">${k(lo)}–${k(hi)}</td></tr>`).join('')}</tbody></table>`;
-  return `<h2>Estimated resale value</h2>${card || (rows.length ? '<p class="unit-meta">Pick a unit on the model or in the table to see its estimate.</p>' : '')}${table}${foot}`;
+  return `<h2><button class="fold" aria-expanded="true">Estimated resale value</button></h2>${card || (rows.length ? '<p class="unit-meta">Pick a unit on the model or in the table to see its estimate.</p>' : '')}${table}${foot}`;
 }

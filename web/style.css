@@ -342,3 +342,10 @@ a.btn{color:inherit;text-decoration:none}
 .wx-now{margin-top:6px}
 .wx-metric th:nth-child(5),.wx-metric th:nth-child(6),.wx-metric td:nth-child(5),.wx-metric td:nth-child(6){display:none}   /* room for the Rain or Wind column */
 .wx-metric + #tableNote{display:none}
+
+/* foldable section headings (Sun / Value / Commute) */
+.fold{all:unset;cursor:pointer;display:flex;align-items:center;gap:6px;min-height:32px}
+.fold::after{content:'▾';font-size:1.1em;color:var(--ink);transition:transform .15s var(--ease)}
+.fold[aria-expanded="false"]::after{transform:rotate(-90deg)}
+.fold:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.shut #tableWrap,.shut #tableNote,.shut #valuePanel>:not(:first-child),.shut #commutePanel>:not(:first-child){display:none}

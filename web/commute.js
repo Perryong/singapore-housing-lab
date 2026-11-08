@@ -50,7 +50,7 @@ export function commuteHtml(P, stacks, selStack, T = null, R = null, pick = {}, 
   const stops = obj ? '' : (C.stops || []).slice(0, 4).map(s => `<div class="aitem"><span>${esc(s.name)}</span><span>${s.d} m · ≈${walkMin(s.d)} min</span></div>` +
     `<p class="note">${s.svc.map(([no, a, b]) => `${esc(no)} ${esc(a)}–${esc(b)}`).join(' · ')}</p>`).join('');
   const liveShown = obj && live?.data && T.stops.some(s => s.code === live.stop && s.walk && blk in s.walk);   // same stops stopsHtml lists
-  return `<h3>Door to hub, weekday 8 am · ${where}</h3>` +
+  return `<h3><button class="fold" aria-expanded="true">Door to hub, weekday 8 am · ${where}</button></h3>` +
     (sel ? (sel.blk === blk ? '' : `<p class="note">No times for this block; showing ${where}</p>`) : blk !== 'site' ? '<p class="note">Pick a unit to see its block</p>' : '') +
     `<table class="commute"><thead><tr><th>Hub</th><th>Time</th><th>Route</th></tr></thead><tbody>${rows}</tbody></table>` +
     (obj ? stopsHtml(T, blk, pick.svc || null, pick.stop ?? null, live) + stationsHtml(T, blk, pick.station || null)
