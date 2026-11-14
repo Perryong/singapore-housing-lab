@@ -19,3 +19,14 @@ for (const [no, am, pm] of EXPECTED) {
   assert.equal(st.pm.toFixed(1), pm.toFixed(1), `stack ${no} PM`);
 }
 console.log(`ok: ${EXPECTED.length} stacks match the original, ${L.units.length} units`);
+
+// planSunDir: sun direction in a floor plan's own axes (x right, z down the page; page-up has bearing `north`)
+import { planSunDir, sunVec } from '../web/sun.js';
+{
+  const close = (a, b) => assert.ok(Math.abs(a - b) < 1e-9, `${a} vs ${b}`);
+  const a = planSunDir(30, 280, 0), b = sunVec(30, 280); a.forEach((v, i) => close(v, b[i]));   // north-up plan = compass vector
+  assert.ok(a[0] < 0, 'afternoon sun comes from the left (west) of a north-up plan');
+  planSunDir(30, 280).forEach((v, i) => close(v, b[i]));                                       // missing north behaves as 0
+  const e = planSunDir(0, 90, 90); close(e[0], 0); close(e[2], -1);                            // page-up = east: a due-east sun is up the page
+  for (const alt of [90, -10]) assert.ok(planSunDir(alt, 123, 47).every(Number.isFinite));
+}
