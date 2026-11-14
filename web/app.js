@@ -575,10 +575,11 @@ const closeViewer = () => { openSeq++; viewer?.dispose(); viewer = null; };
 function syncPlanSun() {
   if (!layoutDlg.open) return;
   const st = stacks.find(s => String(s.no) === $('#view3d').dataset.no), u = st && (st.units.find(u => u.floor === selFloor) || st.units[0]);
-  const p = sunNow, shade = u?.now === 'shade';
+  const p = sunNow, now = p.alt <= 0 ? 'night' : u?.now || 'lit';
   $('#planTime').value = cur.min;
-  viewer?.setSun(p.alt, p.az, !shade);
-  $('#planSunLine').textContent = p.alt <= 0 ? 'After sunset' : `${fmtTime(cur.min)} · ${shade ? `shaded by ${SHADE_BY[u.by] || 'Block ' + u.by}` : `sun from the ${card16(p.az)}`}`;
+  viewer?.setSun(p.alt, p.az, now === 'lit');                  // patches only when the unit card says these windows are in direct sun
+  $('#planSunLine').textContent = `${fmtTime(cur.min)} · ` + (now === 'night' ? 'sun is down' : now === 'shade' ? `shaded by ${SHADE_BY[u.by] || 'Block ' + u.by}`
+    : now === 'away' ? 'sun is behind these windows' : `sun from the ${card16(p.az)}`);
 }
 function setView(mode, no) {                                    // '3d' | '2d'
   const is3d = mode === '3d';

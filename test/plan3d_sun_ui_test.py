@@ -30,7 +30,14 @@ with sync_playwright() as p:
     line = page.inner_text('#planSunLine'); assert line.startswith('10:00 am'), line
     page.evaluate(SET, ['#time', 1320])                          # and the main clock moves the pop-up slider
     assert page.input_value('#planTime') == '1320'
-    assert page.inner_text('#planSunLine') == 'After sunset'
+    assert page.inner_text('#planSunLine') == '10:00 pm · sun is down'
+    assert page.evaluate('__plan3dSun.direct') is False
+    for t in range(420, 1141, 60):                               # sun patches only while the caption says the sun is on these windows
+        page.evaluate(SET, ['#planTime', t]); line = page.inner_text('#planSunLine')
+        assert page.evaluate('__plan3dSun.direct') == ('sun from' in line), (t, line)
+    page.set_viewport_size({'width': 375, 'height': 760})        # a long caption wraps below the slider instead of squeezing it
+    page.evaluate("document.querySelector('#planSunLine').textContent = '4:30 pm · shaded by a neighbouring HDB block'")
+    assert page.evaluate("document.querySelector('#planTime').offsetWidth") >= 160
     page.click('#view2d'); assert page.is_hidden('#planTime')
     assert not errors, errors
     b.close()

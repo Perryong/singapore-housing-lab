@@ -4,6 +4,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { planSunDir } from './sun.js';
+import { lidRects } from './lid.js';
 
 const loader = new GLTFLoader().setDRACOLoader(                // models are Draco-compressed (blender/build_plan3d.py)
   new DRACOLoader().setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/libs/draco/gltf/'));
@@ -26,7 +27,7 @@ export async function openPlan3d(holder, stem, { isStale = () => false } = {}) {
   const scene = new THREE.Scene(); scene.background = new THREE.Color(0xF4F6F3);
   const camera = new THREE.PerspectiveCamera(38, w / h, 0.1, 200);
   scene.add(new THREE.HemisphereLight(0xffffff, 0xC9CFC6, 1.6));
-  const sun = new THREE.DirectionalLight(0xffffff, 3);   // strong enough that a sun patch stands out under the ceiling
+  const sun = new THREE.DirectionalLight(0xffffff, 1.6);
   sun.position.set(-8, 14, 10); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
   Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12 }); sun.shadow.bias = -0.0005;
   scene.add(sun, sun.target);
@@ -37,15 +38,17 @@ export async function openPlan3d(holder, stem, { isStale = () => false } = {}) {
   ground.rotation.x = -Math.PI / 2; ground.position.set(c.x, -0.01, c.z); ground.receiveShadow = true; scene.add(ground);
 
   // unseen ceiling at wall height (WALL_H in blender/build_plan3d.py): sunlight gets in through the windows only
-  const lid = new THREE.Mesh(new THREE.ShapeGeometry([
-    ...J.rooms.map(r => new THREE.Shape(r.poly.map(([x, z]) => new THREE.Vector2(x, z)))),
-    ...J.walls.map(({ rect: [x0, z0, x1, z1] }) => new THREE.Shape([[x0, z0], [x1, z0], [x1, z1], [x0, z1]].map(([x, z]) => new THREE.Vector2(x, z)))),
-  ]), new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false, side: THREE.DoubleSide }));
-  lid.rotation.x = Math.PI / 2; lid.position.y = 2.8; lid.castShadow = true; scene.add(lid);
-  // alt, az in degrees; direct = false when a neighbouring block shades this unit
+  const lid = new THREE.Mesh(new THREE.ShapeGeometry(lidRects(J.rooms, J.walls).map(([x0, z0, x1, z1]) =>
+    new THREE.Shape([[x0, z0], [x1, z0], [x1, z1], [x0, z1]].map(([x, z]) => new THREE.Vector2(x, z))))), new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false, side: THREE.DoubleSide }));
+  lid.rotation.x = Math.PI / 2; lid.position.y = 2.8; scene.add(lid);
+  // alt, az in degrees; direct = the sun is on this unit's windows. Otherwise the plain dollhouse look: studio light, no ceiling.
+  const studio = sun.position.clone();
   const setSun = (alt, az, direct) => {
-    sun.visible = direct && alt > 0; if (!sun.visible) return;
-    sun.target.position.copy(c); sun.position.copy(c).add(new THREE.Vector3(...planSunDir(alt, az, J.north || 0)).multiplyScalar(30));
+    const on = !!direct && alt > 0;
+    lid.castShadow = on; sun.intensity = on ? 3 : 1.6;         // 3: strong enough that a sun patch stands out under the ceiling
+    sun.target.position.copy(on ? c : new THREE.Vector3());
+    if (on) sun.position.copy(c).add(new THREE.Vector3(...planSunDir(alt, az, J.north || 0)).multiplyScalar(30)); else sun.position.copy(studio);
+    window.__plan3dSun = { direct: on };                       // test hook
   };
 
   // north arrow on the ground beside the flat; page-up has compass bearing J.north
