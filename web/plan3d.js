@@ -41,14 +41,14 @@ export async function openPlan3d(holder, stem, { isStale = () => false } = {}) {
   const lid = new THREE.Mesh(new THREE.ShapeGeometry(lidRects(J.rooms, J.walls).map(([x0, z0, x1, z1]) =>
     new THREE.Shape([[x0, z0], [x1, z0], [x1, z1], [x0, z1]].map(([x, z]) => new THREE.Vector2(x, z))))), new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false, side: THREE.DoubleSide }));
   lid.rotation.x = Math.PI / 2; lid.position.y = 2.8; scene.add(lid);
-  // alt, az in degrees; direct = the sun is on this unit's windows. Otherwise the plain dollhouse look: studio light, no ceiling.
+  // alt, az in degrees; direct = the sun is on this unit's windows. Otherwise the plain dollhouse look: studio light, no ceiling, no shadows (any shadow means real sun).
   const studio = sun.position.clone();
   const setSun = (alt, az, direct) => {
     const on = !!direct && alt > 0;
-    lid.castShadow = on; sun.intensity = on ? 3 : 1.6;         // 3: strong enough that a sun patch stands out under the ceiling
+    lid.castShadow = sun.castShadow = on; sun.intensity = on ? 3 : 1.6;         // 3: strong enough that a sun patch stands out under the ceiling
     sun.target.position.copy(on ? c : new THREE.Vector3());
     if (on) sun.position.copy(c).add(new THREE.Vector3(...planSunDir(alt, az, J.north || 0)).multiplyScalar(30)); else sun.position.copy(studio);
-    window.__plan3dSun = { direct: on };                       // test hook
+    window.__plan3dSun = { direct: on, shadows: sun.castShadow }; // test hook
   };
 
   // north arrow on the ground beside the flat; page-up has compass bearing J.north

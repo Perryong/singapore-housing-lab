@@ -35,6 +35,7 @@ with sync_playwright() as p:
     for t in range(420, 1141, 60):                               # sun patches only while the caption says the sun is on these windows
         page.evaluate(SET, ['#planTime', t]); line = page.inner_text('#planSunLine')
         assert page.evaluate('__plan3dSun.direct') == ('sun from' in line), (t, line)
+        assert page.evaluate('__plan3dSun.shadows') == ('sun from' in line), (t, line)   # no lamp shadows that look like sun
     page.set_viewport_size({'width': 375, 'height': 760})        # a long caption wraps below the slider instead of squeezing it
     page.evaluate("document.querySelector('#planSunLine').textContent = '4:30 pm · shaded by a neighbouring HDB block'")
     assert page.evaluate("document.querySelector('#planTime').offsetWidth") >= 160
