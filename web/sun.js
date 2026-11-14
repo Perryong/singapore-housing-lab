@@ -25,6 +25,11 @@ export function solarPos(site, y, m, d, hour) {
   return { alt, az, noon: (720 - 4 * LON - eot + TZ * 60) / 60 };
 }
 export const sunVec = (alt, az) => [Math.cos(alt * deg) * Math.sin(az * deg), Math.sin(alt * deg), -Math.cos(alt * deg) * Math.cos(az * deg)];
+// the same vector in a floor plan's axes: x right, z down the page, page-up at compass bearing `north`
+export function planSunDir(alt, az, north = 0) {
+  const [e, up, s] = sunVec(alt, az), n = north * deg;
+  return [e * Math.cos(n) + s * Math.sin(n), up, s * Math.cos(n) - e * Math.sin(n)];
+}
 
 // -> the blocking context entry's kind, or 0
 function blockedByContext(L, px, py, pz, s) {
