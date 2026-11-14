@@ -12,7 +12,7 @@ import { commuteHtml, reachHtml } from './commute.js';
 import { API, fetchArrivals, liveLine } from './live.js';
 import { BADGE, pickerHtml } from './picker.js';
 import { kindColour } from './surround.js';
-import { card16, face8, RAMP_PM, RAMP_AM, FACE, unitCardHtml, stackTable, legendHtml } from './unit.js';
+import { card16, face8, RAMP_PM, RAMP_AM, FACE, SHADE_BY, unitCardHtml, stackTable, legendHtml } from './unit.js';
 import { col, mkRamp, skyColor, makeLabel, pinSprite, addMapTiles, addSitePlan, buildSurround, buildHostRings, makeMoon, makeWeatherFx } from './scene.js';
 import { makeQueue, fetchFeed, computeWeather, heightGrid, liveValues, skyDim, minutesOld } from './weather.js';
 import { openPlan3d } from './plan3d.js';
@@ -559,8 +559,8 @@ function renderSky() {                                           // sun & moon o
     <div class="sky-row">${phaseSvg(ph.illum, ph.waxing)}<span>Rise <b>${t(mt.rise)}</b></span><span>Set <b>${t(mt.set)}</b></span>
     <span class="unit-meta">${ph.name}, ${Math.round(ph.illum * 100)}% lit</span></div>`;
 }
-function refreshNow() { sunNow = computeNow(L, site, cur.y, cur.m, cur.d, cur.min); updateSunUI(); if (mode === 'now') paint(); renderUnitCard(); }
-function refreshDay() { noonH = computeDay(L, site, cur.y, cur.m, cur.d); drawPath(); renderSky(); sunNow = computeNow(L, site, cur.y, cur.m, cur.d, cur.min); updateSunUI(); paint(); renderUnitCard(); renderTable(); }
+function refreshNow() { sunNow = computeNow(L, site, cur.y, cur.m, cur.d, cur.min); updateSunUI(); if (mode === 'now') paint(); renderUnitCard(); syncPlanSun(); }
+function refreshDay() { noonH = computeDay(L, site, cur.y, cur.m, cur.d); drawPath(); renderSky(); sunNow = computeNow(L, site, cur.y, cur.m, cur.d, cur.min); updateSunUI(); paint(); renderUnitCard(); renderTable(); syncPlanSun(); }
 
 function renderTable() {
   const metric = mode === 'rain' || mode === 'wind' ? mode : null;
@@ -571,10 +571,19 @@ function renderTable() {
 const layoutDlg = $('#layoutDlg');
 let viewer = null, openSeq = 0;                                  // the live 3D viewer; openSeq drops stale loads
 const closeViewer = () => { openSeq++; viewer?.dispose(); viewer = null; };
+// the open 3D plan follows the app's one clock: light from the real sun, off when a neighbour shades this unit
+function syncPlanSun() {
+  if (!layoutDlg.open) return;
+  const st = stacks.find(s => String(s.no) === $('#view3d').dataset.no), u = st && (st.units.find(u => u.floor === selFloor) || st.units[0]);
+  const p = sunNow, shade = u?.now === 'shade';
+  $('#planTime').value = cur.min;
+  viewer?.setSun(p.alt, p.az, !shade);
+  $('#planSunLine').textContent = p.alt <= 0 ? 'After sunset' : `${fmtTime(cur.min)} · ${shade ? `shaded by ${SHADE_BY[u.by] || 'Block ' + u.by}` : `sun from the ${card16(p.az)}`}`;
+}
 function setView(mode, no) {                                    // '3d' | '2d'
   const is3d = mode === '3d';
   $('#view3d').setAttribute('aria-pressed', is3d); $('#view2d').setAttribute('aria-pressed', !is3d);
-  $('#plan3dHolder').hidden = !is3d; $('#plan3dReset').hidden = !is3d;
+  $('#plan3dHolder').hidden = !is3d; $('#plan3dReset').hidden = !is3d; $('#planSun').hidden = !is3d;
   $('#layoutImg').hidden = is3d; $('#layoutToggle').hidden = is3d || !P.layouts[String(no)].lowest;
   if (!is3d) { closeViewer(); return; }
   if (viewer) return;
@@ -582,12 +591,13 @@ function setView(mode, no) {                                    // '3d' | '2d'
   holder.innerHTML = '<p class="p3-wait">Building 3D view…</p>';
   const stale = () => seq !== openSeq || !layoutDlg.open;
   openPlan3d(holder, `${base}plans3d/${no}`, { isStale: stale }).then(v => {
-    if (stale()) v.dispose(); else viewer = v;
+    if (stale()) v.dispose(); else { viewer = v; syncPlanSun(); }
   }).catch(() => { if (!stale()) { $('#layoutTabs').hidden = true; setView('2d', no); } });
 }
 $('#view3d').addEventListener('click', e => setView('3d', e.target.dataset.no));
 $('#view2d').addEventListener('click', e => setView('2d', e.target.dataset.no));
 $('#plan3dReset').addEventListener('click', () => viewer?.reset());
+$('#planTime').addEventListener('input', e => { timeIn.value = e.target.value; timeIn.dispatchEvent(new Event('input')); });
 layoutDlg.addEventListener('close', closeViewer);
 function openLayout(no, which = 'typical') {
   const l = P.layouts[String(no)];
