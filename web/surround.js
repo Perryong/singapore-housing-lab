@@ -32,3 +32,9 @@ export function hostRingShapes(P) {
   }
   return out;
 }
+
+// OSM2World's osm3d.glb draws plain buildings within P.osm3d.r of the site, so their grey boxes are skipped
+export function skipForOsm3d(P) {
+  const r = P.osm3d?.r;
+  return s => r != null && s.k === 'bldg' && Math.hypot(...s.p.reduce((a, q) => [a[0] + q[0] / s.p.length, a[1] + q[1] / s.p.length], [0, 0])) <= r;
+}

@@ -159,6 +159,13 @@ npm test
    Live arrivals for the selected stop come from the separate `sg-bus-api` API (github.com/Perryong/sg-bus-api) (LTA BusArrival), polled every
    30 s, from https://sg-bus-api.vercel.app (`PROD_API` in `web/live.js`); locally, run that API on `:8010` to see live minutes.
 8. `node tools/build.js projects/<slug>`, `node tools/make_index.js`.
+9. Detailed surroundings (optional): `python3 tools/build_osm3d.py projects/<slug>` writes `projects/<slug>/osm3d.glb`,
+   which has OSM2World roads, non-HDB buildings and roofs within 600 m, and adds `"osm3d"` to `project.json` so the
+   page draws the GLB instead of its own grey boxes there. It needs Java 17+ (`brew install openjdk`), Blender, and the
+   OSM2World **latest** build (`OSM2World-latest-bin.zip` from osm2world.org/download, unpacked at
+   `tools/osm2world/latest/`, git-ignored; release 0.4.0 writes files 100× larger). HDB blocks and coloured amenity
+   buildings are taken out of the OSM data first, so they are never drawn twice. Ground areas are dropped, because
+   OneMap already shows them.
 
 ## Refresh the future BTO map
 

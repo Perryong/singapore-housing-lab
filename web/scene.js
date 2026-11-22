@@ -87,8 +87,9 @@ export function addSitePlan(scene, P, base, renderer) {
 // health buildings, parks; one mesh per kind. Ground areas (h <= 0.2) are flat at y = 0.15, translucent for campus/park.
 const SURROUND = { hdb: 0xC9CEC8, bto: 0xC9CEC8, bldg: 0xD3D6D1, mall: 0xEFA48E, mrt: 0xE58A8A };
 const shape2d = p => new THREE.Shape(p.map(q => new THREE.Vector2(q[0], -q[1])));
-export function buildSurround(shapes = []) {
+export function buildSurround(shapes = [], skip = () => false) {
   const group = new THREE.Group();
+  shapes = shapes.filter(s => !skip(s));
   for (const k of new Set(shapes.map(s => s.k))) {
     const color = SURROUND[k] ?? kindColour(k); if (color == null) continue;
     const geos = shapes.filter(s => s.k === k).map(s => {

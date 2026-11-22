@@ -31,3 +31,8 @@ docs/linkedin/
 reference/ura/*.geojson
 reference/ura/*.raw
 reference/ura/new-blocks.json
+# OSM2World install (tools/build_osm3d.py)
+tools/osm2world/
+
+# OSM2World extracts (re-fetch: python3 tools/build_osm3d.py)
+reference/amenities/*.osm

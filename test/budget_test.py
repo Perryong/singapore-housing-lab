@@ -2,7 +2,7 @@
 import gzip
 from pathlib import Path
 
-BUDGET_KB = {'project.json': 300, 'model.glb': 2048}
+BUDGET_KB = {'project.json': 300, 'model.glb': 2048, 'osm3d.glb': 3072}
 worst = {}
 for d in Path('projects').iterdir():
     for name, kb in BUDGET_KB.items():

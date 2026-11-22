@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { buildLayout, bdir, catOf, sizeOf, deg, windowView } from './project.js';
 import { solarPos, sunVec, computeDay, computeNow, sunTimes } from './sun.js';
 import { moonAltAz, moonTimes, moonPhase, sgtNow, phaseSvg } from './moon.js';
@@ -11,7 +12,7 @@ import { valueHtml } from './value.js';
 import { commuteHtml, reachHtml } from './commute.js';
 import { API, fetchArrivals, liveLine } from './live.js';
 import { BADGE, pickerHtml } from './picker.js';
-import { kindColour } from './surround.js';
+import { kindColour, skipForOsm3d } from './surround.js';
 import { card16, face8, RAMP_PM, RAMP_AM, FACE, SHADE_BY, unitCardHtml, stackTable, legendHtml } from './unit.js';
 import { col, mkRamp, skyColor, makeLabel, pinSprite, addMapTiles, addSitePlan, buildSurround, buildHostRings, makeMoon, makeWeatherFx } from './scene.js';
 import { makeQueue, fetchFeed, computeWeather, heightGrid, liveValues, skyDim, minutesOld } from './weather.js';
@@ -106,7 +107,7 @@ addSitePlan(scene, P, base, renderer);
 let unitMesh = null, vUnit = null, model = null;
 if (!hasLayout) { const l = makeLabel('Site · layout not released', { bg: '#E8931C', fg: '#2A1A00' }); l.position.set(0, 72, 0); scene.add(l); }
 // not awaited: the map, neighbours and surroundings draw while the model (~1 MB) downloads, then units are painted
-new GLTFLoader().loadAsync(base + 'model.glb').then(gltf => {
+const modelLoaded = new GLTFLoader().loadAsync(base + 'model.glb').then(gltf => {
   gltf.scene.traverse(o => {
     if (!o.isMesh) return;
     o.castShadow = o.receiveShadow = true;
@@ -359,7 +360,11 @@ renderAmenities();
 /* ---------- Resale nearby (HDB resale transactions, data.gov.sg) ---------- */
 const RS = P.resale;
 let rType = RS ? defaultType(RS) : null, rSort = 'date';
-const surroundGroup = buildSurround(P.surround); surroundGroup.add(buildHostRings(P)); scene.add(surroundGroup);
+const surroundGroup = buildSurround(P.surround, skipForOsm3d(P)); surroundGroup.add(buildHostRings(P)); scene.add(surroundGroup);
+// OSM2World roads, buildings and roofs near the site (tools/build_osm3d.py), fetched after model.glb so it never slows
+// the project's own model down; the page works without it
+if (P.osm3d) modelLoaded.then(() => new GLTFLoader().setDRACOLoader(new DRACOLoader().setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/libs/draco/gltf/'))
+  .loadAsync(base + 'osm3d.glb').then(g => { g.scene.traverse(o => { if (o.isMesh) o.receiveShadow = true; }); surroundGroup.add(g.scene); window.__osm3dAt = performance.now(); }).catch(() => {}));
 { // compact swatches for the feature kinds actually drawn; nothing is added when there are none
   const SW = { school: 'School', campus: 'School', cc: 'Community club', library: 'Library', hawker: 'Hawker', health: 'Health', park: 'Park' };
   const names = [...new Set((P.surround || []).map(s => s.k).filter(k => SW[k]).map(k => SW[k]))];
@@ -475,6 +480,7 @@ $('.panel.right').addEventListener('click', e => { if (e.target.closest('.fold')
 $('#valuePanel').addEventListener('click', e => { const r = e.target.closest('tr[data-s]'); if (r) select(+r.dataset.s); });
 let camBack = null;                                            // the view to return to when resale mode ends
 window.__cam = () => camera.position.toArray();                // test hook
+window.__render = () => ({ calls: renderer.info.render.calls, tris: renderer.info.render.triangles, model: !document.querySelector('#loading') });   // test hook
 function setResaleMode(on) {
   if (on && !camBack) camBack = { target: controls.target.clone(), pos: camera.position.clone() };
   if (!on && camBack) { camGoal = camBack; camBack = null; }

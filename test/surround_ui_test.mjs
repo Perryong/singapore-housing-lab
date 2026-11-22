@@ -25,3 +25,15 @@ assert.deepEqual(hostRingShapes({ surround: P.surround, amenities: [{ cat: 'bogu
 // Review focus 5: nothing nearby
 assert.deepEqual(hostRingShapes({}), {}); assert.deepEqual(hostRingShapes({ surround: [], amenities: [] }), {});
 console.log('ok');
+
+// OSM2World draws plain buildings within P.osm3d.r, so those grey boxes are skipped; coloured kinds and far ones stay
+{
+  const { skipForOsm3d } = await import('../web/surround.js');
+  const sq = (cx, k = 'bldg') => ({ k, h: 10, p: [[cx - 5, -5], [cx + 5, -5], [cx + 5, 5], [cx - 5, 5]] });
+  assert.equal(skipForOsm3d({})(sq(0)), false);                          // no osm3d.glb: everything draws as before
+  const skip = skipForOsm3d({ osm3d: { r: 600 } });
+  assert.equal(skip(sq(0)), true);
+  assert.equal(skip(sq(700)), false);                                     // beyond the radius
+  assert.equal(skip(sq(0, 'school')), false);                             // coloured kinds keep their legend colour
+}
+console.log('ok osm3d skip');
